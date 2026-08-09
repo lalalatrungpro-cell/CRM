@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { SupplierService, TeamService, OrderService, ProductService, SupplierPriceService, SupplierCatalogService } from '../utils/dataService';
 import { useToast } from '../components/Toast';
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
-import { ArrowLeft, Phone, FileText, MessageCircle, Send, Bot, ShieldCheck, AlertOctagon, Trash2, Plus, Edit2, Truck, Layers, ShoppingBag } from 'lucide-react';
+import { ArrowLeft, Phone, FileText, MessageCircle, Send, Bot, ShieldCheck, AlertOctagon, Trash2, Plus, Edit2, Truck, Layers, ShoppingBag, X } from 'lucide-react';
 
 export default function SupplierDetail() {
   const { id } = useParams();
@@ -457,3 +457,4 @@ export default function SupplierDetail() {
     </div>
   );
 }
+
