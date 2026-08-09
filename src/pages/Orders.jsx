@@ -11,7 +11,7 @@ import ConfirmDialog from '../components/ConfirmDialog';
 import {
   Plus, Users, Copy, Check, ShieldAlert, FileText, UserPlus, Search,
   Filter, Eye, EyeOff, ChevronLeft, ChevronRight, X, QrCode, CreditCard,
-  Trash2, Printer, RefreshCw, AlertTriangle, ShieldCheck
+  Trash2, Printer, RefreshCw, Edit3, Edit, AlertTriangle, ShieldCheck
 } from 'lucide-react';
 
 const PAGE_SIZE = 15;
@@ -45,6 +45,7 @@ export default function Orders() {
   const [showDetailModal, setShowDetailModal] = useState(null);
   const [showInvoiceModal, setShowInvoiceModal] = useState(null);
   const [showWarrantyModal, setShowWarrantyModal] = useState(null);
+  const [showEditModal, setShowEditModal] = useState(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState(null);
 
   // Filters & State
@@ -59,6 +60,57 @@ export default function Orders() {
   const [warrantyReason, setWarrantyReason] = useState('');
   const [warrantyNewInfor, setWarrantyNewInfor] = useState('');
   const [warrantyNewTeamId, setWarrantyNewTeamId] = useState('');
+
+  
+  const [editFormData, setEditFormData] = useState({
+    id: '',
+    infor: '',
+    sellPrice: 0,
+    costPrice: 0,
+    supplierId: '',
+    status: 'Đã thanh toán',
+    expireDate: ''
+  });
+
+  const handleOpenEditModal = (order) => {
+    setEditFormData({
+      id: order.id,
+      infor: order.infor || '',
+      sellPrice: order.sell_price || 0,
+      costPrice: order.cost_price || 0,
+      supplierId: order.supplier_id || '',
+      status: order.status || 'Đã thanh toán',
+      expireDate: order.expire_date || ''
+    });
+    setShowEditModal(order);
+  };
+
+  const handleSaveEditOrder = async (e) => {
+    e.preventDefault();
+    if (!editFormData.id) return;
+
+    const payload = {
+      infor: editFormData.infor,
+      sell_price: Number(editFormData.sellPrice),
+      cost_price: Number(editFormData.costPrice),
+      supplier_id: editFormData.supplierId,
+      status: editFormData.status,
+      expire_date: editFormData.expireDate
+    };
+
+    try {
+      await OrderService.update(editFormData.id, payload);
+      toast.success('Đã cập nhật thông tin tài khoản & đơn hàng!');
+      setShowEditModal(null);
+      if (showDetailModal && String(showDetailModal.id) === String(editFormData.id)) {
+        setShowDetailModal({ ...showDetailModal, ...payload });
+      }
+      loadData();
+    } catch (err) {
+      console.error(err);
+      toast.error('Có lỗi khi cập nhật đơn hàng.');
+    }
+  };
 
   const loadData = async () => {
     if (!shopId) return;
@@ -977,7 +1029,7 @@ export default function Orders() {
         <div className="modal-overlay" onClick={() => setShowWarrantyModal(null)}>
           <div className="modal-box" onClick={e => e.stopPropagation()} style={{ maxWidth: '480px' }}>
             <div className="modal-header">
-              <h2 style={{ fontSize: '18px', fontWeight: '700' }}>Bảo Hành / Đổi Tài Khoản Đơn #{showWarrantyModal.id}</h2>
+              <h2 style={{ fontSize: '18px', fontWeight: '700' }}>Đổi Acc Bảo Hành Đơn #{showWarrantyModal.id}</h2>
               <button className="modal-close-btn" onClick={() => setShowWarrantyModal(null)}><X size={18} /></button>
             </div>
             <form onSubmit={handleProcessWarranty} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
@@ -1236,6 +1288,103 @@ export default function Orders() {
         </div>
       )}
 
+      
+      {/* EDIT ACCOUNT & ORDER MODAL */}
+      {showEditModal && (
+        <div style={{
+          position: 'fixed', inset: 0, zIndex: 9999,
+          background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(8px)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px'
+        }}>
+          <div className="glass-panel animate-scale-in" style={{ width: '100%', maxWidth: '520px', padding: '24px', position: 'relative' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '18px' }}>
+              <div>
+                <h3 style={{ fontSize: '18px', fontWeight: 'bold', color: '#fff' }}>
+                  ✏️ Điền / Cập Nhật Tài Khoản Đơn #{showEditModal.id}
+                </h3>
+                <p style={{ color: '#94a3b8', fontSize: '12.5px', marginTop: '2px' }}>
+                  Khách hàng: {showEditModal.customer_name} | SP: {showEditModal.product_name}
+                </p>
+              </div>
+              <button onClick={() => setShowEditModal(null)} style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer' }}>
+                <X size={20} />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveEditOrder} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+              <div>
+                <label className="form-label" style={{ color: '#60a5fa', fontWeight: 'bold' }}>
+                  🔑 Thông Tin Tài Khoản / Invite Link Giao Khách:
+                </label>
+                <textarea
+                  className="glass-input"
+                  style={{ minHeight: '80px', fontFamily: 'monospace', fontSize: '13px', background: 'rgba(15, 23, 42, 0.8)', border: '1px solid #3b82f6' }}
+                  placeholder="VD: email@gmail.com | pass123 | https://link_join_slot..."
+                  value={editFormData.infor}
+                  onChange={e => setEditFormData({ ...editFormData, infor: e.target.value })}
+                />
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                <div>
+                  <label className="form-label">Giá Bán Khách (VNĐ)</label>
+                  <input
+                    type="number" className="glass-input"
+                    value={editFormData.sellPrice}
+                    onChange={e => setEditFormData({ ...editFormData, sellPrice: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <label className="form-label">Giá Vốn Nhập Sỉ (VNĐ)</label>
+                  <input
+                    type="number" className="glass-input"
+                    value={editFormData.costPrice}
+                    onChange={e => setEditFormData({ ...editFormData, costPrice: e.target.value })}
+                  />
+                </div>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                <div>
+                  <label className="form-label">Trạng Thái Thanh Toán</label>
+                  <select
+                    className="glass-input"
+                    value={editFormData.status}
+                    onChange={e => setEditFormData({ ...editFormData, status: e.target.value })}
+                  >
+                    <option value="Đã thanh toán">Đã thanh toán</option>
+                    <option value="Nợ">Nợ</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="form-label">Ngày Hết Hạn Acc</label>
+                  <input
+                    type="date" className="glass-input"
+                    value={editFormData.expireDate}
+                    onChange={e => setEditFormData({ ...editFormData, expireDate: e.target.value })}
+                  />
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
+                <button
+                  type="submit" className="glass-button"
+                  style={{ flex: 1, background: 'linear-gradient(135deg, #3b82f6, #10b981)', color: '#fff', fontWeight: 'bold' }}
+                >
+                  💾 Lưu Thông Tin Tài Khoản
+                </button>
+                <button
+                  type="button" onClick={() => setShowEditModal(null)}
+                  style={{ padding: '10px 18px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)', background: 'transparent', color: '#94a3b8', cursor: 'pointer' }}
+                >
+                  Hủy
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+  
       <ConfirmDialog
         isOpen={!!confirmDeleteId}
         title="Xóa Đơn Hàng?"
