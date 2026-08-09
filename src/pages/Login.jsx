@@ -1,10 +1,13 @@
 import React, { useState } from 'react';
 import { signIn, signUp } from '../utils/auth';
-import { LogIn } from 'lucide-react';
+import { LogIn, ShieldAlert, Sparkles } from 'lucide-react';
 import { useToast } from '../components/Toast';
+import { useAuth } from '../contexts/AuthContext';
 
 export default function Login() {
   const toast = useToast();
+  const { loginDemo } = useAuth();
+
   const [isSignUp, setIsSignUp] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -35,16 +38,27 @@ export default function Login() {
         toast.success('Đăng nhập thành công!');
       }
     } catch (err) {
-      setError(err.message || 'Thao tác thất bại. Vui lòng kiểm tra thông tin.');
+      console.error('Login error:', err);
+      const msg = err.message || '';
+      if (msg.includes('Invalid API key') || msg.includes('apiKey')) {
+        setError('Lỗi "Invalid API key": Khóa VITE_SUPABASE_ANON_KEY trong file .env.local chưa đúng chuẩn anon key của Supabase. Bạn có thể bấm nút dùng thử bên dưới.');
+      } else {
+        setError(msg || 'Thao tác thất bại. Vui lòng kiểm tra lại thông tin.');
+      }
     } finally {
       setLoading(false);
     }
   };
 
+  const handleDemoClick = () => {
+    loginDemo();
+    toast.success('Đã vào hệ thống với Chế độ Dùng Thử (Demo Mode)!');
+  };
+
   return (
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', background: '#0a0d18' }}>
-      <div className="glass-panel animate-fade-in" style={{ padding: '40px', width: '100%', maxWidth: '400px' }}>
-        <div style={{ textAlign: 'center', marginBottom: '30px' }}>
+      <div className="glass-panel animate-fade-in" style={{ padding: '40px', width: '100%', maxWidth: '420px' }}>
+        <div style={{ textAlign: 'center', marginBottom: '26px' }}>
           <div style={{
             width: '60px', height: '60px', borderRadius: '50%', background: '#6366f1',
             display: 'inline-flex', alignItems: 'center', justifyContent: 'center', marginBottom: '16px',
@@ -59,8 +73,9 @@ export default function Login() {
         </div>
 
         {error && (
-          <div className="badge badge-danger" style={{ display: 'block', marginBottom: '20px', padding: '10px', textAlign: 'center' }}>
-            {error}
+          <div style={{ background: 'rgba(239,68,68,0.15)', border: '1px solid rgba(239,68,68,0.3)', color: '#ef4444', padding: '12px', borderRadius: '10px', fontSize: '12.5px', marginBottom: '20px', lineHeight: 1.5 }}>
+            <strong><ShieldAlert size={14} style={{ display: 'inline', marginRight: '4px' }} /> Lỗi Đăng Nhập:</strong>
+            <p style={{ margin: '4px 0 0 0' }}>{error}</p>
           </div>
         )}
 
@@ -104,29 +119,40 @@ export default function Login() {
             />
           </div>
 
-          <button type="submit" className="glass-button" style={{ width: '100%', marginTop: '10px', fontWeight: '700' }} disabled={loading}>
-            {loading ? 'Đang xử lý...' : isSignUp ? 'Đăng Ký Tài Khoản' : 'Đăng Nhập'}
+          <button type="submit" className="glass-button" style={{ width: '100%', marginTop: '6px', fontWeight: '700', background: '#6366f1', color: '#fff' }} disabled={loading}>
+            {loading ? 'Đang xử lý...' : isSignUp ? 'Đăng Ký Tài Khoản' : 'Đăng Nhập Supabase'}
           </button>
         </form>
 
-        <div style={{ marginTop: '20px', textAlign: 'center', fontSize: '13px' }}>
-          <span style={{ color: '#94a3b8' }}>
-            {isSignUp ? 'Đã có tài khoản? ' : 'Chưa có tài khoản cửa hàng? '}
-          </span>
+        <div style={{ marginTop: '16px', display: 'flex', flexDirection: 'column', gap: '10px', textAlign: 'center' }}>
           <button
             type="button"
-            onClick={() => {
-              setIsSignUp(!isSignUp);
-              setError('');
-            }}
-            style={{
-              background: 'none', border: 'none', color: '#6366f1',
-              fontWeight: '600', cursor: 'pointer', padding: 0
-            }}
-            disabled={loading}
+            className="glass-button"
+            onClick={handleDemoClick}
+            style={{ width: '100%', background: 'rgba(16,185,129,0.18)', border: '1px solid rgba(16,185,129,0.3)', color: '#10b981', fontWeight: '700', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
           >
-            {isSignUp ? 'Đăng nhập ngay' : 'Đăng ký ngay'}
+            <Sparkles size={16} /> Đăng Nhập Chế Độ Demo / Dùng Thử (Offline)
           </button>
+
+          <div style={{ fontSize: '13px', marginTop: '6px' }}>
+            <span style={{ color: '#94a3b8' }}>
+              {isSignUp ? 'Đã có tài khoản? ' : 'Chưa có tài khoản cửa hàng? '}
+            </span>
+            <button
+              type="button"
+              onClick={() => {
+                setIsSignUp(!isSignUp);
+                setError('');
+              }}
+              style={{
+                background: 'none', border: 'none', color: '#6366f1',
+                fontWeight: '600', cursor: 'pointer', padding: 0
+              }}
+              disabled={loading}
+            >
+              {isSignUp ? 'Đăng nhập ngay' : 'Đăng ký ngay'}
+            </button>
+          </div>
         </div>
       </div>
     </div>
