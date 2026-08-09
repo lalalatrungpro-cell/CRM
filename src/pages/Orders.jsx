@@ -2,7 +2,7 @@
 import { useAuth } from '../contexts/AuthContext';
 import {
   OrderService, CustomerService, ProductService, SupplierService,
-  TeamService, ChannelService, VietQRService
+  TeamService, ChannelService, VietQRService, WarrantyLogService
 } from '../utils/dataService';
 import { supabase } from '../utils/supabaseClient';
 import { getVietQRUrl } from '../utils/storage';
@@ -60,6 +60,12 @@ export default function Orders() {
   const [warrantyReason, setWarrantyReason] = useState('');
   const [warrantyNewInfor, setWarrantyNewInfor] = useState('');
   const [warrantyNewTeamId, setWarrantyNewTeamId] = useState('');
+  const [warrantyMode, setWarrantyMode] = useState('EXCHANGE_SAME_SUPPLIER');
+  const [warrantyNewSupplierId, setWarrantyNewSupplierId] = useState('');
+  const [warrantyAdditionalCost, setWarrantyAdditionalCost] = useState(0);
+  const [warrantyRefundAmount, setWarrantyRefundAmount] = useState(0);
+  const [warrantyAuditLogs, setWarrantyAuditLogs] = useState([]);
+  
 
   
   const [editFormData, setEditFormData] = useState({
@@ -83,6 +89,104 @@ export default function Orders() {
       expireDate: order.expire_date || ''
     });
     setShowEditModal(order);
+  };
+
+  
+  const handleOpenWarrantyModal = (order) => {
+    setShowWarrantyModal(order);
+    setWarrantyMode('EXCHANGE_SAME_SUPPLIER');
+    setWarrantyReason('');
+    setWarrantyNewInfor('');
+    setWarrantyNewTeamId('');
+    setWarrantyNewSupplierId('');
+    setWarrantyAdditionalCost(0);
+
+    // Calculate prorated partial refund recommendation
+    const sellP = order.sell_price || order.sellPrice || 0;
+    const pDate = new Date(order.purchase_date || Date.now());
+    const eDate = new Date(order.expire_date || Date.now());
+    const totalDays = Math.max(1, Math.round((eDate - pDate) / (1000 * 60 * 60 * 24))) || 30;
+    const remainingDays = Math.max(0, Math.round((eDate - new Date()) / (1000 * 60 * 60 * 24)));
+    const estimatedRefund = Math.round((sellP / totalDays) * remainingDays);
+    setWarrantyRefundAmount(estimatedRefund > 0 ? estimatedRefund : sellP);
+  };
+  
+  
+  const handleConfirmWarranty = async (e) => {
+    e.preventDefault();
+    if (!showWarrantyModal) return;
+
+    const order = showWarrantyModal;
+    const currentCost = Number(order.cost_price || order.costPrice || 0);
+    const currentSell = Number(order.sell_price || order.sellPrice || 0);
+
+    let updatedOrderPayload = {};
+    let auditLogPayload = {
+      order_id: order.id,
+      customer_name: order.customer_name,
+      product_name: order.product_name,
+      warranty_type: warrantyMode,
+      reason: warrantyReason,
+      new_infor: warrantyNewInfor,
+      original_supplier_id: order.supplier_id || ''
+    };
+
+    if (warrantyMode === 'SWITCH_TEAM') {
+      updatedOrderPayload = {
+        team_id: warrantyNewTeamId || order.team_id,
+        infor: warrantyNewInfor || order.infor
+      };
+      auditLogPayload.new_team_id = warrantyNewTeamId;
+      auditLogPayload.summary = 'Chuyển Kho Team mới: ' + (teams.find(t => String(t.id) === String(warrantyNewTeamId))?.name || warrantyNewTeamId);
+    } else if (warrantyMode === 'EXCHANGE_SAME_SUPPLIER') {
+      updatedOrderPayload = {
+        infor: warrantyNewInfor || order.infor
+      };
+      auditLogPayload.summary = 'Đổi Acc mới từ cùng Nguồn Sỉ';
+    } else if (warrantyMode === 'CROSS_SUPPLIER') {
+      const addCost = Number(warrantyAdditionalCost || 0);
+      const newTotalCost = currentCost + addCost;
+      updatedOrderPayload = {
+        supplier_id: warrantyNewSupplierId || order.supplier_id,
+        cost_price: newTotalCost,
+        infor: warrantyNewInfor || order.infor
+      };
+      auditLogPayload.new_supplier_id = warrantyNewSupplierId;
+      auditLogPayload.additional_cost_price = addCost;
+      auditLogPayload.total_cost_price = newTotalCost;
+      auditLogPayload.summary = 'Đổi Acc Chéo Nguồn Sỉ: ' + (suppliers.find(s => String(s.id) === String(warrantyNewSupplierId))?.name || warrantyNewSupplierId) + ' (+ ' + addCost.toLocaleString() + 'đ giá vốn)';
+    } else if (warrantyMode === 'FULL_REFUND') {
+      updatedOrderPayload = {
+        status: 'Đã hoàn tiền (100%)',
+        refund_amount: currentSell
+      };
+      auditLogPayload.refund_amount = currentSell;
+      auditLogPayload.summary = 'Hoàn tiền 100%: ' + currentSell.toLocaleString() + 'đ';
+    } else if (warrantyMode === 'PARTIAL_REFUND') {
+      const refAmt = Number(warrantyRefundAmount || 0);
+      updatedOrderPayload = {
+        status: 'Hoàn tiền 1 phần (' + refAmt.toLocaleString() + 'đ)',
+        refund_amount: refAmt
+      };
+      auditLogPayload.refund_amount = refAmt;
+      auditLogPayload.summary = 'Hoàn tiền 1 phần: ' + refAmt.toLocaleString() + 'đ';
+    } else if (warrantyMode === 'REJECT_WARRANTY') {
+      updatedOrderPayload = {
+        status: 'Từ chối bảo hành'
+      };
+      auditLogPayload.summary = 'Từ chối bảo hành. Lý do: ' + warrantyReason;
+    }
+
+    try {
+      await OrderService.update(order.id, updatedOrderPayload);
+      await WarrantyLogService.create(shopId, auditLogPayload);
+      toast.success('Đã ghi nhận xử lý bảo hành 360°!');
+      setShowWarrantyModal(null);
+      loadData();
+    } catch (err) {
+      console.error(err);
+      toast.error('Có lỗi xảy ra khi xử lý bảo hành.');
+    }
   };
 
   const handleSaveEditOrder = async (e) => {
@@ -143,6 +247,14 @@ export default function Orders() {
   useEffect(() => {
     loadData();
   }, [shopId]);
+  useEffect(() => {
+    if (showDetailModal && showDetailModal.id) {
+      WarrantyLogService.listByOrder(shopId, showDetailModal.id).then(setWarrantyAuditLogs).catch(console.error);
+    } else {
+      setWarrantyAuditLogs([]);
+    }
+  }, [showDetailModal, shopId]);
+  
 
   const todayStr = new Date().toISOString().split('T')[0];
   const nextMonthStr = new Date(Date.now() + 30 * 86400000).toISOString().split('T')[0];
@@ -770,7 +882,7 @@ export default function Orders() {
                             <Edit3 size={13} />
                           </button>                          <button
                             className="glass-button"
-                            onClick={() => setShowWarrantyModal(order)}
+                            onClick={() => handleOpenWarrantyModal(order)}
                             title="Bảo Hành / Đổi Tài Khoản"
                             style={{ padding: '5px 8px', fontSize: '11px', background: 'rgba(245,158,11,0.18)', color: '#f59e0b' }}
                           >
@@ -1032,48 +1144,197 @@ export default function Orders() {
       )}
 
       {/* MODAL 3: Warranty / Change Account */}
+      
+      {/* 6-MODE WARRANTY CONTROL PANEL MODAL */}
       {showWarrantyModal && (
         <div className="modal-overlay" onClick={() => setShowWarrantyModal(null)}>
-          <div className="modal-box" onClick={e => e.stopPropagation()} style={{ maxWidth: '480px' }}>
-            <div className="modal-header">
-              <h2 style={{ fontSize: '18px', fontWeight: '700' }}>Đổi Acc Bảo Hành Đơn #{showWarrantyModal.id}</h2>
+          <div className="modal-box animate-scale-in" onClick={e => e.stopPropagation()} style={{ maxWidth: '640px', padding: '24px' }}>
+            <div className="modal-header" style={{ marginBottom: '16px' }}>
+              <div>
+                <h2 style={{ fontSize: '20px', fontWeight: 'bold', color: '#fff', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <RefreshCw size={20} color="#f59e0b" /> Trung Tâm Bảo Hành & Đổi Trả 360° Đơn #{showWarrantyModal.id}
+                </h2>
+                <p style={{ color: '#94a3b8', fontSize: '13px', marginTop: '4px' }}>
+                  Khách: <strong>{showWarrantyModal.customer_name}</strong> | SP: <strong>{showWarrantyModal.product_name}</strong> | Nguồn sỉ: <strong style={{ color: '#f59e0b' }}>{suppliers.find(s => String(s.id) === String(showWarrantyModal.supplier_id))?.name || 'N/A'}</strong>
+                </p>
+              </div>
               <button className="modal-close-btn" onClick={() => setShowWarrantyModal(null)}><X size={18} /></button>
             </div>
-            <form onSubmit={handleProcessWarranty} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+
+            {/* 6-Card Scenario Tabs Selector */}
+            <div style={{ marginBottom: '16px' }}>
+              <label className="form-label" style={{ color: '#38bdf8', fontWeight: 'bold', marginBottom: '8px', display: 'block' }}>
+                🎯 CHỌN KỊCH BẢN BẢO HÀNH (1-CLICK):
+              </label>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px' }}>
+                <button
+                  type="button"
+                  onClick={() => setWarrantyMode('SWITCH_TEAM')}
+                  style={{
+                    padding: '10px 8px', borderRadius: '8px', border: warrantyMode === 'SWITCH_TEAM' ? '2px solid #3b82f6' : '1px solid rgba(255,255,255,0.1)',
+                    background: warrantyMode === 'SWITCH_TEAM' ? 'rgba(59,130,246,0.25)' : 'rgba(255,255,255,0.04)',
+                    color: '#fff', fontSize: '12px', fontWeight: '600', cursor: 'pointer', textAlign: 'center'
+                  }}
+                >
+                  🔵 1. Đổi Kho Team
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setWarrantyMode('EXCHANGE_SAME_SUPPLIER')}
+                  style={{
+                    padding: '10px 8px', borderRadius: '8px', border: warrantyMode === 'EXCHANGE_SAME_SUPPLIER' ? '2px solid #10b981' : '1px solid rgba(255,255,255,0.1)',
+                    background: warrantyMode === 'EXCHANGE_SAME_SUPPLIER' ? 'rgba(16,185,129,0.25)' : 'rgba(255,255,255,0.04)',
+                    color: '#fff', fontSize: '12px', fontWeight: '600', cursor: 'pointer', textAlign: 'center'
+                  }}
+                >
+                  🟢 2. Đổi Acc Cùng NCC
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setWarrantyMode('CROSS_SUPPLIER')}
+                  style={{
+                    padding: '10px 8px', borderRadius: '8px', border: warrantyMode === 'CROSS_SUPPLIER' ? '2px solid #f97316' : '1px solid rgba(255,255,255,0.1)',
+                    background: warrantyMode === 'CROSS_SUPPLIER' ? 'rgba(249,115,22,0.25)' : 'rgba(255,255,255,0.04)',
+                    color: '#fff', fontSize: '12px', fontWeight: '600', cursor: 'pointer', textAlign: 'center'
+                  }}
+                >
+                  🟧 3. Đổi Acc Chéo NCC B
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setWarrantyMode('FULL_REFUND')}
+                  style={{
+                    padding: '10px 8px', borderRadius: '8px', border: warrantyMode === 'FULL_REFUND' ? '2px solid #ef4444' : '1px solid rgba(255,255,255,0.1)',
+                    background: warrantyMode === 'FULL_REFUND' ? 'rgba(239,68,68,0.25)' : 'rgba(255,255,255,0.04)',
+                    color: '#fff', fontSize: '12px', fontWeight: '600', cursor: 'pointer', textAlign: 'center'
+                  }}
+                >
+                  🔴 4. Hoàn Tiền 100%
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setWarrantyMode('PARTIAL_REFUND')}
+                  style={{
+                    padding: '10px 8px', borderRadius: '8px', border: warrantyMode === 'PARTIAL_REFUND' ? '2px solid #eab308' : '1px solid rgba(255,255,255,0.1)',
+                    background: warrantyMode === 'PARTIAL_REFUND' ? 'rgba(234,179,8,0.25)' : 'rgba(255,255,255,0.04)',
+                    color: '#fff', fontSize: '12px', fontWeight: '600', cursor: 'pointer', textAlign: 'center'
+                  }}
+                >
+                  🟡 5. Hoàn Tiền 1 Phần
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setWarrantyMode('REJECT_WARRANTY')}
+                  style={{
+                    padding: '10px 8px', borderRadius: '8px', border: warrantyMode === 'REJECT_WARRANTY' ? '2px solid #64748b' : '1px solid rgba(255,255,255,0.1)',
+                    background: warrantyMode === 'REJECT_WARRANTY' ? 'rgba(100,116,139,0.25)' : 'rgba(255,255,255,0.04)',
+                    color: '#fff', fontSize: '12px', fontWeight: '600', cursor: 'pointer', textAlign: 'center'
+                  }}
+                >
+                  ⚪ 6. Từ Chối Bảo Hành
+                </button>
+              </div>
+            </div>
+
+            <form onSubmit={handleConfirmWarranty} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
               <div>
-                <label className="form-label">Lý Do Bảo Hành / Lỗi</label>
+                <label className="form-label">Ghi Chú / Lý Do Bảo Hành</label>
                 <input
-                  type="text" required className="glass-input" placeholder="VD: Tài khoản bị uất slot, sai mật khẩu..."
+                  type="text" required className="glass-input"
+                  placeholder="VD: Sai mật khẩu, sập slot, NCC A bùng..."
                   value={warrantyReason} onChange={e => setWarrantyReason(e.target.value)}
                 />
               </div>
 
-              <div>
-                <label className="form-label">Thông Tin Tài Khoản / Invite Link Mới</label>
-                <textarea
-                  className="glass-input" style={{ minHeight: '60px', fontFamily: 'monospace', fontSize: '12.5px' }} placeholder="VD: pass_moi_123 | link_join_moi"
-                  value={warrantyNewInfor} onChange={e => setWarrantyNewInfor(e.target.value)}
-                />
-              </div>
+              {/* Dynamic Inputs Based on Selected Warranty Mode */}
+              {warrantyMode === 'SWITCH_TEAM' && (
+                <div>
+                  <label className="form-label" style={{ color: '#3b82f6' }}>Chọn Kho Team Mới (Chuyển Slot)</label>
+                  <select
+                    className="glass-input" required
+                    value={warrantyNewTeamId} onChange={e => setWarrantyNewTeamId(e.target.value)}
+                  >
+                    <option value="">-- Chọn Kho Team mới --</option>
+                    {teams.map(t => (
+                      <option key={t.id} value={t.id}>{t.name} ({t.category})</option>
+                    ))}
+                  </select>
+                </div>
+              )}
 
-              <div>
-                <label className="form-label">Chuyển Sang Kho Team Mới (Tùy chọn)</label>
-                <select
-                  className="glass-input"
-                  value={warrantyNewTeamId} onChange={e => setWarrantyNewTeamId(e.target.value)}
-                >
-                  <option value="">-- Giữ nguyên kho team cũ --</option>
-                  {teams.map(t => (
-                    <option key={t.id} value={t.id}>{t.name} ({t.category})</option>
-                  ))}
-                </select>
-              </div>
+              {(warrantyMode === 'SWITCH_TEAM' || warrantyMode === 'EXCHANGE_SAME_SUPPLIER' || warrantyMode === 'CROSS_SUPPLIER') && (
+                <div>
+                  <label className="form-label" style={{ color: '#10b981' }}>Thông Tin Nick / Invite Link Mới Cho Khách</label>
+                  <textarea
+                    className="glass-input" required
+                    style={{ minHeight: '60px', fontFamily: 'monospace', fontSize: '12.5px', background: 'rgba(15,23,42,0.8)' }}
+                    placeholder="VD: new_acc@gmail.com | pass_123 | https://link_join_moi..."
+                    value={warrantyNewInfor} onChange={e => setWarrantyNewInfor(e.target.value)}
+                  />
+                </div>
+              )}
 
-              <div style={{ display: 'flex', gap: '10px', marginTop: '6px' }}>
-                <button type="submit" className="glass-button" style={{ flex: 1, background: '#f59e0b', color: '#fff', fontWeight: '700' }}>
-                  Xác Nhận Bảo Hành
+              {warrantyMode === 'CROSS_SUPPLIER' && (
+                <div style={{ background: 'rgba(249,115,22,0.12)', border: '1px solid rgba(249,115,22,0.3)', padding: '12px', borderRadius: '8px' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                    <div>
+                      <label className="form-label" style={{ color: '#f97316' }}>Chọn Nhà Cung Cấp Mới (NCC B)</label>
+                      <select
+                        className="glass-input" required
+                        value={warrantyNewSupplierId} onChange={e => setWarrantyNewSupplierId(e.target.value)}
+                      >
+                        <option value="">-- Chọn NCC B thay thế --</option>
+                        {suppliers.map(s => (
+                          <option key={s.id} value={s.id}>{s.name}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="form-label" style={{ color: '#f97316' }}>Giá Vốn Mới Phát Sinh (VNĐ)</label>
+                      <input
+                        type="number" required className="glass-input"
+                        placeholder="VD: 60000"
+                        value={warrantyAdditionalCost} onChange={e => setWarrantyAdditionalCost(e.target.value)}
+                      />
+                    </div>
+                  </div>
+                  <p style={{ fontSize: '11.5px', color: '#fdba74', marginTop: '6px', margin: 0 }}>
+                    💡 CRM sẽ tự động cộng dồn Tổng Giá Vốn = <strong>{((showWarrantyModal.cost_price || 0) + Number(warrantyAdditionalCost || 0)).toLocaleString()}đ</strong> và tính lại Lợi nhuận chuẩn xác!
+                  </p>
+                </div>
+              )}
+
+              {warrantyMode === 'PARTIAL_REFUND' && (
+                <div style={{ background: 'rgba(234,179,8,0.12)', border: '1px solid rgba(234,179,8,0.3)', padding: '12px', borderRadius: '8px' }}>
+                  <label className="form-label" style={{ color: '#eab308' }}>Số Tiền Hoàn Cho Khách (VNĐ)</label>
+                  <input
+                    type="number" required className="glass-input"
+                    value={warrantyRefundAmount} onChange={e => setWarrantyRefundAmount(e.target.value)}
+                  />
+                  <p style={{ fontSize: '11.5px', color: '#fde047', marginTop: '4px', margin: 0 }}>
+                    💡 Gợi ý hoàn tiền tự động dựa trên số ngày còn lại chưa dùng của đơn.
+                  </p>
+                </div>
+              )}
+
+              {warrantyMode === 'FULL_REFUND' && (
+                <div style={{ background: 'rgba(239,68,68,0.12)', border: '1px solid rgba(239,68,68,0.3)', padding: '10px', borderRadius: '8px', color: '#fca5a5', fontSize: '12px' }}>
+                  ⚠️ Đơn hàng sẽ được chuyển sang trạng thái <strong>Đã hoàn tiền (100%)</strong> ({Number(showWarrantyModal.sell_price || 0).toLocaleString()}đ).
+                </div>
+              )}
+
+              <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
+                <button type="submit" className="glass-button" style={{ flex: 1, background: 'linear-gradient(135deg, #f59e0b, #10b981)', color: '#fff', fontWeight: '700' }}>
+                  ⚡ Xác Nhận Xử Lý Bảo Hành
                 </button>
-                <button type="button" onClick={() => setShowWarrantyModal(null)} style={{ padding: '10px 20px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)', background: 'transparent', color: '#94a3b8', cursor: 'pointer' }}>Hủy</button>
+                <button type="button" onClick={() => setShowWarrantyModal(null)} style={{ padding: '10px 20px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)', background: 'transparent', color: '#94a3b8', cursor: 'pointer' }}>
+                  Hủy
+                </button>
               </div>
             </form>
           </div>
@@ -1420,4 +1681,5 @@ export default function Orders() {
     </div>
   );
 }
+
 

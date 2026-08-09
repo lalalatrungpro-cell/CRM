@@ -43,10 +43,15 @@ export default function Dashboard() {
     loadData();
   }, [shopId]);
 
-  const paidOrders = orders.filter(o => o.status === 'Đã thanh toán');
+    const paidOrders = orders.filter(o => o.status !== 'Từ chối bảo hành' && !String(o.status || '').includes('100%'));
 
-  const totalRevenue = paidOrders.reduce((sum, o) => sum + (o.sell_price || o.sellPrice || 0), 0);
-  const totalCost = paidOrders.reduce((sum, o) => sum + (o.cost_price || o.costPrice || 0), 0);
+  const totalRevenue = paidOrders.reduce((sum, o) => {
+    const sellP = Number(o.sell_price || o.sellPrice || 0);
+    const refP = Number(o.refund_amount || 0);
+    return sum + Math.max(0, sellP - refP);
+  }, 0);
+
+  const totalCost = paidOrders.reduce((sum, o) => sum + Number(o.cost_price || o.costPrice || 0), 0);
   const totalProfit = totalRevenue - totalCost;
 
   const repeatCustomersCount = customers.filter(c => {

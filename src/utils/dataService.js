@@ -1,4 +1,4 @@
-import { supabase } from './supabaseClient';
+﻿import { supabase } from './supabaseClient';
 
 // Helper for safe localStorage fallback
 const getLocal = (key, defaultVal = []) => {
@@ -498,6 +498,15 @@ export const CareLogService = {
 
 // ==================== WARRANTY LOGS ====================
 export const WarrantyLogService = {
+  async listByOrder(shopId, orderId) {
+    try {
+      const all = await this.listByShop(shopId);
+      return all.filter(w => String(w.order_id || w.orderId) === String(orderId));
+    } catch (err) {
+      return [];
+    }
+  },
+
   async listByShop(shopId) {
     try {
       const { data, error } = await supabase
@@ -614,3 +623,4 @@ export const VietQRService = {
     return payload;
   }
 };
+
