@@ -4,7 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { SupplierService, OrderService, ProductService, SupplierPriceService } from '../utils/dataService';
 import { useToast } from '../components/Toast';
 import ConfirmDialog from '../components/ConfirmDialog';
-import { Truck, Plus, BarChart2, TrendingDown, Award, Sparkles, Eye, Edit2, ShieldCheck, AlertTriangle, CheckCircle, X, Trash2, Search } from 'lucide-react';
+import { Truck, Plus, MessageCircle, Send, Bot, PhoneCall, BarChart2, TrendingDown, Award, Sparkles, Eye, Edit2, ShieldCheck, AlertTriangle, CheckCircle, X, Trash2, Search } from 'lucide-react';
 
 export default function Suppliers() {
   const navigate = useNavigate();
@@ -19,7 +19,7 @@ export default function Suppliers() {
   const [showModal, setShowModal] = useState(false);
   const [editingSupplier, setEditingSupplier] = useState(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState(null);
-  const [formData, setFormData] = useState({ name: '', phone: '', notes: '' });
+  const [formData, setFormData] = useState({ name: '', phone: '', zalo: '', telegram: '', bot_link: '', notes: '' });
 
   // Filters
   const [searchTerm, setSearchTerm] = useState('');

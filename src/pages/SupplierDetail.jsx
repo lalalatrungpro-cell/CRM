@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { SupplierService, TeamService, OrderService, ProductService, SupplierPriceService } from '../utils/dataService';
+import { SupplierService, TeamService, OrderService, ProductService, SupplierPriceService, SupplierCatalogService } from '../utils/dataService';
 import { useToast } from '../components/Toast';
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
-import { ArrowLeft, Phone, FileText, MessageCircle, Truck, Layers, ShoppingBag } from 'lucide-react';
+import { ArrowLeft, Phone, FileText, MessageCircle, Send, Bot, ShieldCheck, AlertOctagon, Trash2, Plus, Edit2, Truck, Layers, ShoppingBag } from 'lucide-react';
 
 export default function SupplierDetail() {
   const { id } = useParams();
@@ -17,6 +17,12 @@ export default function SupplierDetail() {
   const [orders, setOrders] = useState([]);
   const [products, setProducts] = useState([]);
   const [priceHistory, setPriceHistory] = useState([]);
+  const [catalogItems, setCatalogItems] = useState([]);
+  const [catProductName, setCatProductName] = useState('');
+  const [catPrice, setCatPrice] = useState('');
+  const [catWarrantyPolicy, setCatWarrantyPolicy] = useState('FULL_WARRANTY');
+  const [catDescription, setCatDescription] = useState('');
+  
   const [dailyProductName, setDailyProductName] = useState('');
   const [dailyPrice, setDailyPrice] = useState('');
   const [dailyNotes, setDailyNotes] = useState('');
@@ -51,6 +57,8 @@ export default function SupplierDetail() {
       setOrders(suppOrders);
       setProducts(prodList || []);
       setPriceHistory(priceList || []);
+      const catList = await SupplierCatalogService.listBySupplier(shopId, id);
+      setCatalogItems(catList || []);
       if ((prodList || []).length > 0) setDailyProductName(prodList[0].name);
   
     } catch (err) {
@@ -65,6 +73,42 @@ export default function SupplierDetail() {
     loadData();
   }, [shopId, id]);
 
+  
+  
+  const handleSaveCatalogItem = async (e) => {
+    e.preventDefault();
+    if (!catProductName || !catPrice) {
+      return toast.error('Vui lòng chọn sản phẩm và nhập giá sỉ chuẩn.');
+    }
+
+    try {
+      await SupplierCatalogService.saveCatalogItem(shopId, {
+        supplierId: id,
+        productName: catProductName,
+        wholesalePrice: Number(catPrice),
+        warrantyPolicy: catWarrantyPolicy,
+        productDescription: catDescription
+      });
+      toast.success('Đã lưu sản phẩm vào danh mục NCC!');
+      setCatPrice('');
+      setCatDescription('');
+      const updatedCat = await SupplierCatalogService.listBySupplier(shopId, id);
+      setCatalogItems(updatedCat || []);
+    } catch (err) {
+      console.error(err);
+      toast.error('Lỗi khi lưu danh mục sản phẩm.');
+    }
+  };
+
+  const handleDeleteCatalogItem = async (catId) => {
+    try {
+      await SupplierCatalogService.deleteCatalogItem(catId);
+      toast.success('Đã xóa sản phẩm khỏi danh mục NCC!');
+      setCatalogItems(prev => prev.filter(c => String(c.id) !== String(catId)));
+    } catch (err) {
+      console.error(err);
+    }
+  };
   
   const handleSaveDailyPrice = async (e) => {
     e.preventDefault();
@@ -163,6 +207,114 @@ export default function SupplierDetail() {
       </div>
 
       
+      
+      {/* SECTION 1: SUPPLIER PRODUCT CATALOG & WARRANTY POLICIES */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', marginBottom: '24px' }}>
+        <h3 style={{ fontSize: '17px', fontWeight: '700', color: '#38bdf8', display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <ShoppingBag size={18} color="#38bdf8" /> Danh Mục Sản Phẩm & Chính Sách Bảo Hành Sỉ ({catalogItems.length})
+        </h3>
+
+        <div style={{ display: 'grid', gridTemplateColumns: '360px 1fr', gap: '20px' }}>
+          {/* Add Product Catalog Form */}
+          <div className="glass-panel" style={{ padding: '20px' }}>
+            <h4 style={{ fontSize: '14.5px', fontWeight: 'bold', color: '#fff', marginBottom: '12px' }}>
+              ➕ Thêm Mặt Hàng Vào Danh Mục NCC
+            </h4>
+            <form onSubmit={handleSaveCatalogItem} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <div>
+                <label className="form-label">Tên Sản Phẩm Sỉ</label>
+                <select
+                  className="glass-input" required
+                  value={catProductName} onChange={e => setCatProductName(e.target.value)}
+                >
+                  <option value="">-- Chọn sản phẩm --</option>
+                  {products.map(p => (
+                    <option key={p.id} value={p.name}>{p.name}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="form-label">Giá Bán Sỉ Chuẩn (VNĐ)</label>
+                <input
+                  type="number" required className="glass-input" placeholder="VD: 45000"
+                  value={catPrice} onChange={e => setCatPrice(e.target.value)}
+                />
+              </div>
+
+              <div>
+                <label className="form-label">Chính Sách Bảo Hành Sỉ</label>
+                <select
+                  className="glass-input" required
+                  value={catWarrantyPolicy} onChange={e => setCatWarrantyPolicy(e.target.value)}
+                >
+                  <option value="FULL_WARRANTY">🟢 Bảo Hành Full Thời Hạn (1 Đổi 1)</option>
+                  <option value="SEVEN_DAYS">🟡 Bảo Hành 7 Ngày Đầu</option>
+                  <option value="NO_WARRANTY">🔴 Không Bảo Hành (Acc Thanh Lý)</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="form-label">Mô Tả Quy Cách Sản Phẩm</label>
+                <textarea
+                  className="glass-input" style={{ minHeight: '60px', fontSize: '12px' }}
+                  placeholder="VD: Mail chính chủ, invite link, max 5 thiết bị..."
+                  value={catDescription} onChange={e => setCatDescription(e.target.value)}
+                />
+              </div>
+
+              <button type="submit" className="glass-button" style={{ background: '#38bdf8', color: '#fff', fontWeight: 'bold' }}>
+                Thêm Vào Danh Mục
+              </button>
+            </form>
+          </div>
+
+          {/* Supplier Catalog Table */}
+          <div className="glass-panel" style={{ padding: 0, overflow: 'hidden' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+              <thead>
+                <tr style={{ background: 'rgba(255,255,255,0.04)', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+                  {['Sản Phẩm', 'Giá Sỉ Chuẩn', 'Chính Sách Bảo Hành', 'Mô Tả Quy Cách', 'Thao Tác'].map(h => (
+                    <th key={h} style={{ padding: '12px 16px', textAlign: 'left', color: '#64748b', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: '700' }}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {catalogItems.length === 0 ? (
+                  <tr>
+                    <td colSpan={5} style={{ padding: '24px', textAlign: 'center', color: '#64748b', fontStyle: 'italic' }}>
+                      Chưa thiết lập danh mục sản phẩm riêng cho Nhà Cung Cấp này. Hãy điền form bên trái để thêm!
+                    </td>
+                  </tr>
+                ) : (
+                  catalogItems.map(c => (
+                    <tr key={c.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                      <td style={{ padding: '12px 16px' }}><strong style={{ color: '#fff' }}>{c.product_name || c.productName}</strong></td>
+                      <td style={{ padding: '12px 16px', color: '#10b981', fontWeight: 'bold' }}>{Number(c.wholesale_price || c.wholesalePrice || 0).toLocaleString()}đ</td>
+                      <td style={{ padding: '12px 16px' }}>
+                        {c.warranty_policy === 'FULL_WARRANTY' ? (
+                          <span className="badge badge-success" style={{ background: 'rgba(16,185,129,0.2)', color: '#10b981', border: '1px solid #10b981', fontSize: '10.5px' }}>🟢 BH FULL THỜI HẠN</span>
+                        ) : c.warranty_policy === 'SEVEN_DAYS' ? (
+                          <span className="badge badge-warning" style={{ background: 'rgba(245,158,11,0.2)', color: '#f59e0b', border: '1px solid #f59e0b', fontSize: '10.5px' }}>🟡 BH 7 NGÀY ĐẦU</span>
+                        ) : (
+                          <span className="badge badge-danger" style={{ background: 'rgba(239,68,68,0.2)', color: '#ef4444', border: '1px solid #ef4444', fontSize: '10.5px' }}>🔴 KHÔNG BẢO HÀNH</span>
+                        )}
+                      </td>
+                      <td style={{ padding: '12px 16px', color: '#cbd5e1', fontSize: '12px' }}>{c.product_description || c.productDescription || '---'}</td>
+                      <td style={{ padding: '12px 16px' }}>
+                        <button onClick={() => handleDeleteCatalogItem(c.id)} style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer' }}>
+                          <Trash2 size={15} />
+                        </button>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
       {/* Daily Price Sheet & Trend Chart */}
       <div style={{ display: 'grid', gridTemplateColumns: '360px 1fr', gap: '20px', marginBottom: '24px' }}>
         {/* Entry Form */}

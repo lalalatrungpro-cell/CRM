@@ -68,6 +68,13 @@ const seedDemoData = () => {
       { id: 4, supplier_id: 2, product_name: 'Google AI Pro (Gemini Advanced 1 năm)', price: 110000, price_date: new Date().toISOString().split('T')[0], notes: 'Bảo hành 12 tháng' }
     ]);
 
+    
+    setLocal('supplier_catalog', [
+      { id: 1, supplier_id: 1, product_name: 'Canva Pro (1 năm)', wholesale_price: 45000, warranty_policy: 'FULL_WARRANTY', product_description: 'Mail chính chủ, kích hoạt qua link invite, dùng 5 thiết bị' },
+      { id: 2, supplier_id: 1, product_name: 'Google AI Pro (Gemini Advanced 1 năm)', wholesale_price: 95000, warranty_policy: 'FULL_WARRANTY', product_description: 'Nâng cấp mail chính chủ, bảo hành 12 tháng' },
+      { id: 3, supplier_id: 2, product_name: 'Netflix Premium (1 tháng)', wholesale_price: 55000, warranty_policy: 'SEVEN_DAYS', product_description: 'Acc dùng chung slot 5 người, bảo hành 7 ngày đầu' }
+    ]);
+
     localStorage.setItem('crm_demo_seeded', 'true');
   }
 };
@@ -726,5 +733,76 @@ export const SupplierPriceService = {
     } catch (err) {
       return null;
     }
+  }
+};
+
+
+// ==================== SUPPLIER CATALOG ====================
+export const SupplierCatalogService = {
+  async listByShop(shopId) {
+    try {
+      const { data, error } = await supabase
+        .from('supplier_catalog')
+        .select('*')
+        .eq('shop_id', shopId)
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      const merged = mergeData(data || [], 'supplier_catalog');
+      setLocal('supplier_catalog', merged);
+      return merged;
+    } catch (err) {
+      return getLocal('supplier_catalog');
+    }
+  },
+
+  async listBySupplier(shopId, supplierId) {
+    try {
+      const all = await this.listByShop(shopId);
+      return all.filter(c => String(c.supplier_id || c.supplierId) === String(supplierId));
+    } catch (err) {
+      return [];
+    }
+  },
+
+  async saveCatalogItem(shopId, payload) {
+    const newObj = {
+      id: payload.id || Date.now(),
+      shop_id: shopId,
+      supplier_id: payload.supplier_id || payload.supplierId,
+      product_name: payload.product_name || payload.productName,
+      wholesale_price: Number(payload.wholesale_price || payload.wholesalePrice || 0),
+      warranty_policy: payload.warranty_policy || payload.warrantyPolicy || 'FULL_WARRANTY',
+      product_description: payload.product_description || payload.productDescription || '',
+      created_at: new Date().toISOString()
+    };
+
+    const current = getLocal('supplier_catalog');
+    const existingIdx = current.findIndex(c => String(c.id) === String(newObj.id));
+    let updatedList = [];
+    if (existingIdx >= 0) {
+      current[existingIdx] = newObj;
+      updatedList = [...current];
+    } else {
+      updatedList = [newObj, ...current];
+    }
+    setLocal('supplier_catalog', updatedList);
+
+    try {
+      const { data, error } = await supabase
+        .from('supplier_catalog')
+        .upsert({ ...newObj, shop_id: shopId })
+        .select()
+        .single();
+      if (!error && data) return data;
+    } catch (err) {}
+    return newObj;
+  },
+
+  async deleteCatalogItem(id) {
+    const current = getLocal('supplier_catalog');
+    setLocal('supplier_catalog', current.filter(c => String(c.id) !== String(id)));
+    try {
+      await supabase.from('supplier_catalog').delete().eq('id', id);
+    } catch (err) {}
   }
 };
