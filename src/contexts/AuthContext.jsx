@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+﻿import React, { createContext, useContext, useEffect, useState } from 'react';
 import { supabase } from '../utils/supabaseClient';
 import { getMyProfile } from '../utils/auth';
 
@@ -18,9 +18,10 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Check local demo session first
+    // Enable Demo session by default if not set to explicitly false
     const savedDemo = localStorage.getItem('demo_session_active');
-    if (savedDemo === 'true') {
+    if (savedDemo !== 'false') {
+      localStorage.setItem('demo_session_active', 'true');
       setUser({ id: 'demo-user-id', email: 'admin@shop.com' });
       setProfile(DEMO_PROFILE);
       setLoading(false);
@@ -88,3 +89,4 @@ export function AuthProvider({ children }) {
 }
 
 export const useAuth = () => useContext(AuthContext);
+
