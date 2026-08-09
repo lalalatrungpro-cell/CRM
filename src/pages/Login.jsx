@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { signIn, signUp } from '../utils/auth';
 import { LogIn, ShieldAlert, Sparkles } from 'lucide-react';
 import { useToast } from '../components/Toast';
@@ -6,6 +7,7 @@ import { useAuth } from '../contexts/AuthContext';
 
 export default function Login() {
   const toast = useToast();
+  const navigate = useNavigate();
   const { loginDemo } = useAuth();
 
   const [isSignUp, setIsSignUp] = useState(false);
@@ -36,14 +38,17 @@ export default function Login() {
       } else {
         await signIn(email.trim(), password);
         toast.success('Đăng nhập thành công!');
+        setTimeout(() => {
+          window.location.href = '/';
+        }, 300);
       }
     } catch (err) {
       console.error('Login error:', err);
       const msg = err.message || '';
       if (msg.includes('Invalid API key') || msg.includes('apiKey')) {
-        setError('Lỗi "Invalid API key": Khóa VITE_SUPABASE_ANON_KEY trong file .env.local chưa đúng chuẩn anon key của Supabase. Bạn có thể bấm nút dùng thử bên dưới.');
+        setError('Lỗi API Key: Khóa Supabase chưa chuẩn. Bạn có thể bấm nút Dùng Thử màu xanh lá bên dưới để vào ngay!');
       } else {
-        setError(msg || 'Thao tác thất bại. Vui lòng kiểm tra lại thông tin.');
+        setError(msg || 'Đăng nhập thất bại. Kiểm tra lại thông tin hoặc bấm nút Dùng Thử bên dưới.');
       }
     } finally {
       setLoading(false);
@@ -52,7 +57,10 @@ export default function Login() {
 
   const handleDemoClick = () => {
     loginDemo();
-    toast.success('Đã vào hệ thống với Chế độ Dùng Thử (Demo Mode)!');
+    toast.success('Đăng nhập thành công! Đang chuyển hướng vào hệ thống...');
+    setTimeout(() => {
+      window.location.href = '/';
+    }, 300);
   };
 
   return (
