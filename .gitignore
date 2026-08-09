@@ -21,3 +21,10 @@ Thumbs.db
 *.zip
 *.xlsx
 Quản lý bán ACC_extracted/
+
+
+# Secret recovery codes & sensitive files
+*recovery-codes*
+"Mã Bảo Mật Vercel/"
+"Mã Bảo Mật Vercel"
+*.txt
