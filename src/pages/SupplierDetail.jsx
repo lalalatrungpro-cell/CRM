@@ -6,6 +6,83 @@ import { useToast } from '../components/Toast';
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
 import { ArrowLeft, Phone, FileText, MessageCircle, Send, Bot, ShieldCheck, AlertOctagon, Trash2, Plus, Edit2, Truck, Layers, ShoppingBag, X } from 'lucide-react';
 
+
+
+      {/* POP-UP MODAL EDIT SUPPLIER PROFILE & MULTI-CONTACTS */}
+      {showEditSuppModal && (
+        <div className="modal-overlay" onClick={() => setShowEditSuppModal(false)}>
+          <div className="modal-box animate-scale-in" onClick={e => e.stopPropagation()} style={{ maxWidth: '520px', padding: '24px' }}>
+            <div className="modal-header" style={{ marginBottom: '16px' }}>
+              <h2 style={{ fontSize: '18px', fontWeight: 'bold', color: '#fff', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Edit2 size={18} color="#3b82f6" /> Sửa Hồ Sơ & Đa Liên Hệ NCC
+              </h2>
+              <button className="modal-close-btn" onClick={() => setShowEditSuppModal(false)}><X size={18} /></button>
+            </div>
+
+            <form onSubmit={handleSaveSupplierProfile} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+              <div>
+                <label className="form-label">Tên Nhà Cung Cấp / Nguồn Sỉ</label>
+                <input
+                  type="text" required className="glass-input"
+                  value={suppFormData.name} onChange={e => setSuppFormData({ ...suppFormData, name: e.target.value })}
+                />
+              </div>
+
+              <div>
+                <label className="form-label">Số Điện Thoại Hotline (Nhiều SĐT cách nhau bằng dấu phẩy)</label>
+                <input
+                  type="text" className="glass-input" placeholder="VD: 0977666555, 0988111222"
+                  value={suppFormData.phone} onChange={e => setSuppFormData({ ...suppFormData, phone: e.target.value })}
+                />
+              </div>
+
+              <div>
+                <label className="form-label" style={{ color: '#3b82f6' }}>Zalo Chat (Nhiều SĐT Zalo cách nhau bằng dấu phẩy)</label>
+                <input
+                  type="text" className="glass-input" placeholder="VD: 0977666555, 0911222333"
+                  value={suppFormData.zalo} onChange={e => setSuppFormData({ ...suppFormData, zalo: e.target.value })}
+                />
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                <div>
+                  <label className="form-label" style={{ color: '#38bdf8' }}>Telegram (Cách bằng dấu phẩy)</label>
+                  <input
+                    type="text" className="glass-input" placeholder="VD: @tele_sale, @tele_tech"
+                    value={suppFormData.telegram} onChange={e => setSuppFormData({ ...suppFormData, telegram: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <label className="form-label" style={{ color: '#a855f7' }}>Link Bot Tự Động Mua Acc</label>
+                  <input
+                    type="text" className="glass-input" placeholder="VD: https://t.me/autobot1, https://t.me/autobot2"
+                    value={suppFormData.bot_link} onChange={e => setSuppFormData({ ...suppFormData, bot_link: e.target.value })}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="form-label">Ghi Chú Về Nhà Cung Cấp</label>
+                <textarea
+                  className="glass-input" style={{ minHeight: '60px', fontSize: '12.5px' }}
+                  value={suppFormData.notes} onChange={e => setSuppFormData({ ...suppFormData, notes: e.target.value })}
+                />
+              </div>
+
+              <div style={{ display: 'flex', gap: '10px', marginTop: '6px' }}>
+                <button type="submit" className="glass-button" style={{ flex: 1, background: '#3b82f6', color: '#fff', fontWeight: 'bold' }}>
+                  Lưu Thay Đổi Hồ Sơ
+                </button>
+                <button type="button" onClick={() => setShowEditSuppModal(false)} style={{ padding: '10px 18px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)', background: 'transparent', color: '#94a3b8', cursor: 'pointer' }}>
+                  Hủy
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+
 export default function SupplierDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -19,6 +96,10 @@ export default function SupplierDetail() {
   const [priceHistory, setPriceHistory] = useState([]);
   const [catalogItems, setCatalogItems] = useState([]);
   const [showAddCatalogModal, setShowAddCatalogModal] = useState(false);
+
+  const [showEditSuppModal, setShowEditSuppModal] = useState(false);
+  const [suppFormData, setSuppFormData] = useState({ name: '', phone: '', zalo: '', telegram: '', bot_link: '', notes: '' });
+  
   const [catProductName, setCatProductName] = useState('');
   const [catPrice, setCatPrice] = useState('');
   const [catWarrantyPolicy, setCatWarrantyPolicy] = useState('FULL_WARRANTY');
@@ -110,6 +191,33 @@ export default function SupplierDetail() {
       setCatalogItems(prev => prev.filter(c => String(c.id) !== String(catId)));
     } catch (err) {
       console.error(err);
+    }
+  };
+  
+  
+  const handleOpenEditSupplierModal = () => {
+    if (!supplier) return;
+    setSuppFormData({
+      name: supplier.name || '',
+      phone: supplier.phone || '',
+      zalo: supplier.zalo || '',
+      telegram: supplier.telegram || '',
+      bot_link: supplier.bot_link || supplier.botLink || '',
+      notes: supplier.notes || ''
+    });
+    setShowEditSuppModal(true);
+  };
+
+  const handleSaveSupplierProfile = async (e) => {
+    e.preventDefault();
+    try {
+      await SupplierService.update(id, suppFormData);
+      toast.success('Đã cập nhật hồ sơ & liên hệ NCC thành công!');
+      setShowEditSuppModal(false);
+      loadData();
+    } catch (err) {
+      console.error(err);
+      toast.error('Lỗi khi cập nhật nhà cung cấp.');
     }
   };
   
