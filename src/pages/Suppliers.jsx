@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { SupplierService, OrderService } from '../utils/dataService';
+import { SupplierService, OrderService, ProductService, SupplierPriceService } from '../utils/dataService';
 import { useToast } from '../components/Toast';
 import ConfirmDialog from '../components/ConfirmDialog';
-import { Truck, Plus, Eye, Edit2, ShieldCheck, AlertTriangle, CheckCircle, X, Trash2, Search } from 'lucide-react';
+import { Truck, Plus, BarChart2, TrendingDown, Award, Sparkles, Eye, Edit2, ShieldCheck, AlertTriangle, CheckCircle, X, Trash2, Search } from 'lucide-react';
 
 export default function Suppliers() {
   const navigate = useNavigate();
@@ -23,17 +23,29 @@ export default function Suppliers() {
 
   // Filters
   const [searchTerm, setSearchTerm] = useState('');
+  const [activeTab, setActiveTab] = useState('LIST');
+  const [products, setProducts] = useState([]);
+  const [todayPrices, setTodayPrices] = useState([]);
+  const [selectedCompareProduct, setSelectedCompareProduct] = useState('');
+  
 
   const loadData = async () => {
     if (!shopId) return;
     setLoading(true);
     try {
-      const [suppList, orderList] = await Promise.all([
+      
+      const [suppList, orderList, prodList, priceList] = await Promise.all([
         SupplierService.list(shopId),
-        OrderService.list(shopId)
+        OrderService.list(shopId),
+        ProductService.list(shopId),
+        SupplierPriceService.listTodayPrices(shopId)
       ]);
       setSuppliers(suppList || []);
       setOrders(orderList || []);
+      setProducts(prodList || []);
+      setTodayPrices(priceList || []);
+      if ((prodList || []).length > 0) setSelectedCompareProduct(prodList[0].name);
+  
     } catch (err) {
       console.error(err);
       toast.error('Lỗi khi tải nhà cung cấp từ Supabase!');

@@ -60,6 +60,14 @@ const seedDemoData = () => {
       template: 'compact2'
     });
 
+    
+    setLocal('supplier_prices', [
+      { id: 1, supplier_id: 1, product_name: 'Canva Pro (1 năm)', price: 45000, price_date: new Date().toISOString().split('T')[0], notes: 'Giảm giá sỉ 10%' },
+      { id: 2, supplier_id: 2, product_name: 'Canva Pro (1 năm)', price: 55000, price_date: new Date().toISOString().split('T')[0], notes: 'Giá gốc' },
+      { id: 3, supplier_id: 1, product_name: 'Google AI Pro (Gemini Advanced 1 năm)', price: 95000, price_date: new Date().toISOString().split('T')[0], notes: 'Khuyến mãi tuần này' },
+      { id: 4, supplier_id: 2, product_name: 'Google AI Pro (Gemini Advanced 1 năm)', price: 110000, price_date: new Date().toISOString().split('T')[0], notes: 'Bảo hành 12 tháng' }
+    ]);
+
     localStorage.setItem('crm_demo_seeded', 'true');
   }
 };
@@ -624,3 +632,99 @@ export const VietQRService = {
   }
 };
 
+
+
+// ==================== SUPPLIER PRICES ====================
+export const SupplierPriceService = {
+  async listByShop(shopId) {
+    try {
+      const { data, error } = await supabase
+        .from('supplier_prices')
+        .select('*')
+        .eq('shop_id', shopId)
+        .order('price_date', { ascending: false });
+      if (error) throw error;
+      const merged = mergeData(data || [], 'supplier_prices');
+      setLocal('supplier_prices', merged);
+      return merged;
+    } catch (err) {
+      return getLocal('supplier_prices');
+    }
+  },
+
+  async listBySupplier(shopId, supplierId) {
+    try {
+      const all = await this.listByShop(shopId);
+      return all.filter(p => String(p.supplier_id || p.supplierId) === String(supplierId));
+    } catch (err) {
+      return [];
+    }
+  },
+
+  async listTodayPrices(shopId) {
+    const todayStr = new Date().toISOString().split('T')[0];
+    try {
+      const all = await this.listByShop(shopId);
+      // Fallback to most recent price if no today entry
+      const todayList = all.filter(p => p.price_date === todayStr);
+      return todayList.length > 0 ? todayList : all;
+    } catch (err) {
+      return [];
+    }
+  },
+
+  async saveDailyPrice(shopId, payload) {
+    const todayStr = payload.price_date || new Date().toISOString().split('T')[0];
+    const newObj = {
+      id: Date.now(),
+      shop_id: shopId,
+      supplier_id: payload.supplier_id || payload.supplierId,
+      product_name: payload.product_name || payload.productName,
+      price: Number(payload.price || 0),
+      price_date: todayStr,
+      notes: payload.notes || '',
+      created_at: new Date().toISOString()
+    };
+
+    const current = getLocal('supplier_prices');
+    setLocal('supplier_prices', [newObj, ...current]);
+
+    try {
+      const { data, error } = await supabase
+        .from('supplier_prices')
+        .insert({
+          shop_id: shopId,
+          supplier_id: newObj.supplier_id,
+          product_name: newObj.product_name,
+          price: newObj.price,
+          price_date: newObj.price_date,
+          notes: newObj.notes
+        })
+        .select()
+        .single();
+      if (!error && data) return data;
+    } catch (err) {}
+    return newObj;
+  },
+
+  async getLowestPriceSupplier(shopId, productName, suppliersList = []) {
+    try {
+      const all = await this.listTodayPrices(shopId);
+      const prodPrices = all.filter(p => (p.product_name || p.productName) === productName);
+      if (prodPrices.length === 0) return null;
+
+      prodPrices.sort((a, b) => Number(a.price) - Number(b.price));
+      const lowest = prodPrices[0];
+      const supp = suppliersList.find(s => String(s.id) === String(lowest.supplier_id || lowest.supplierId));
+
+      return {
+        supplier_id: lowest.supplier_id || lowest.supplierId,
+        supplier_name: supp ? supp.name : ('Nguồn Sỉ #' + (lowest.supplier_id || lowest.supplierId)),
+        price: Number(lowest.price),
+        notes: lowest.notes || ''
+      };
+    } catch (err) {
+      return null;
+    }
+  }
+};

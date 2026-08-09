@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { SupplierService, TeamService, OrderService } from '../utils/dataService';
+import { SupplierService, TeamService, OrderService, ProductService, SupplierPriceService } from '../utils/dataService';
 import { useToast } from '../components/Toast';
+import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
 import { ArrowLeft, Phone, FileText, MessageCircle, Truck, Layers, ShoppingBag } from 'lucide-react';
 
 export default function SupplierDetail() {
@@ -14,16 +15,25 @@ export default function SupplierDetail() {
   const [supplier, setSupplier] = useState(null);
   const [teams, setTeams] = useState([]);
   const [orders, setOrders] = useState([]);
+  const [products, setProducts] = useState([]);
+  const [priceHistory, setPriceHistory] = useState([]);
+  const [dailyProductName, setDailyProductName] = useState('');
+  const [dailyPrice, setDailyPrice] = useState('');
+  const [dailyNotes, setDailyNotes] = useState('');
+  
   const [loading, setLoading] = useState(true);
 
   const loadData = async () => {
     if (!shopId || !id) return;
     setLoading(true);
     try {
-      const [suppList, teamList, orderList] = await Promise.all([
+      
+      const [suppList, teamList, orderList, prodList, priceList] = await Promise.all([
         SupplierService.list(shopId),
         TeamService.list(shopId),
-        OrderService.list(shopId)
+        OrderService.list(shopId),
+        ProductService.list(shopId),
+        SupplierPriceService.listBySupplier(shopId, id)
       ]);
 
       const foundSupp = (suppList || []).find(s => String(s.id) === String(id));
@@ -39,6 +49,10 @@ export default function SupplierDetail() {
       setSupplier(foundSupp);
       setTeams(suppTeams);
       setOrders(suppOrders);
+      setProducts(prodList || []);
+      setPriceHistory(priceList || []);
+      if ((prodList || []).length > 0) setDailyProductName(prodList[0].name);
+  
     } catch (err) {
       console.error(err);
       toast.error('Lỗi khi tải thông tin nhà cung cấp!');
@@ -51,6 +65,31 @@ export default function SupplierDetail() {
     loadData();
   }, [shopId, id]);
 
+  
+  const handleSaveDailyPrice = async (e) => {
+    e.preventDefault();
+    if (!dailyProductName || !dailyPrice) {
+      return toast.error('Vui lòng chọn sản phẩm và nhập giá sỉ.');
+    }
+
+    try {
+      await SupplierPriceService.saveDailyPrice(shopId, {
+        supplierId: id,
+        productName: dailyProductName,
+        price: Number(dailyPrice),
+        notes: dailyNotes
+      });
+      toast.success('Đã cập nhật bảng giá sỉ hôm nay!');
+      setDailyPrice('');
+      setDailyNotes('');
+      const updatedPrices = await SupplierPriceService.listBySupplier(shopId, id);
+      setPriceHistory(updatedPrices || []);
+    } catch (err) {
+      console.error(err);
+      toast.error('Lỗi khi lưu giá sỉ.');
+    }
+  };
+  
   const handleOpenZaloChat = () => {
     if (!supplier || !supplier.phone) {
       toast.error('Nhà cung cấp chưa có số điện thoại!');
@@ -123,6 +162,71 @@ export default function SupplierDetail() {
         </div>
       </div>
 
+      
+      {/* Daily Price Sheet & Trend Chart */}
+      <div style={{ display: 'grid', gridTemplateColumns: '360px 1fr', gap: '20px', marginBottom: '24px' }}>
+        {/* Entry Form */}
+        <div className="glass-panel" style={{ padding: '20px' }}>
+          <h4 style={{ fontSize: '15px', fontWeight: 'bold', color: '#f59e0b', marginBottom: '14px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+            📝 Cập Nhật Bảng Giá Sỉ Hôm Nay
+          </h4>
+          <form onSubmit={handleSaveDailyPrice} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <div>
+              <label className="form-label">Chọn Sản Phẩm Sỉ</label>
+              <select
+                className="glass-input" required
+                value={dailyProductName} onChange={e => setDailyProductName(e.target.value)}
+              >
+                {products.map(p => (
+                  <option key={p.id} value={p.name}>{p.name}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="form-label">Giá Nhập Sỉ Hôm Nay (VNĐ)</label>
+              <input
+                type="number" required className="glass-input" placeholder="VD: 45000"
+                value={dailyPrice} onChange={e => setDailyPrice(e.target.value)}
+              />
+            </div>
+            <div>
+              <label className="form-label">Ghi Chú Giá (Tùy chọn)</label>
+              <input
+                type="text" className="glass-input" placeholder="VD: Đang xả kho sale 10%"
+                value={dailyNotes} onChange={e => setDailyNotes(e.target.value)}
+              />
+            </div>
+            <button type="submit" className="glass-button" style={{ background: 'linear-gradient(135deg, #f59e0b, #10b981)', color: '#fff', fontWeight: 'bold', marginTop: '4px' }}>
+              💾 Lưu Giá Sỉ Hôm Nay
+            </button>
+          </form>
+        </div>
+
+        {/* 30-Day Price Trend Line Chart */}
+        <div className="glass-panel" style={{ padding: '20px', display: 'flex', flexDirection: 'column' }}>
+          <h4 style={{ fontSize: '15px', fontWeight: 'bold', color: '#38bdf8', marginBottom: '14px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+            📈 Lịch Sử & Biến Động Giá Sỉ (30 Ngày Gần Nhất)
+          </h4>
+          {priceHistory.length === 0 ? (
+            <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#64748b', fontSize: '13px', fontStyle: 'italic' }}>
+              Chưa có lịch sử cập nhật giá sỉ cho nhà cung cấp này.
+            </div>
+          ) : (
+            <div style={{ width: '100%', height: '220px' }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={[...priceHistory].reverse()}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" />
+                  <XAxis dataKey="price_date" stroke="#64748b" fontSize={11} />
+                  <YAxis stroke="#64748b" fontSize={11} tickFormatter={v => v.toLocaleString() + 'đ'} />
+                  <Tooltip contentStyle={{ background: '#0f172a', border: '1px solid #38bdf8', borderRadius: '8px', fontSize: '12px', color: '#fff' }} formatter={v => [Number(v).toLocaleString() + 'đ', 'Giá sỉ']} />
+                  <Line type="monotone" dataKey="price" stroke="#f59e0b" strokeWidth={3} dot={{ r: 4, fill: '#f59e0b' }} />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          )}
+        </div>
+      </div>
+  
       {/* Linked Teams List */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
         <h3 style={{ fontSize: '17px', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '8px' }}>

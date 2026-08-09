@@ -2,7 +2,7 @@
 import { useAuth } from '../contexts/AuthContext';
 import {
   OrderService, CustomerService, ProductService, SupplierService,
-  TeamService, ChannelService, VietQRService, WarrantyLogService
+  TeamService, ChannelService, VietQRService, WarrantyLogService, SupplierPriceService
 } from '../utils/dataService';
 import { supabase } from '../utils/supabaseClient';
 import { getVietQRUrl } from '../utils/storage';
@@ -65,6 +65,8 @@ export default function Orders() {
   const [warrantyAdditionalCost, setWarrantyAdditionalCost] = useState(0);
   const [warrantyRefundAmount, setWarrantyRefundAmount] = useState(0);
   const [warrantyAuditLogs, setWarrantyAuditLogs] = useState([]);
+  const [lowestPriceHint, setLowestPriceHint] = useState(null);
+  
   
 
   
@@ -78,6 +80,30 @@ export default function Orders() {
     expireDate: ''
   });
 
+  
+  const checkLowestPriceForProduct = async (productName) => {
+    if (!productName || !shopId) {
+      setLowestPriceHint(null);
+      return;
+    }
+    try {
+      const hint = await SupplierPriceService.getLowestPriceSupplier(shopId, productName, suppliers);
+      setLowestPriceHint(hint);
+    } catch (err) {
+      setLowestPriceHint(null);
+    }
+  };
+
+  const handleApplyLowestPriceHint = () => {
+    if (!lowestPriceHint) return;
+    setFormData(prev => ({
+      ...prev,
+      supplier_id: String(lowestPriceHint.supplier_id),
+      cost_price: lowestPriceHint.price
+    }));
+    toast.success('Đã áp dụng Nguồn Sỉ rẻ nhất (' + lowestPriceHint.supplier_name + ' - ' + lowestPriceHint.price.toLocaleString() + 'đ)!');
+  };
+  
   const handleOpenEditModal = (order) => {
     setEditFormData({
       id: order.id,
