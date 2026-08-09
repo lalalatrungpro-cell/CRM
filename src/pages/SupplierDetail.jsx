@@ -4,84 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { SupplierService, TeamService, OrderService, ProductService, SupplierPriceService, SupplierCatalogService } from '../utils/dataService';
 import { useToast } from '../components/Toast';
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
-import { ArrowLeft, Phone, FileText, MessageCircle, Send, Bot, ShieldCheck, AlertOctagon, Trash2, Plus, Edit2, Truck, Layers, ShoppingBag, X } from 'lucide-react';
-
-
-
-      {/* POP-UP MODAL EDIT SUPPLIER PROFILE & MULTI-CONTACTS */}
-      {showEditSuppModal && (
-        <div className="modal-overlay" onClick={() => setShowEditSuppModal(false)}>
-          <div className="modal-box animate-scale-in" onClick={e => e.stopPropagation()} style={{ maxWidth: '520px', padding: '24px' }}>
-            <div className="modal-header" style={{ marginBottom: '16px' }}>
-              <h2 style={{ fontSize: '18px', fontWeight: 'bold', color: '#fff', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <Edit2 size={18} color="#3b82f6" /> Sửa Hồ Sơ & Đa Liên Hệ NCC
-              </h2>
-              <button className="modal-close-btn" onClick={() => setShowEditSuppModal(false)}><X size={18} /></button>
-            </div>
-
-            <form onSubmit={handleSaveSupplierProfile} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-              <div>
-                <label className="form-label">Tên Nhà Cung Cấp / Nguồn Sỉ</label>
-                <input
-                  type="text" required className="glass-input"
-                  value={suppFormData.name} onChange={e => setSuppFormData({ ...suppFormData, name: e.target.value })}
-                />
-              </div>
-
-              <div>
-                <label className="form-label">Số Điện Thoại Hotline (Nhiều SĐT cách nhau bằng dấu phẩy)</label>
-                <input
-                  type="text" className="glass-input" placeholder="VD: 0977666555, 0988111222"
-                  value={suppFormData.phone} onChange={e => setSuppFormData({ ...suppFormData, phone: e.target.value })}
-                />
-              </div>
-
-              <div>
-                <label className="form-label" style={{ color: '#3b82f6' }}>Zalo Chat (Nhiều SĐT Zalo cách nhau bằng dấu phẩy)</label>
-                <input
-                  type="text" className="glass-input" placeholder="VD: 0977666555, 0911222333"
-                  value={suppFormData.zalo} onChange={e => setSuppFormData({ ...suppFormData, zalo: e.target.value })}
-                />
-              </div>
-
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-                <div>
-                  <label className="form-label" style={{ color: '#38bdf8' }}>Telegram (Cách bằng dấu phẩy)</label>
-                  <input
-                    type="text" className="glass-input" placeholder="VD: @tele_sale, @tele_tech"
-                    value={suppFormData.telegram} onChange={e => setSuppFormData({ ...suppFormData, telegram: e.target.value })}
-                  />
-                </div>
-                <div>
-                  <label className="form-label" style={{ color: '#a855f7' }}>Link Bot Tự Động Mua Acc</label>
-                  <input
-                    type="text" className="glass-input" placeholder="VD: https://t.me/autobot1, https://t.me/autobot2"
-                    value={suppFormData.bot_link} onChange={e => setSuppFormData({ ...suppFormData, bot_link: e.target.value })}
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="form-label">Ghi Chú Về Nhà Cung Cấp</label>
-                <textarea
-                  className="glass-input" style={{ minHeight: '60px', fontSize: '12.5px' }}
-                  value={suppFormData.notes} onChange={e => setSuppFormData({ ...suppFormData, notes: e.target.value })}
-                />
-              </div>
-
-              <div style={{ display: 'flex', gap: '10px', marginTop: '6px' }}>
-                <button type="submit" className="glass-button" style={{ flex: 1, background: '#3b82f6', color: '#fff', fontWeight: 'bold' }}>
-                  Lưu Thay Đổi Hồ Sơ
-                </button>
-                <button type="button" onClick={() => setShowEditSuppModal(false)} style={{ padding: '10px 18px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)', background: 'transparent', color: '#94a3b8', cursor: 'pointer' }}>
-                  Hủy
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
+import { ArrowLeft, Phone, MessageCircle, Send, Bot, ShieldCheck, Trash2, Plus, Edit2, Layers, ShoppingBag, X } from 'lucide-react';
 
 export default function SupplierDetail() {
   const { id } = useParams();
@@ -95,27 +18,28 @@ export default function SupplierDetail() {
   const [products, setProducts] = useState([]);
   const [priceHistory, setPriceHistory] = useState([]);
   const [catalogItems, setCatalogItems] = useState([]);
-  const [showAddCatalogModal, setShowAddCatalogModal] = useState(false);
+  const [loading, setLoading] = useState(true);
 
-  const [showEditSuppModal, setShowEditSuppModal] = useState(false);
-  const [suppFormData, setSuppFormData] = useState({ name: '', phone: '', zalo: '', telegram: '', bot_link: '', notes: '' });
-  
+  // Catalog Modal
+  const [showAddCatalogModal, setShowAddCatalogModal] = useState(false);
   const [catProductName, setCatProductName] = useState('');
   const [catPrice, setCatPrice] = useState('');
   const [catWarrantyPolicy, setCatWarrantyPolicy] = useState('FULL_WARRANTY');
   const [catDescription, setCatDescription] = useState('');
-  
+
+  // Edit Supplier Profile Modal
+  const [showEditSuppModal, setShowEditSuppModal] = useState(false);
+  const [suppFormData, setSuppFormData] = useState({ name: '', phone: '', zalo: '', telegram: '', bot_link: '', notes: '' });
+
+  // Daily Price
   const [dailyProductName, setDailyProductName] = useState('');
   const [dailyPrice, setDailyPrice] = useState('');
   const [dailyNotes, setDailyNotes] = useState('');
-  
-  const [loading, setLoading] = useState(true);
 
   const loadData = async () => {
     if (!shopId || !id) return;
     setLoading(true);
     try {
-      
       const [suppList, teamList, orderList, prodList, priceList] = await Promise.all([
         SupplierService.list(shopId),
         TeamService.list(shopId),
@@ -142,7 +66,6 @@ export default function SupplierDetail() {
       const catList = await SupplierCatalogService.listBySupplier(shopId, id);
       setCatalogItems(catList || []);
       if ((prodList || []).length > 0) setDailyProductName(prodList[0].name);
-  
     } catch (err) {
       console.error(err);
       toast.error('Lỗi khi tải thông tin nhà cung cấp!');
@@ -155,15 +78,11 @@ export default function SupplierDetail() {
     loadData();
   }, [shopId, id]);
 
-  
-  
   const handleSaveCatalogItem = async (e) => {
-    e.preventDefault();
     e.preventDefault();
     if (!catProductName || !catPrice) {
       return toast.error('Vui lòng chọn sản phẩm và nhập giá sỉ chuẩn.');
     }
-
     try {
       await SupplierCatalogService.saveCatalogItem(shopId, {
         supplierId: id,
@@ -193,8 +112,7 @@ export default function SupplierDetail() {
       console.error(err);
     }
   };
-  
-  
+
   const handleOpenEditSupplierModal = () => {
     if (!supplier) return;
     setSuppFormData({
@@ -220,13 +138,12 @@ export default function SupplierDetail() {
       toast.error('Lỗi khi cập nhật nhà cung cấp.');
     }
   };
-  
+
   const handleSaveDailyPrice = async (e) => {
     e.preventDefault();
     if (!dailyProductName || !dailyPrice) {
       return toast.error('Vui lòng chọn sản phẩm và nhập giá sỉ.');
     }
-
     try {
       await SupplierPriceService.saveDailyPrice(shopId, {
         supplierId: id,
@@ -244,15 +161,6 @@ export default function SupplierDetail() {
       toast.error('Lỗi khi lưu giá sỉ.');
     }
   };
-  
-  const handleOpenZaloChat = () => {
-    if (!supplier || !supplier.phone) {
-      toast.error('Nhà cung cấp chưa có số điện thoại!');
-      return;
-    }
-    const cleanPhone = supplier.phone.replace(/[^0-9]/g, '');
-    window.open(`https://zalo.me/${cleanPhone}`, '_blank');
-  };
 
   if (loading) {
     return <div style={{ padding: '40px', textAlign: 'center', color: '#94a3b8' }}>Đang tải hồ sơ nguồn sỉ 360°...</div>;
@@ -264,6 +172,9 @@ export default function SupplierDetail() {
   const unpaidOrders = orders.filter(o => o.supplier_paid === false || o.supplierPaid === false);
   const totalDebtToSupplier = unpaidOrders.reduce((sum, o) => sum + (o.cost_price || o.costPrice || 0), 0);
 
+  // Helper: split comma-separated contact info
+  const parseContacts = (str) => (str || '').split(',').map(s => s.trim()).filter(Boolean);
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
       {/* Back & Title */}
@@ -274,31 +185,54 @@ export default function SupplierDetail() {
         <h1 style={{ fontSize: '22px', fontWeight: '800' }}>Hồ Sơ Nguồn Sỉ 360°: {supplier.name}</h1>
       </div>
 
-      {/* Supplier Profile Card */}
+      {/* ============ SUPPLIER PROFILE HEADER ============ */}
       <div className="glass-panel" style={{ display: 'flex', flexDirection: 'column', gap: '16px', background: 'linear-gradient(135deg, rgba(245,158,11,0.08), rgba(99,102,241,0.05))', border: '1px solid rgba(245,158,11,0.2)' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '16px' }}>
+          {/* Name & Notes */}
           <div>
-            <h2 style={{ fontSize: '24px', fontWeight: '800', color: '#fff' }}>{supplier.name}</h2>
-            <p style={{ color: '#94a3b8', fontSize: '13.5px', marginTop: '4px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <Phone size={14} color="#f59e0b" /> SĐT Hotline: <strong>{supplier.phone || 'Chưa cập nhật'}</strong>
-            </p>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+              <h2 style={{ fontSize: '24px', fontWeight: '800', color: '#fff', margin: 0 }}>{supplier.name}</h2>
+              <button
+                onClick={handleOpenEditSupplierModal}
+                className="glass-button"
+                style={{ padding: '4px 10px', fontSize: '11px', background: 'rgba(59,130,246,0.2)', color: '#3b82f6', border: '1px solid #3b82f6', fontWeight: 'bold', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+              >
+                <Edit2 size={12} /> ✏️ Sửa Hồ Sơ & Đa Liên Hệ
+              </button>
+            </div>
             {supplier.notes && (
               <p style={{ color: '#cbd5e1', fontSize: '13px', marginTop: '6px', fontStyle: 'italic', background: 'rgba(0,0,0,0.2)', padding: '8px 12px', borderRadius: '8px' }}>
-                "Ghi chú: {supplier.notes}"
+                "{supplier.notes}"
               </p>
             )}
           </div>
 
-          <button
-            className="glass-button"
-            onClick={handleOpenZaloChat}
-            style={{ background: '#0068ff', color: '#fff', fontWeight: '700', border: 'none', display: 'flex', alignItems: 'center', gap: '6px' }}
-          >
-            <MessageCircle size={16} /> Nhắn Zalo Nguồn Sỉ
-          </button>
+          {/* Multi-Channel Contact Badges */}
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', maxWidth: '520px', justifyContent: 'flex-end' }}>
+            {parseContacts(supplier.phone).map((phoneNo, idx) => (
+              <a key={'p-' + idx} href={"tel:" + phoneNo} className="glass-button" style={{ background: 'rgba(245,158,11,0.18)', color: '#f59e0b', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '6px', fontWeight: 'bold', fontSize: '12px' }}>
+                <Phone size={14} /> Hotline{idx > 0 ? ' ' + (idx + 1) : ''}: {phoneNo}
+              </a>
+            ))}
+            {parseContacts(supplier.zalo || supplier.phone).map((zaloVal, idx) => (
+              <a key={'z-' + idx} href={"https://zalo.me/" + zaloVal.replace(/[^0-9]/g, '')} target="_blank" rel="noreferrer" className="glass-button" style={{ background: '#0068ff', color: '#fff', fontWeight: 'bold', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '12px' }}>
+                <MessageCircle size={14} /> Zalo{idx > 0 ? ' ' + (idx + 1) : ''}: {zaloVal}
+              </a>
+            ))}
+            {parseContacts(supplier.telegram).map((teleVal, idx) => (
+              <a key={'t-' + idx} href={"https://t.me/" + teleVal.replace('@', '')} target="_blank" rel="noreferrer" className="glass-button" style={{ background: '#38bdf8', color: '#fff', fontWeight: 'bold', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '12px' }}>
+                <Send size={14} /> Telegram{idx > 0 ? ' ' + (idx + 1) : ''}: {teleVal}
+              </a>
+            ))}
+            {parseContacts(supplier.bot_link || supplier.botLink).map((botVal, idx) => (
+              <a key={'b-' + idx} href={botVal.startsWith('http') ? botVal : ('https://' + botVal)} target="_blank" rel="noreferrer" className="glass-button" style={{ background: 'linear-gradient(135deg, #a855f7, #6366f1)', color: '#fff', fontWeight: 'bold', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '12px' }}>
+                <Bot size={14} /> Bot Auto{idx > 0 ? ' ' + (idx + 1) : ''}
+              </a>
+            ))}
+          </div>
         </div>
 
-        {/* Metrics Grid */}
+        {/* KPI Metrics */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', marginTop: '10px' }}>
           <div style={{ background: 'rgba(255,255,255,0.03)', padding: '14px', borderRadius: '12px' }}>
             <span style={{ color: '#94a3b8', fontSize: '12px' }}>Tổng Tiền Nhập Hàng</span>
@@ -317,16 +251,12 @@ export default function SupplierDetail() {
         </div>
       </div>
 
-      
-      
-      
-      {/* SECTION 1: SUPPLIER PRODUCT CATALOG & WARRANTY POLICIES */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', marginBottom: '24px' }}>
+      {/* ============ SECTION 1: SUPPLIER PRODUCT CATALOG ============ */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <h3 style={{ fontSize: '17px', fontWeight: '700', color: '#38bdf8', display: 'flex', alignItems: 'center', gap: '8px', margin: 0 }}>
             <ShoppingBag size={18} color="#38bdf8" /> Danh Mục Sản Phẩm & Chính Sách Bảo Hành Sỉ ({catalogItems.length})
           </h3>
-
           <button
             type="button"
             onClick={() => setShowAddCatalogModal(true)}
@@ -337,7 +267,6 @@ export default function SupplierDetail() {
           </button>
         </div>
 
-        {/* Full-width Supplier Catalog Table */}
         <div className="glass-panel" style={{ padding: 0, overflow: 'hidden' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
             <thead>
@@ -351,7 +280,7 @@ export default function SupplierDetail() {
               {catalogItems.length === 0 ? (
                 <tr>
                   <td colSpan={5} style={{ padding: '30px', textAlign: 'center', color: '#64748b', fontStyle: 'italic' }}>
-                    Chưa có sản phẩm nào trong danh mục của Nhà Cung Cấp này. Bấm nút "Thêm SP Vào Danh Mục" ở trên để tạo mới!
+                    Chưa có sản phẩm nào. Bấm "Thêm SP Vào Danh Mục" để tạo mới!
                   </td>
                 </tr>
               ) : (
@@ -360,12 +289,12 @@ export default function SupplierDetail() {
                     <td style={{ padding: '14px 16px' }}><strong style={{ color: '#fff', fontSize: '14px' }}>{c.product_name || c.productName}</strong></td>
                     <td style={{ padding: '14px 16px', color: '#10b981', fontWeight: 'bold', fontSize: '14px' }}>{Number(c.wholesale_price || c.wholesalePrice || 0).toLocaleString()}đ</td>
                     <td style={{ padding: '14px 16px' }}>
-                      {c.warranty_policy === 'FULL_WARRANTY' ? (
-                        <span className="badge badge-success" style={{ background: 'rgba(16,185,129,0.2)', color: '#10b981', border: '1px solid #10b981', fontSize: '11px', padding: '4px 8px' }}>🟢 BH FULL THỜI HẠN</span>
-                      ) : c.warranty_policy === 'SEVEN_DAYS' ? (
-                        <span className="badge badge-warning" style={{ background: 'rgba(245,158,11,0.2)', color: '#f59e0b', border: '1px solid #f59e0b', fontSize: '11px', padding: '4px 8px' }}>🟡 BH 7 NGÀY ĐẦU</span>
+                      {(c.warranty_policy || c.warrantyPolicy) === 'FULL_WARRANTY' ? (
+                        <span style={{ background: 'rgba(16,185,129,0.2)', color: '#10b981', border: '1px solid #10b981', fontSize: '11px', padding: '4px 8px', borderRadius: '6px' }}>🟢 BH FULL THỜI HẠN</span>
+                      ) : (c.warranty_policy || c.warrantyPolicy) === 'SEVEN_DAYS' ? (
+                        <span style={{ background: 'rgba(245,158,11,0.2)', color: '#f59e0b', border: '1px solid #f59e0b', fontSize: '11px', padding: '4px 8px', borderRadius: '6px' }}>🟡 BH 7 NGÀY ĐẦU</span>
                       ) : (
-                        <span className="badge badge-danger" style={{ background: 'rgba(239,68,68,0.2)', color: '#ef4444', border: '1px solid #ef4444', fontSize: '11px', padding: '4px 8px' }}>🔴 KHÔNG BẢO HÀNH</span>
+                        <span style={{ background: 'rgba(239,68,68,0.2)', color: '#ef4444', border: '1px solid #ef4444', fontSize: '11px', padding: '4px 8px', borderRadius: '6px' }}>🔴 KHÔNG BẢO HÀNH</span>
                       )}
                     </td>
                     <td style={{ padding: '14px 16px', color: '#cbd5e1', fontSize: '12.5px' }}>{c.product_description || c.productDescription || '---'}</td>
@@ -382,106 +311,29 @@ export default function SupplierDetail() {
         </div>
       </div>
 
-      {/* POP-UP MODAL ADD CATALOG PRODUCT */}
-      {showAddCatalogModal && (
-        <div className="modal-overlay" onClick={() => setShowAddCatalogModal(false)}>
-          <div className="modal-box animate-scale-in" onClick={e => e.stopPropagation()} style={{ maxWidth: '480px', padding: '24px' }}>
-            <div className="modal-header" style={{ marginBottom: '16px' }}>
-              <h2 style={{ fontSize: '18px', fontWeight: 'bold', color: '#fff', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <ShoppingBag size={18} color="#38bdf8" /> Thêm SP Vào Danh Mục NCC
-              </h2>
-              <button className="modal-close-btn" onClick={() => setShowAddCatalogModal(false)}><X size={18} /></button>
-            </div>
-
-            <form onSubmit={handleSaveCatalogItem} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-              <div>
-                <label className="form-label">Tên Sản Phẩm Sỉ</label>
-                <select
-                  className="glass-input" required
-                  value={catProductName} onChange={e => setCatProductName(e.target.value)}
-                >
-                  <option value="">-- Chọn sản phẩm --</option>
-                  {products.map(p => (
-                    <option key={p.id} value={p.name}>{p.name}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="form-label">Giá Bán Sỉ Chuẩn (VNĐ)</label>
-                <input
-                  type="number" required className="glass-input" placeholder="VD: 45000"
-                  value={catPrice} onChange={e => setCatPrice(e.target.value)}
-                />
-              </div>
-
-              <div>
-                <label className="form-label">Chính Sách Bảo Hành Sỉ</label>
-                <select
-                  className="glass-input" required
-                  value={catWarrantyPolicy} onChange={e => setCatWarrantyPolicy(e.target.value)}
-                >
-                  <option value="FULL_WARRANTY">🟢 Bảo Hành Full Thời Hạn (1 Đổi 1)</option>
-                  <option value="SEVEN_DAYS">🟡 Bảo Hành 7 Ngày Đầu</option>
-                  <option value="NO_WARRANTY">🔴 Không Bảo Hành (Acc Thanh Lý)</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="form-label">Mô Tả Quy Cách Sản Phẩm</label>
-                <textarea
-                  className="glass-input" style={{ minHeight: '65px', fontSize: '12.5px' }}
-                  placeholder="VD: Mail chính chủ, invite link, max 5 thiết bị..."
-                  value={catDescription} onChange={e => setCatDescription(e.target.value)}
-                />
-              </div>
-
-              <div style={{ display: 'flex', gap: '10px', marginTop: '6px' }}>
-                <button type="submit" className="glass-button" style={{ flex: 1, background: '#38bdf8', color: '#fff', fontWeight: 'bold' }}>
-                  Lưu Vào Danh Mục
-                </button>
-                <button type="button" onClick={() => setShowAddCatalogModal(false)} style={{ padding: '10px 18px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)', background: 'transparent', color: '#94a3b8', cursor: 'pointer' }}>
-                  Hủy
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-
-      {/* Daily Price Sheet & Trend Chart */}
-      <div style={{ display: 'grid', gridTemplateColumns: '360px 1fr', gap: '20px', marginBottom: '24px' }}>
+      {/* ============ SECTION 2: DAILY PRICE SHEET & TREND CHART ============ */}
+      <div style={{ display: 'grid', gridTemplateColumns: '360px 1fr', gap: '20px' }}>
         {/* Entry Form */}
         <div className="glass-panel" style={{ padding: '20px' }}>
           <h4 style={{ fontSize: '15px', fontWeight: 'bold', color: '#f59e0b', marginBottom: '14px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-            📝 Cập Nhật Bảng Giá Sỉ Hôm Nay
+            📋 Cập Nhật Bảng Giá Sỉ Hôm Nay
           </h4>
           <form onSubmit={handleSaveDailyPrice} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
             <div>
               <label className="form-label">Chọn Sản Phẩm Sỉ</label>
-              <select
-                className="glass-input" required
-                value={dailyProductName} onChange={e => setDailyProductName(e.target.value)}
-              >
+              <select className="glass-input" required value={dailyProductName} onChange={e => setDailyProductName(e.target.value)}>
                 {products.map(p => (
                   <option key={p.id} value={p.name}>{p.name}</option>
                 ))}
               </select>
             </div>
             <div>
-              <label className="form-label">Giá Nhập Sỉ Hôm Nay (VNĐ)</label>
-              <input
-                type="number" required className="glass-input" placeholder="VD: 45000"
-                value={dailyPrice} onChange={e => setDailyPrice(e.target.value)}
-              />
+              <label className="form-label">Giá Nhập Sỉ Hôm Nay (VND)</label>
+              <input type="number" required className="glass-input" placeholder="VD: 45000" value={dailyPrice} onChange={e => setDailyPrice(e.target.value)} />
             </div>
             <div>
               <label className="form-label">Ghi Chú Giá (Tùy chọn)</label>
-              <input
-                type="text" className="glass-input" placeholder="VD: Đang xả kho sale 10%"
-                value={dailyNotes} onChange={e => setDailyNotes(e.target.value)}
-              />
+              <input type="text" className="glass-input" placeholder="VD: Đang xả kho sale 10%" value={dailyNotes} onChange={e => setDailyNotes(e.target.value)} />
             </div>
             <button type="submit" className="glass-button" style={{ background: 'linear-gradient(135deg, #f59e0b, #10b981)', color: '#fff', fontWeight: 'bold', marginTop: '4px' }}>
               💾 Lưu Giá Sỉ Hôm Nay
@@ -489,7 +341,7 @@ export default function SupplierDetail() {
           </form>
         </div>
 
-        {/* 30-Day Price Trend Line Chart */}
+        {/* 30-Day Trend Chart */}
         <div className="glass-panel" style={{ padding: '20px', display: 'flex', flexDirection: 'column' }}>
           <h4 style={{ fontSize: '15px', fontWeight: 'bold', color: '#38bdf8', marginBottom: '14px', display: 'flex', alignItems: 'center', gap: '6px' }}>
             📈 Lịch Sử & Biến Động Giá Sỉ (30 Ngày Gần Nhất)
@@ -513,24 +365,28 @@ export default function SupplierDetail() {
           )}
         </div>
       </div>
-  
-      {/* Linked Teams List */}
+
+      {/* ============ SECTION 3: LINKED TEAMS ============ */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
         <h3 style={{ fontSize: '17px', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '8px' }}>
           <Layers size={18} color="#6366f1" /> Kho Team Do Nguồn Cung Cấp ({teams.length})
         </h3>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '14px' }}>
-          {teams.map(t => (
-            <div key={t.id} className="glass-panel" style={{ padding: '14px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
-              <strong style={{ color: '#fff', fontSize: '14.5px' }}>{t.name}</strong>
-              <span className="badge badge-info" style={{ width: 'fit-content', fontSize: '10px' }}>{t.category}</span>
-              <p style={{ fontSize: '12px', color: '#94a3b8', marginTop: '4px' }}>Hạn nguồn: {t.expire_date || t.expireDate || '---'}</p>
-            </div>
-          ))}
+          {teams.length === 0 ? (
+            <div style={{ color: '#64748b', fontStyle: 'italic', fontSize: '13px' }}>Chưa có team nào được gán từ nguồn sỉ này.</div>
+          ) : (
+            teams.map(t => (
+              <div key={t.id} className="glass-panel" style={{ padding: '14px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <strong style={{ color: '#fff', fontSize: '14.5px' }}>{t.name}</strong>
+                <span className="badge badge-info" style={{ width: 'fit-content', fontSize: '10px' }}>{t.category}</span>
+                <p style={{ fontSize: '12px', color: '#94a3b8', marginTop: '4px' }}>Hạn nguồn: {t.expire_date || t.expireDate || '---'}</p>
+              </div>
+            ))
+          )}
         </div>
       </div>
 
-      {/* Orders List from Supplier */}
+      {/* ============ SECTION 4: ORDERS FROM SUPPLIER ============ */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
         <h3 style={{ fontSize: '17px', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '8px' }}>
           <ShoppingBag size={18} color="#10b981" /> Danh Sách Đơn Hàng Từ Nguồn Sỉ Này ({orders.length})
@@ -545,23 +401,143 @@ export default function SupplierDetail() {
               </tr>
             </thead>
             <tbody>
-              {orders.map(o => (
-                <tr key={o.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                  <td style={{ padding: '12px 16px' }}><strong>#{o.id}</strong></td>
-                  <td style={{ padding: '12px 16px', color: '#fff' }}>{o.customer_name || o.customerName}</td>
-                  <td style={{ padding: '12px 16px', color: '#818cf8' }}>{o.product_name || o.productName}</td>
-                  <td style={{ padding: '12px 16px', color: '#f59e0b', fontWeight: '700' }}>{(o.cost_price || o.costPrice || 0).toLocaleString()}đ</td>
-                  <td style={{ padding: '12px 16px' }}>
-                    <span className={`badge ${(o.supplier_paid || o.supplierPaid) ? 'badge-success' : 'badge-warning'}`}>
-                      {(o.supplier_paid || o.supplierPaid) ? 'Đã TT Sỉ' : 'Chưa TT Sỉ'}
-                    </span>
-                  </td>
+              {orders.length === 0 ? (
+                <tr>
+                  <td colSpan={5} style={{ padding: '24px', textAlign: 'center', color: '#64748b', fontStyle: 'italic' }}>Chưa có đơn hàng nào từ nguồn sỉ này.</td>
                 </tr>
-              ))}
+              ) : (
+                orders.map(o => (
+                  <tr key={o.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                    <td style={{ padding: '12px 16px' }}><strong>#{o.id}</strong></td>
+                    <td style={{ padding: '12px 16px', color: '#fff' }}>{o.customer_name || o.customerName}</td>
+                    <td style={{ padding: '12px 16px', color: '#818cf8' }}>{o.product_name || o.productName}</td>
+                    <td style={{ padding: '12px 16px', color: '#f59e0b', fontWeight: '700' }}>{(o.cost_price || o.costPrice || 0).toLocaleString()}đ</td>
+                    <td style={{ padding: '12px 16px' }}>
+                      <span className={`badge ${(o.supplier_paid || o.supplierPaid) ? 'badge-success' : 'badge-warning'}`}>
+                        {(o.supplier_paid || o.supplierPaid) ? '✅ Đã TT Sỉ' : '⏳ Chưa TT Sỉ'}
+                      </span>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
       </div>
+
+      {/* ============ POP-UP MODAL: ADD CATALOG PRODUCT ============ */}
+      {showAddCatalogModal && (
+        <div className="modal-overlay" onClick={() => setShowAddCatalogModal(false)}>
+          <div className="modal-box animate-scale-in" onClick={e => e.stopPropagation()} style={{ maxWidth: '480px', padding: '24px' }}>
+            <div className="modal-header" style={{ marginBottom: '16px' }}>
+              <h2 style={{ fontSize: '18px', fontWeight: 'bold', color: '#fff', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <ShoppingBag size={18} color="#38bdf8" /> Thêm SP Vào Danh Mục NCC
+              </h2>
+              <button className="modal-close-btn" onClick={() => setShowAddCatalogModal(false)}><X size={18} /></button>
+            </div>
+
+            <form onSubmit={handleSaveCatalogItem} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+              <div>
+                <label className="form-label">Tên Sản Phẩm Sỉ</label>
+                <select className="glass-input" required value={catProductName} onChange={e => setCatProductName(e.target.value)}>
+                  <option value="">-- Chọn sản phẩm --</option>
+                  {products.map(p => (
+                    <option key={p.id} value={p.name}>{p.name}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="form-label">Giá Bán Sỉ Chuẩn (VND)</label>
+                <input type="number" required className="glass-input" placeholder="VD: 45000" value={catPrice} onChange={e => setCatPrice(e.target.value)} />
+              </div>
+
+              <div>
+                <label className="form-label">Chính Sách Bảo Hành Sỉ</label>
+                <select className="glass-input" required value={catWarrantyPolicy} onChange={e => setCatWarrantyPolicy(e.target.value)}>
+                  <option value="FULL_WARRANTY">🟢 Bảo Hành Full Thời Hạn (1 Đổi 1)</option>
+                  <option value="SEVEN_DAYS">🟡 Bảo Hành 7 Ngày Đầu</option>
+                  <option value="NO_WARRANTY">🔴 Không Bảo Hành (Acc Thanh Lý)</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="form-label">Mô Tả Quy Cách Sản Phẩm</label>
+                <textarea
+                  className="glass-input" style={{ minHeight: '65px', fontSize: '12.5px' }}
+                  placeholder="VD: Mail chính chủ, invite link, max 5 thiết bị..."
+                  value={catDescription} onChange={e => setCatDescription(e.target.value)}
+                />
+              </div>
+
+              <div style={{ display: 'flex', gap: '10px', marginTop: '6px' }}>
+                <button type="submit" className="glass-button" style={{ flex: 1, background: '#38bdf8', color: '#fff', fontWeight: 'bold' }}>
+                  💾 Lưu Vào Danh Mục
+                </button>
+                <button type="button" onClick={() => setShowAddCatalogModal(false)} style={{ padding: '10px 18px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)', background: 'transparent', color: '#94a3b8', cursor: 'pointer' }}>
+                  Hủy
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ============ POP-UP MODAL: EDIT SUPPLIER PROFILE & MULTI-CONTACTS ============ */}
+      {showEditSuppModal && (
+        <div className="modal-overlay" onClick={() => setShowEditSuppModal(false)}>
+          <div className="modal-box animate-scale-in" onClick={e => e.stopPropagation()} style={{ maxWidth: '520px', padding: '24px' }}>
+            <div className="modal-header" style={{ marginBottom: '16px' }}>
+              <h2 style={{ fontSize: '18px', fontWeight: 'bold', color: '#fff', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Edit2 size={18} color="#3b82f6" /> Sửa Hồ Sơ & Đa Liên Hệ NCC
+              </h2>
+              <button className="modal-close-btn" onClick={() => setShowEditSuppModal(false)}><X size={18} /></button>
+            </div>
+
+            <form onSubmit={handleSaveSupplierProfile} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+              <div>
+                <label className="form-label">Tên Nhà Cung Cấp / Nguồn Sỉ</label>
+                <input type="text" required className="glass-input" value={suppFormData.name} onChange={e => setSuppFormData({ ...suppFormData, name: e.target.value })} />
+              </div>
+
+              <div>
+                <label className="form-label">Số Điện Thoại Hotline (Nhiều SĐT cách bằng dấu phẩy)</label>
+                <input type="text" className="glass-input" placeholder="VD: 0977666555, 0988111222" value={suppFormData.phone} onChange={e => setSuppFormData({ ...suppFormData, phone: e.target.value })} />
+              </div>
+
+              <div>
+                <label className="form-label" style={{ color: '#3b82f6' }}>Zalo Chat / SĐT Zalo (Cách bằng dấu phẩy)</label>
+                <input type="text" className="glass-input" placeholder="VD: 0977666555, 0911222333" value={suppFormData.zalo} onChange={e => setSuppFormData({ ...suppFormData, zalo: e.target.value })} />
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                <div>
+                  <label className="form-label" style={{ color: '#38bdf8' }}>Telegram (Cách bằng dấu phẩy)</label>
+                  <input type="text" className="glass-input" placeholder="VD: @tele_sale, @tele_tech" value={suppFormData.telegram} onChange={e => setSuppFormData({ ...suppFormData, telegram: e.target.value })} />
+                </div>
+                <div>
+                  <label className="form-label" style={{ color: '#a855f7' }}>Link Bot Tự Động Mua Acc</label>
+                  <input type="text" className="glass-input" placeholder="VD: https://t.me/autobot1" value={suppFormData.bot_link} onChange={e => setSuppFormData({ ...suppFormData, bot_link: e.target.value })} />
+                </div>
+              </div>
+
+              <div>
+                <label className="form-label">Ghi Chú Về Nhà Cung Cấp</label>
+                <textarea className="glass-input" style={{ minHeight: '60px', fontSize: '12.5px' }} value={suppFormData.notes} onChange={e => setSuppFormData({ ...suppFormData, notes: e.target.value })} />
+              </div>
+
+              <div style={{ display: 'flex', gap: '10px', marginTop: '6px' }}>
+                <button type="submit" className="glass-button" style={{ flex: 1, background: '#3b82f6', color: '#fff', fontWeight: 'bold' }}>
+                  💾 Lưu Thay Đổi Hồ Sơ
+                </button>
+                <button type="button" onClick={() => setShowEditSuppModal(false)} style={{ padding: '10px 18px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)', background: 'transparent', color: '#94a3b8', cursor: 'pointer' }}>
+                  Hủy
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
