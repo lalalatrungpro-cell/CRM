@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import {
   OrderService, CustomerService, ProductService, SupplierService,
@@ -763,6 +763,13 @@ export default function Orders() {
                           </button>
                           <button
                             className="glass-button"
+                            onClick={() => handleOpenEditModal(order)}
+                            title="Dien Acc / Cap Nhat Tai Khoan & Gia Von"
+                            style={{ padding: '5px 8px', fontSize: '11px', background: 'rgba(59,130,246,0.18)', color: '#3b82f6' }}
+                          >
+                            <Edit3 size={13} />
+                          </button>                          <button
+                            className="glass-button"
                             onClick={() => setShowWarrantyModal(order)}
                             title="Bảo Hành / Đổi Tài Khoản"
                             style={{ padding: '5px 8px', fontSize: '11px', background: 'rgba(245,158,11,0.18)', color: '#f59e0b' }}
@@ -1413,3 +1420,4 @@ export default function Orders() {
     </div>
   );
 }
+
