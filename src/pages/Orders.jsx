@@ -1325,6 +1325,23 @@ export default function Orders() {
                 />
               </div>
 
+              <div>
+                <label className="form-label" style={{ color: '#f59e0b', fontWeight: 'bold' }}>
+                  🏢 Chọn Nhà Cung Cấp / Nguồn Nhập Sỉ:
+                </label>
+                <select
+                  className="glass-input"
+                  style={{ border: '1px solid rgba(245, 158, 11, 0.4)' }}
+                  value={editFormData.supplierId}
+                  onChange={e => setEditFormData({ ...editFormData, supplierId: e.target.value })}
+                >
+                  <option value="">-- Chọn Nhà Cung Cấp nhập acc --</option>
+                  {suppliers.map(s => (
+                    <option key={s.id} value={s.id}>{s.name} (SĐT: {s.phone || 'N/A'})</option>
+                  ))}
+                </select>
+              </div>
+
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                 <div>
                   <label className="form-label">Giá Bán Khách (VNĐ)</label>
