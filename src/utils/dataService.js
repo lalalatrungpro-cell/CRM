@@ -1,6 +1,5 @@
 import { supabase } from './supabaseClient';
 
-
 // Helper for safe localStorage fallback
 const getLocal = (key, defaultVal = []) => {
   try {
@@ -35,7 +34,7 @@ const seedDemoData = () => {
 
     setLocal('orders', [
       { id: 1, customer_id: 1, customer_name: 'Nguyễn Văn A', phone: '0901234567', product_name: 'Canva Pro (1 năm)', sell_price: 150000, cost_price: 50000, status: 'Đã thanh toán', infor: 'canva.user1@gmail.com | pass123', purchase_date: '2026-08-01', expire_date: '2027-08-01', channel: 'Facebook Page' },
-      { id: 2, customer_id: 2, customer_name: 'Trần Thị B', phone: '0987654321', product_name: 'Google AI Pro (Gemini Advanced 1 năm)', sell_price: 220000, cost_price: 100000, status: 'Nợ', infor: 'gemini.vip2@gmail.com | pass888', purchase_date: '2026-08-05', expire_date: '2027-08-05', channel: 'Zalo' }
+      { id: 2, customer_id: 2, customer_name: 'Trần Thị B', phone: '0987654321', product_name: 'Google AI Pro (Gemini Advanced 1 năm)', sell_price: 220000, cost_price: 100000, status: 'Đã thanh toán', infor: 'gemini.vip2@gmail.com | pass888', purchase_date: '2026-08-05', expire_date: '2027-08-05', channel: 'Zalo' }
     ]);
 
     setLocal('suppliers', [
@@ -67,6 +66,19 @@ const seedDemoData = () => {
 
 seedDemoData();
 
+// Combine Supabase data with Local Storage data cleanly
+const mergeData = (supaList, localKey) => {
+  const localList = getLocal(localKey);
+  if (!supaList || supaList.length === 0) return localList;
+  
+  // Merge by id
+  const map = new Map();
+  localList.forEach(item => map.set(String(item.id), item));
+  supaList.forEach(item => map.set(String(item.id), item));
+  
+  return Array.from(map.values()).sort((a, b) => (b.id - a.id));
+};
+
 // ==================== CUSTOMERS ====================
 export const CustomerService = {
   async list(shopId) {
@@ -76,32 +88,48 @@ export const CustomerService = {
         .select('*')
         .eq('shop_id', shopId)
         .order('created_at', { ascending: false });
-      if (error || !data) throw error || new Error('No data');
-      return data;
+      if (error) throw error;
+      const merged = mergeData(data || [], 'customers');
+      setLocal('customers', merged);
+      return merged;
     } catch (err) {
-      console.warn('Supabase query fallback to local:', err?.message);
       return getLocal('customers');
     }
   },
 
   async create(shopId, payload) {
+    const newObj = { ...payload, id: Date.now(), shop_id: shopId, created_at: new Date().toISOString() };
+    const current = getLocal('customers');
+    const updated = [newObj, ...current];
+    setLocal('customers', updated);
+
     try {
       const { data, error } = await supabase
         .from('customers')
         .insert({ ...payload, shop_id: shopId })
         .select()
         .single();
-      if (error || !data) throw error || new Error('Insert failed');
-      return data;
-    } catch (err) {
-      const current = getLocal('customers');
-      const newObj = { ...payload, id: Date.now(), shop_id: shopId, created_at: new Date().toISOString() };
-      setLocal('customers', [newObj, ...current]);
-      return newObj;
-    }
+      if (!error && data) {
+        const currentRefreshed = getLocal('customers').map(c => String(c.id) === String(newObj.id) ? data : c);
+        setLocal('customers', currentRefreshed);
+        return data;
+      }
+    } catch (err) {}
+    return newObj;
   },
 
   async update(id, payload) {
+    const current = getLocal('customers');
+    let updatedObj = null;
+    const updatedList = current.map(c => {
+      if (String(c.id) === String(id)) {
+        updatedObj = { ...c, ...payload };
+        return updatedObj;
+      }
+      return c;
+    });
+    setLocal('customers', updatedList);
+
     try {
       const { data, error } = await supabase
         .from('customers')
@@ -109,30 +137,17 @@ export const CustomerService = {
         .eq('id', id)
         .select()
         .single();
-      if (error || !data) throw error || new Error('Update failed');
-      return data;
-    } catch (err) {
-      const current = getLocal('customers');
-      let updatedObj = null;
-      const updatedList = current.map(c => {
-        if (String(c.id) === String(id)) {
-          updatedObj = { ...c, ...payload };
-          return updatedObj;
-        }
-        return c;
-      });
-      setLocal('customers', updatedList);
-      return updatedObj || { id, ...payload };
-    }
+      if (!error && data) return data;
+    } catch (err) {}
+    return updatedObj || { id, ...payload };
   },
 
   async remove(id) {
+    const current = getLocal('customers');
+    setLocal('customers', current.filter(c => String(c.id) !== String(id)));
     try {
       await supabase.from('customers').delete().eq('id', id);
-    } catch (err) {
-      const current = getLocal('customers');
-      setLocal('customers', current.filter(c => String(c.id) !== String(id)));
-    }
+    } catch (err) {}
   }
 };
 
@@ -145,31 +160,47 @@ export const ProductService = {
         .select('*')
         .eq('shop_id', shopId)
         .order('created_at', { ascending: false });
-      if (error || !data) throw error || new Error('No data');
-      return data;
+      if (error) throw error;
+      const merged = mergeData(data || [], 'products');
+      setLocal('products', merged);
+      return merged;
     } catch (err) {
       return getLocal('products');
     }
   },
 
   async create(shopId, payload) {
+    const newObj = { ...payload, id: Date.now(), shop_id: shopId, created_at: new Date().toISOString() };
+    const current = getLocal('products');
+    setLocal('products', [newObj, ...current]);
+
     try {
       const { data, error } = await supabase
         .from('products')
         .insert({ ...payload, shop_id: shopId })
         .select()
         .single();
-      if (error || !data) throw error || new Error('Insert failed');
-      return data;
-    } catch (err) {
-      const current = getLocal('products');
-      const newObj = { ...payload, id: Date.now(), shop_id: shopId, created_at: new Date().toISOString() };
-      setLocal('products', [newObj, ...current]);
-      return newObj;
-    }
+      if (!error && data) {
+        const refreshed = getLocal('products').map(p => String(p.id) === String(newObj.id) ? data : p);
+        setLocal('products', refreshed);
+        return data;
+      }
+    } catch (err) {}
+    return newObj;
   },
 
   async update(id, payload) {
+    const current = getLocal('products');
+    let updatedObj = null;
+    const updatedList = current.map(p => {
+      if (String(p.id) === String(id)) {
+        updatedObj = { ...p, ...payload };
+        return updatedObj;
+      }
+      return p;
+    });
+    setLocal('products', updatedList);
+
     try {
       const { data, error } = await supabase
         .from('products')
@@ -177,30 +208,17 @@ export const ProductService = {
         .eq('id', id)
         .select()
         .single();
-      if (error || !data) throw error || new Error('Update failed');
-      return data;
-    } catch (err) {
-      const current = getLocal('products');
-      let updatedObj = null;
-      const updatedList = current.map(p => {
-        if (String(p.id) === String(id)) {
-          updatedObj = { ...p, ...payload };
-          return updatedObj;
-        }
-        return p;
-      });
-      setLocal('products', updatedList);
-      return updatedObj || { id, ...payload };
-    }
+      if (!error && data) return data;
+    } catch (err) {}
+    return updatedObj || { id, ...payload };
   },
 
   async remove(id) {
+    const current = getLocal('products');
+    setLocal('products', current.filter(p => String(p.id) !== String(id)));
     try {
       await supabase.from('products').delete().eq('id', id);
-    } catch (err) {
-      const current = getLocal('products');
-      setLocal('products', current.filter(p => String(p.id) !== String(id)));
-    }
+    } catch (err) {}
   }
 };
 
@@ -213,31 +231,64 @@ export const OrderService = {
         .select('*')
         .eq('shop_id', shopId)
         .order('created_at', { ascending: false });
-      if (error || !data) throw error || new Error('No data');
-      return data;
+      if (error) throw error;
+      const merged = mergeData(data || [], 'orders');
+      setLocal('orders', merged);
+      return merged;
     } catch (err) {
       return getLocal('orders');
     }
   },
 
   async create(shopId, payload) {
+    // Standardize object fields
+    const formattedPayload = {
+      customer_id: payload.customer_id || payload.customerId,
+      customer_name: payload.customer_name || payload.customerName,
+      phone: payload.phone || '',
+      product_name: payload.product_name || payload.productName,
+      supplier_id: payload.supplier_id || payload.supplierId,
+      team_id: payload.team_id || payload.teamId,
+      infor: payload.infor || '',
+      sell_price: payload.sell_price || payload.sellPrice || 0,
+      cost_price: payload.cost_price || payload.costPrice || 0,
+      status: payload.status || 'Đã thanh toán',
+      purchase_date: payload.purchase_date || payload.purchaseDate || new Date().toISOString().split('T')[0],
+      expire_date: payload.expire_date || payload.expireDate || new Date().toISOString().split('T')[0],
+      channel: payload.channel || payload.source || 'Facebook Page'
+    };
+
+    const newObj = { ...formattedPayload, id: Date.now(), shop_id: shopId, created_at: new Date().toISOString() };
+    const current = getLocal('orders');
+    setLocal('orders', [newObj, ...current]);
+
     try {
       const { data, error } = await supabase
         .from('orders')
-        .insert({ ...payload, shop_id: shopId })
+        .insert({ ...formattedPayload, shop_id: shopId })
         .select()
         .single();
-      if (error || !data) throw error || new Error('Insert failed');
-      return data;
-    } catch (err) {
-      const current = getLocal('orders');
-      const newObj = { ...payload, id: Date.now(), shop_id: shopId, created_at: new Date().toISOString() };
-      setLocal('orders', [newObj, ...current]);
-      return newObj;
-    }
+      if (!error && data) {
+        const refreshed = getLocal('orders').map(o => String(o.id) === String(newObj.id) ? data : o);
+        setLocal('orders', refreshed);
+        return data;
+      }
+    } catch (err) {}
+    return newObj;
   },
 
   async update(id, payload) {
+    const current = getLocal('orders');
+    let updatedObj = null;
+    const updatedList = current.map(o => {
+      if (String(o.id) === String(id)) {
+        updatedObj = { ...o, ...payload };
+        return updatedObj;
+      }
+      return o;
+    });
+    setLocal('orders', updatedList);
+
     try {
       const { data, error } = await supabase
         .from('orders')
@@ -245,30 +296,17 @@ export const OrderService = {
         .eq('id', id)
         .select()
         .single();
-      if (error || !data) throw error || new Error('Update failed');
-      return data;
-    } catch (err) {
-      const current = getLocal('orders');
-      let updatedObj = null;
-      const updatedList = current.map(o => {
-        if (String(o.id) === String(id)) {
-          updatedObj = { ...o, ...payload };
-          return updatedObj;
-        }
-        return o;
-      });
-      setLocal('orders', updatedList);
-      return updatedObj || { id, ...payload };
-    }
+      if (!error && data) return data;
+    } catch (err) {}
+    return updatedObj || { id, ...payload };
   },
 
   async remove(id) {
+    const current = getLocal('orders');
+    setLocal('orders', current.filter(o => String(o.id) !== String(id)));
     try {
       await supabase.from('orders').delete().eq('id', id);
-    } catch (err) {
-      const current = getLocal('orders');
-      setLocal('orders', current.filter(o => String(o.id) !== String(id)));
-    }
+    } catch (err) {}
   }
 };
 
@@ -281,31 +319,47 @@ export const SupplierService = {
         .select('*')
         .eq('shop_id', shopId)
         .order('created_at', { ascending: false });
-      if (error || !data) throw error || new Error('No data');
-      return data;
+      if (error) throw error;
+      const merged = mergeData(data || [], 'suppliers');
+      setLocal('suppliers', merged);
+      return merged;
     } catch (err) {
       return getLocal('suppliers');
     }
   },
 
   async create(shopId, payload) {
+    const newObj = { ...payload, id: Date.now(), shop_id: shopId, created_at: new Date().toISOString() };
+    const current = getLocal('suppliers');
+    setLocal('suppliers', [newObj, ...current]);
+
     try {
       const { data, error } = await supabase
         .from('suppliers')
         .insert({ ...payload, shop_id: shopId })
         .select()
         .single();
-      if (error || !data) throw error || new Error('Insert failed');
-      return data;
-    } catch (err) {
-      const current = getLocal('suppliers');
-      const newObj = { ...payload, id: Date.now(), shop_id: shopId, created_at: new Date().toISOString() };
-      setLocal('suppliers', [newObj, ...current]);
-      return newObj;
-    }
+      if (!error && data) {
+        const refreshed = getLocal('suppliers').map(s => String(s.id) === String(newObj.id) ? data : s);
+        setLocal('suppliers', refreshed);
+        return data;
+      }
+    } catch (err) {}
+    return newObj;
   },
 
   async update(id, payload) {
+    const current = getLocal('suppliers');
+    let updatedObj = null;
+    const updatedList = current.map(s => {
+      if (String(s.id) === String(id)) {
+        updatedObj = { ...s, ...payload };
+        return updatedObj;
+      }
+      return s;
+    });
+    setLocal('suppliers', updatedList);
+
     try {
       const { data, error } = await supabase
         .from('suppliers')
@@ -313,30 +367,17 @@ export const SupplierService = {
         .eq('id', id)
         .select()
         .single();
-      if (error || !data) throw error || new Error('Update failed');
-      return data;
-    } catch (err) {
-      const current = getLocal('suppliers');
-      let updatedObj = null;
-      const updatedList = current.map(s => {
-        if (String(s.id) === String(id)) {
-          updatedObj = { ...s, ...payload };
-          return updatedObj;
-        }
-        return s;
-      });
-      setLocal('suppliers', updatedList);
-      return updatedObj || { id, ...payload };
-    }
+      if (!error && data) return data;
+    } catch (err) {}
+    return updatedObj || { id, ...payload };
   },
 
   async remove(id) {
+    const current = getLocal('suppliers');
+    setLocal('suppliers', current.filter(s => String(s.id) !== String(id)));
     try {
       await supabase.from('suppliers').delete().eq('id', id);
-    } catch (err) {
-      const current = getLocal('suppliers');
-      setLocal('suppliers', current.filter(s => String(s.id) !== String(id)));
-    }
+    } catch (err) {}
   }
 };
 
@@ -349,31 +390,47 @@ export const TeamService = {
         .select('*')
         .eq('shop_id', shopId)
         .order('created_at', { ascending: false });
-      if (error || !data) throw error || new Error('No data');
-      return data;
+      if (error) throw error;
+      const merged = mergeData(data || [], 'teams');
+      setLocal('teams', merged);
+      return merged;
     } catch (err) {
       return getLocal('teams');
     }
   },
 
   async create(shopId, payload) {
+    const newObj = { ...payload, id: Date.now(), shop_id: shopId, created_at: new Date().toISOString() };
+    const current = getLocal('teams');
+    setLocal('teams', [newObj, ...current]);
+
     try {
       const { data, error } = await supabase
         .from('teams')
         .insert({ ...payload, shop_id: shopId })
         .select()
         .single();
-      if (error || !data) throw error || new Error('Insert failed');
-      return data;
-    } catch (err) {
-      const current = getLocal('teams');
-      const newObj = { ...payload, id: Date.now(), shop_id: shopId, created_at: new Date().toISOString() };
-      setLocal('teams', [newObj, ...current]);
-      return newObj;
-    }
+      if (!error && data) {
+        const refreshed = getLocal('teams').map(t => String(t.id) === String(newObj.id) ? data : t);
+        setLocal('teams', refreshed);
+        return data;
+      }
+    } catch (err) {}
+    return newObj;
   },
 
   async update(id, payload) {
+    const current = getLocal('teams');
+    let updatedObj = null;
+    const updatedList = current.map(t => {
+      if (String(t.id) === String(id)) {
+        updatedObj = { ...t, ...payload };
+        return updatedObj;
+      }
+      return t;
+    });
+    setLocal('teams', updatedList);
+
     try {
       const { data, error } = await supabase
         .from('teams')
@@ -381,30 +438,17 @@ export const TeamService = {
         .eq('id', id)
         .select()
         .single();
-      if (error || !data) throw error || new Error('Update failed');
-      return data;
-    } catch (err) {
-      const current = getLocal('teams');
-      let updatedObj = null;
-      const updatedList = current.map(t => {
-        if (String(t.id) === String(id)) {
-          updatedObj = { ...t, ...payload };
-          return updatedObj;
-        }
-        return t;
-      });
-      setLocal('teams', updatedList);
-      return updatedObj || { id, ...payload };
-    }
+      if (!error && data) return data;
+    } catch (err) {}
+    return updatedObj || { id, ...payload };
   },
 
   async remove(id) {
+    const current = getLocal('teams');
+    setLocal('teams', current.filter(t => String(t.id) !== String(id)));
     try {
       await supabase.from('teams').delete().eq('id', id);
-    } catch (err) {
-      const current = getLocal('teams');
-      setLocal('teams', current.filter(t => String(t.id) !== String(id)));
-    }
+    } catch (err) {}
   }
 };
 
@@ -415,8 +459,11 @@ export const CareLogService = {
       let query = supabase.from('care_logs').select('*').eq('shop_id', shopId);
       if (customerId) query = query.eq('customer_id', customerId);
       const { data, error } = await query.order('created_at', { ascending: false });
-      if (error || !data) throw error || new Error('No data');
-      return data;
+      if (error) throw error;
+      const merged = mergeData(data || [], 'care_logs');
+      setLocal('care_logs', merged);
+      if (customerId) return merged.filter(c => String(c.customer_id) === String(customerId));
+      return merged;
     } catch (err) {
       const current = getLocal('care_logs');
       if (customerId) return current.filter(c => String(c.customer_id) === String(customerId));
@@ -425,29 +472,27 @@ export const CareLogService = {
   },
 
   async create(shopId, payload) {
+    const newObj = { ...payload, id: Date.now(), shop_id: shopId, created_at: new Date().toISOString() };
+    const current = getLocal('care_logs');
+    setLocal('care_logs', [newObj, ...current]);
+
     try {
       const { data, error } = await supabase
         .from('care_logs')
         .insert({ ...payload, shop_id: shopId })
         .select()
         .single();
-      if (error || !data) throw error || new Error('Insert failed');
-      return data;
-    } catch (err) {
-      const current = getLocal('care_logs');
-      const newObj = { ...payload, id: Date.now(), shop_id: shopId, created_at: new Date().toISOString() };
-      setLocal('care_logs', [newObj, ...current]);
-      return newObj;
-    }
+      if (!error && data) return data;
+    } catch (err) {}
+    return newObj;
   },
 
   async remove(id) {
+    const current = getLocal('care_logs');
+    setLocal('care_logs', current.filter(c => String(c.id) !== String(id)));
     try {
       await supabase.from('care_logs').delete().eq('id', id);
-    } catch (err) {
-      const current = getLocal('care_logs');
-      setLocal('care_logs', current.filter(c => String(c.id) !== String(id)));
-    }
+    } catch (err) {}
   }
 };
 
@@ -460,28 +505,29 @@ export const WarrantyLogService = {
         .select('*')
         .eq('shop_id', shopId)
         .order('created_at', { ascending: false });
-      if (error || !data) throw error || new Error('No data');
-      return data;
+      if (error) throw error;
+      const merged = mergeData(data || [], 'warranty_logs');
+      setLocal('warranty_logs', merged);
+      return merged;
     } catch (err) {
       return getLocal('warranty_logs');
     }
   },
 
   async create(shopId, payload) {
+    const newObj = { ...payload, id: Date.now(), shop_id: shopId, created_at: new Date().toISOString() };
+    const current = getLocal('warranty_logs');
+    setLocal('warranty_logs', [newObj, ...current]);
+
     try {
       const { data, error } = await supabase
         .from('warranty_logs')
         .insert({ ...payload, shop_id: shopId })
         .select()
         .single();
-      if (error || !data) throw error || new Error('Insert failed');
-      return data;
-    } catch (err) {
-      const current = getLocal('warranty_logs');
-      const newObj = { ...payload, id: Date.now(), shop_id: shopId, created_at: new Date().toISOString() };
-      setLocal('warranty_logs', [newObj, ...current]);
-      return newObj;
-    }
+      if (!error && data) return data;
+    } catch (err) {}
+    return newObj;
   }
 };
 
@@ -494,37 +540,37 @@ export const ChannelService = {
         .select('*')
         .eq('shop_id', shopId)
         .order('created_at', { ascending: false });
-      if (error || !data) throw error || new Error('No data');
-      return data;
+      if (error) throw error;
+      const merged = mergeData(data || [], 'channels');
+      setLocal('channels', merged);
+      return merged;
     } catch (err) {
       return getLocal('channels');
     }
   },
 
   async create(shopId, payload) {
+    const newObj = { ...payload, id: Date.now(), shop_id: shopId, created_at: new Date().toISOString() };
+    const current = getLocal('channels');
+    setLocal('channels', [newObj, ...current]);
+
     try {
       const { data, error } = await supabase
         .from('channels')
         .insert({ ...payload, shop_id: shopId })
         .select()
         .single();
-      if (error || !data) throw error || new Error('Insert failed');
-      return data;
-    } catch (err) {
-      const current = getLocal('channels');
-      const newObj = { ...payload, id: Date.now(), shop_id: shopId, created_at: new Date().toISOString() };
-      setLocal('channels', [newObj, ...current]);
-      return newObj;
-    }
+      if (!error && data) return data;
+    } catch (err) {}
+    return newObj;
   },
 
   async remove(id) {
+    const current = getLocal('channels');
+    setLocal('channels', current.filter(c => String(c.id) !== String(id)));
     try {
       await supabase.from('channels').delete().eq('id', id);
-    } catch (err) {
-      const current = getLocal('channels');
-      setLocal('channels', current.filter(c => String(c.id) !== String(id)));
-    }
+    } catch (err) {}
   }
 };
 
@@ -545,6 +591,7 @@ export const VietQRService = {
   },
 
   async save(shopId, payload) {
+    setLocal('vietqr', payload);
     try {
       const existing = await this.get(shopId);
       if (existing && existing.id) {
@@ -554,20 +601,16 @@ export const VietQRService = {
           .eq('id', existing.id)
           .select()
           .single();
-        if (error || !data) throw error || new Error('Update failed');
-        return data;
+        if (!error && data) return data;
       } else {
         const { data, error } = await supabase
           .from('vietqr_settings')
           .insert({ ...payload, shop_id: shopId })
           .select()
           .single();
-        if (error || !data) throw error || new Error('Insert failed');
-        return data;
+        if (!error && data) return data;
       }
-    } catch (err) {
-      setLocal('vietqr', payload);
-      return payload;
-    }
+    } catch (err) {}
+    return payload;
   }
 };
