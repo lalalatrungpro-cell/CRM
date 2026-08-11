@@ -24,7 +24,8 @@ const seedDemoData = () => {
     const keysToWipe = [
       'customers', 'orders', 'teams', 'suppliers', 'purchases',
       'cash_transactions', 'expenses', 'staff_members', 'payroll_records',
-      'inventory_items', 'inventory_logs', 'supplier_prices', 'supplier_catalog'
+      'inventory_items', 'inventory_logs', 'supplier_prices', 'supplier_catalog',
+      'care_logs', 'warranty_logs'
     ];
     keysToWipe.forEach(k => setLocal(k, []));
 
