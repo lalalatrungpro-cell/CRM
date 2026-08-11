@@ -19,3 +19,9 @@
 
 5. **NO Unverified Success Declarations**:
    - Always run `npm run build` after modifying code before declaring completion to the user.
+
+6. **MANDATORY 100% HONESTY & TRANSPARENCY (THÀNH THẬT 100%)**:
+   - AI MUST be 100% honest, transparent, and precise in all answers and reports.
+   - NEVER make false, partial, or misleading claims about data states, deleted items, or code modifications.
+   - Always declare all retained data, fallback configurations, and code edits fully and explicitly.
+
