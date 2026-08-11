@@ -1625,8 +1625,8 @@ export default function Orders() {
                     value={formData.subChannelName} onChange={e => setFormData({ ...formData, subChannelName: e.target.value })}
                   >
                     <option value="">-- Mặc định --</option>
-                    {filterChannels.map(ch => (
-                      <option key={ch.id} value={ch.name}>{ch.name}</option>
+                    {(channels || []).filter(ch => !formData.channel || ch.main_channel === formData.channel).map(ch => (
+                      <option key={ch.id} value={ch.sub_channel_name || ch.name}>{ch.sub_channel_name || ch.name}</option>
                     ))}
                   </select>
                 </div>
