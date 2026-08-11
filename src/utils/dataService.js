@@ -19,39 +19,20 @@ export const setLocal = (key, val) => {
 // Seed initial demo data for smooth offline experience
 const seedDemoData = () => {
   if (!localStorage.getItem('crm_demo_seeded')) {
-    setLocal('customers', [
-      { id: 1, name: 'Nguyễn Văn A', phone: '0901234567', email: 'vana@gmail.com', type: 'Le', source: 'Facebook Page', debt: 0, notes: 'Khách hay mua Canva' },
-      { id: 2, name: 'Trần Thị B', phone: '0987654321', email: 'thib@gmail.com', type: 'CTV', source: 'Zalo', debt: 220000, notes: 'Đại lý CTV chiết khấu' },
-      { id: 3, name: 'Đại lý C', phone: '0911222333', email: 'dailyc@gmail.com', type: 'Si', source: 'Giới Thiệu', debt: 5000000, notes: 'Khách sỉ lớn' }
-    ]);
-
+    setLocal('customers', []);
     setLocal('products', [
       { id: 1, name: 'Canva Pro (1 năm)', category: 'Design', default_duration_days: 365, default_sell: 150000, price_ctv: 110000, price_si: 80000, default_cost: 45000 },
       { id: 2, name: 'Google AI Pro (Gemini Advanced 1 năm)', category: 'AI', default_duration_days: 365, default_sell: 220000, price_ctv: 170000, price_si: 135000, default_cost: 95000 },
       { id: 3, name: 'Netflix Premium (1 tháng)', category: 'Entertainment', default_duration_days: 30, default_sell: 90000, price_ctv: 75000, price_si: 60000, default_cost: 40000 },
       { id: 4, name: 'ChatGPT Plus (1 tháng)', category: 'AI', default_duration_days: 30, default_sell: 250000, price_ctv: 210000, price_si: 180000, default_cost: 150000 }
     ]);
-
-    setLocal('orders', [
-      { id: 1, customer_id: 1, customer_name: 'Nguyễn Văn A', phone: '0901234567', product_name: 'Canva Pro (1 năm)', sell_price: 150000, cost_price: 50000, status: 'Đã thanh toán', infor: 'canva.user1@gmail.com | pass123', purchase_date: '2026-08-01', expire_date: '2027-08-01', channel: 'Facebook Page' },
-      { id: 2, customer_id: 2, customer_name: 'Trần Thị B', phone: '0987654321', product_name: 'Google AI Pro (Gemini Advanced 1 năm)', sell_price: 220000, cost_price: 100000, status: 'Đã thanh toán', infor: 'gemini.vip2@gmail.com | pass888', purchase_date: '2026-08-05', expire_date: '2027-08-05', channel: 'Zalo' }
-    ]);
-
-    setLocal('suppliers', [
-      { id: 1, name: 'Kho Nguồn Sỉ VIP 01', phone: '0933444555', notes: 'Chuyên cung cấp Canva & Google AI', debt: 0 },
-      { id: 2, name: 'Nguồn Sỉ Netflix Việt Nam', phone: '0977888999', notes: 'Chuyên slot Netflix 4K', debt: 0 }
-    ]);
-
-    setLocal('teams', [
-      { id: 1, name: 'Team Canva Pro VIP #01', category: 'Design', max_slots: 500, created_at: new Date().toISOString() },
-      { id: 2, name: 'Team Gemini Advanced #02', category: 'AI', max_slots: 100, created_at: new Date().toISOString() }
-    ]);
-
+    setLocal('orders', []);
+    setLocal('suppliers', []);
+    setLocal('teams', []);
     setLocal('channels', [
       { id: 1, main_channel: 'Facebook Page', sub_channel_name: 'Page Canva Sỉ #01' },
       { id: 2, main_channel: 'Zalo', sub_channel_name: 'Zalo Hotline CSKH 02' }
     ]);
-
     setLocal('vietqr', {
       bank_id: 'MB',
       account_no: '0901234567',
@@ -59,70 +40,15 @@ const seedDemoData = () => {
       memo_prefix: 'DON',
       template: 'compact2'
     });
-
-    
-    setLocal('supplier_prices', [
-      { id: 1, supplier_id: 1, product_name: 'Canva Pro (1 năm)', price: 45000, price_date: new Date().toISOString().split('T')[0], notes: 'Giảm giá sỉ 10%' },
-      { id: 2, supplier_id: 2, product_name: 'Canva Pro (1 năm)', price: 55000, price_date: new Date().toISOString().split('T')[0], notes: 'Giá gốc' },
-      { id: 3, supplier_id: 1, product_name: 'Google AI Pro (Gemini Advanced 1 năm)', price: 95000, price_date: new Date().toISOString().split('T')[0], notes: 'Khuyến mãi tuần này' },
-      { id: 4, supplier_id: 2, product_name: 'Google AI Pro (Gemini Advanced 1 năm)', price: 110000, price_date: new Date().toISOString().split('T')[0], notes: 'Bảo hành 12 tháng' }
-    ]);
-
-    
-    setLocal('supplier_catalog', [
-      { id: 1, supplier_id: 1, product_name: 'Canva Pro (1 năm)', wholesale_price: 45000, warranty_policy: 'FULL_WARRANTY', product_description: 'Mail chính chủ, kích hoạt qua link invite, dùng 5 thiết bị' },
-      { id: 2, supplier_id: 1, product_name: 'Google AI Pro (Gemini Advanced 1 năm)', wholesale_price: 95000, warranty_policy: 'FULL_WARRANTY', product_description: 'Nâng cấp mail chính chủ, bảo hành 12 tháng' },
-      { id: 3, supplier_id: 2, product_name: 'Netflix Premium (1 tháng)', wholesale_price: 55000, warranty_policy: 'SEVEN_DAYS', product_description: 'Acc dùng chung slot 5 người, bảo hành 7 ngày đầu' }
-    ]);
-
-    setLocal('purchases', [
-      { id: 1, supplier_id: 1, supplier_name: 'Kho Nguồn Sỉ VIP 01', team_id: 1, product_name: 'Canva Pro (1 năm)', import_cost: 2000000, quantity: 49, unit_cost: 40816, payment_status: 'PAID', payment_date: '2026-08-01', purchase_date: '2026-08-01', notes: 'Mua kho Team Canva Pro Edu 49 slots' },
-      { id: 2, supplier_id: 2, supplier_name: 'Nguồn Sỉ Netflix Việt Nam', team_id: 2, product_name: 'Google AI Pro (Gemini Advanced 1 năm)', import_cost: 4500000, quantity: 50, unit_cost: 90000, payment_status: 'PAID', payment_date: '2026-08-05', purchase_date: '2026-08-05', notes: 'Nhập lô 50 slot Gemini' }
-    ]);
-
-    setLocal('cash_transactions', [
-      { id: 1, type: 'INCOME', category: 'Bán hàng', amount: 150000, account_type: 'BANK', reference_type: 'ORDER', reference_id: '1', counterpart_name: 'Nguyễn Văn A', notes: 'Thu tiền đơn Canva #1', transaction_date: '2026-08-01' },
-      { id: 2, type: 'INCOME', category: 'Bán hàng', amount: 220000, account_type: 'BANK', reference_type: 'ORDER', reference_id: '2', counterpart_name: 'Trần Thị B', notes: 'Thu tiền đơn Gemini #2', transaction_date: '2026-08-05' },
-      { id: 3, type: 'EXPENSE', category: 'Nhập hàng', amount: 2000000, account_type: 'BANK', reference_type: 'PURCHASE', reference_id: '1', counterpart_name: 'Kho Nguồn Sỉ VIP 01', notes: 'Thanh toán mua Team Canva 49 slots', transaction_date: '2026-08-01' },
-      { id: 4, type: 'EXPENSE', category: 'Marketing/Ads', amount: 1200000, account_type: 'BANK', reference_type: 'EXPENSE', reference_id: '1', counterpart_name: 'Facebook Ads', notes: 'Chạy camp quảng cáo Page Canva tuần 1', transaction_date: '2026-08-03' },
-      { id: 5, type: 'EXPENSE', category: 'Tool/VPS', amount: 450000, account_type: 'BANK', reference_type: 'EXPENSE', reference_id: '2', counterpart_name: 'Nhà cung cấp VPS', notes: 'Tiền server nuôi bot tự động', transaction_date: '2026-08-04' },
-      { id: 6, type: 'EXPENSE', category: 'Lương nhân viên', amount: 5500000, account_type: 'BANK', reference_type: 'PAYROLL', reference_id: '1', counterpart_name: 'Nguyễn Văn Hùng (Sale)', notes: 'Chi trả lương & hoa hồng tháng 7', transaction_date: '2026-08-05' }
-    ]);
-
-    setLocal('expenses', [
-      { id: 1, name: 'Chi phí Facebook Ads tuần 1', expense_type: 'VARIABLE', category: 'Marketing/Ads', amount: 1200000, recurrence: 'ONE_TIME', expense_date: '2026-08-03', notes: 'Chạy camp Page Canva', is_paid: true },
-      { id: 2, name: 'Thuê Server VPS & Proxies nuôi Bot', expense_type: 'FIXED', category: 'Tool/VPS', amount: 450000, recurrence: 'MONTHLY', expense_date: '2026-08-04', notes: 'Gia hạn server', is_paid: true },
-      { id: 3, name: 'Tiền thuê văn phòng / mặt bằng', expense_type: 'FIXED', category: 'Mặt bằng', amount: 4000000, recurrence: 'MONTHLY', expense_date: '2026-08-01', notes: 'Văn phòng chi nhánh HCM', is_paid: true },
-      { id: 4, name: 'Internet & Điện nước văn phòng', expense_type: 'FIXED', category: 'Điện nước/Internet', amount: 350000, recurrence: 'MONTHLY', expense_date: '2026-08-05', notes: 'Cáp quang Viettel', is_paid: true }
-    ]);
-
-    setLocal('staff_members', [
-      { id: 1, full_name: 'Nguyễn Văn Hùng', phone: '0912345678', role: 'Sale', base_salary: 5000000, commission_type: 'PERCENT', commission_rate: 5, commission_fixed: 0, status: 'ACTIVE', joined_date: '2026-01-15' },
-      { id: 2, full_name: 'Trần Thị Mai', phone: '0988776655', role: 'CSKH', base_salary: 5500000, commission_type: 'FIXED_PER_ORDER', commission_rate: 0, commission_fixed: 3000, status: 'ACTIVE', joined_date: '2026-03-01' }
-    ]);
-
-    setLocal('payroll_records', [
-      { id: 1, staff_id: 1, staff_name: 'Nguyễn Văn Hùng', month_period: '2026-08', base_salary: 5000000, orders_count: 32, revenue_generated: 7800000, commission_amount: 390000, bonus_kpi: 500000, advance_deduction: 0, net_salary: 5890000, status: 'DRAFT', paid_date: null },
-      { id: 2, staff_id: 2, staff_name: 'Trần Thị Mai', month_period: '2026-08', base_salary: 5500000, orders_count: 45, revenue_generated: 9500000, commission_amount: 135000, bonus_kpi: 300000, advance_deduction: 0, net_salary: 5935000, status: 'DRAFT', paid_date: null }
-    ]);
-
-    setLocal('inventory_items', [
-      { id: 1, product_name: 'ChatGPT Plus (1 tháng)', category: 'AI', asset_type: 'ACCOUNT', item_code: 'chatgpt.vip01@gmail.com | PassSecure888', cost_price: 150000, supplier_id: 1, supplier_name: 'Kho Nguồn Sỉ VIP 01', status: 'AVAILABLE', import_date: '2026-08-01', expire_date: '2026-09-01', notes: 'Nhập lô đầu tháng' },
-      { id: 2, product_name: 'ChatGPT Plus (1 tháng)', category: 'AI', asset_type: 'ACCOUNT', item_code: 'chatgpt.vip02@gmail.com | PassSecure999', cost_price: 150000, supplier_id: 1, supplier_name: 'Kho Nguồn Sỉ VIP 01', status: 'AVAILABLE', import_date: '2026-08-01', expire_date: '2026-09-01', notes: 'Nhập lô đầu tháng' },
-      { id: 3, product_name: 'ChatGPT Plus (1 tháng)', category: 'AI', asset_type: 'ACCOUNT', item_code: 'chatgpt.vip03@gmail.com | PassSecure111', cost_price: 150000, supplier_id: 1, supplier_name: 'Kho Nguồn Sỉ VIP 01', status: 'AVAILABLE', import_date: '2026-08-02', expire_date: '2026-09-02', notes: 'Lô phụ' },
-      { id: 4, product_name: 'ChatGPT Plus (1 tháng)', category: 'AI', asset_type: 'ACCOUNT', item_code: 'chatgpt.sold04@gmail.com | PassSold444', cost_price: 150000, supplier_id: 1, supplier_name: 'Kho Nguồn Sỉ VIP 01', status: 'SOLD', order_id: 1, customer_name: 'Nguyễn Văn A', import_date: '2026-08-01', sold_date: '2026-08-01', notes: 'Đã xuất bán POS' },
-      { id: 5, product_name: 'ChatGPT Plus (1 tháng)', category: 'AI', asset_type: 'ACCOUNT', item_code: 'chatgpt.error05@gmail.com | PassErr555', cost_price: 150000, supplier_id: 1, supplier_name: 'Kho Nguồn Sỉ VIP 01', status: 'FAULTY', faulty_reason: 'Bị khóa pass sau 2 ngày dùng', supplier_claim_status: 'PENDING_CLAIM', import_date: '2026-08-01', notes: 'Chờ NCC đổi key' },
-      { id: 6, product_name: 'Canva Pro (1 năm)', category: 'Design', asset_type: 'INVITE_LINK', item_code: 'https://canva.com/brand/join?token=INVITE_CANVA_VIP_777', cost_price: 40000, supplier_id: 1, supplier_name: 'Kho Nguồn Sỉ VIP 01', status: 'AVAILABLE', import_date: '2026-08-03', expire_date: '2027-08-03', notes: 'Link invite chính chủ' },
-      { id: 7, product_name: 'Canva Pro (1 năm)', category: 'Design', asset_type: 'INVITE_LINK', item_code: 'https://canva.com/brand/join?token=INVITE_CANVA_VIP_888', cost_price: 40000, supplier_id: 1, supplier_name: 'Kho Nguồn Sỉ VIP 01', status: 'AVAILABLE', import_date: '2026-08-03', expire_date: '2027-08-03', notes: 'Link invite chính chủ' },
-      { id: 8, product_name: 'Google AI Pro (Gemini Advanced 1 năm)', category: 'AI', asset_type: 'ACCOUNT', item_code: 'gemini.vip101@gmail.com | AiPass2026', cost_price: 90000, supplier_id: 1, supplier_name: 'Kho Nguồn Sỉ VIP 01', status: 'AVAILABLE', import_date: '2026-08-04', expire_date: '2027-08-04', notes: 'Tài khoản nâng cấp sẵn' },
-      { id: 9, product_name: 'Google AI Pro (Gemini Advanced 1 năm)', category: 'AI', asset_type: 'ACCOUNT', item_code: 'gemini.vip102@gmail.com | AiPass2026', cost_price: 90000, supplier_id: 1, supplier_name: 'Kho Nguồn Sỉ VIP 01', status: 'AVAILABLE', import_date: '2026-08-04', expire_date: '2027-08-04', notes: 'Tài khoản nâng cấp sẵn' },
-      { id: 10, product_name: 'Netflix Premium (1 tháng)', category: 'Entertainment', asset_type: 'ACCOUNT', item_code: 'netflix.vip55@gmail.com | NetPass99 | Profile 3 PIN 1234', cost_price: 50000, supplier_id: 2, supplier_name: 'Nguồn Sỉ Netflix Việt Nam', status: 'AVAILABLE', import_date: '2026-08-05', expire_date: '2026-09-05', notes: 'Slot 4K Ultra HD' }
-    ]);
-
-    setLocal('inventory_logs', [
-      { id: 1, inventory_item_id: 1, action_type: 'IMPORT', product_name: 'ChatGPT Plus (1 tháng)', quantity: 1, unit_cost: 150000, notes: 'Nhập kho ban đầu', created_at: new Date().toISOString() },
-      { id: 2, inventory_item_id: 4, action_type: 'EXPORT_POS', product_name: 'ChatGPT Plus (1 tháng)', quantity: 1, unit_cost: 150000, reference_id: '1', notes: 'Xuất bán đơn hàng #1', created_at: new Date().toISOString() }
-    ]);
+    setLocal('supplier_prices', []);
+    setLocal('supplier_catalog', []);
+    setLocal('purchases', []);
+    setLocal('cash_transactions', []);
+    setLocal('expenses', []);
+    setLocal('staff_members', []);
+    setLocal('payroll_records', []);
+    setLocal('inventory_items', []);
+    setLocal('inventory_logs', []);
 
     localStorage.setItem('crm_demo_seeded', 'true');
   }
