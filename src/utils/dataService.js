@@ -16,19 +16,24 @@ export const setLocal = (key, val) => {
   } catch (e) {}
 };
 
+const RESET_VERSION = 'v3_force_clean_production_clean_all_20260812';
+
 // Seed initial demo data for smooth offline experience
 const seedDemoData = () => {
-  if (!localStorage.getItem('crm_demo_seeded')) {
-    setLocal('customers', []);
+  if (localStorage.getItem('crm_demo_version') !== RESET_VERSION) {
+    const keysToWipe = [
+      'customers', 'orders', 'teams', 'suppliers', 'purchases',
+      'cash_transactions', 'expenses', 'staff_members', 'payroll_records',
+      'inventory_items', 'inventory_logs', 'supplier_prices', 'supplier_catalog'
+    ];
+    keysToWipe.forEach(k => setLocal(k, []));
+
     setLocal('products', [
       { id: 1, name: 'Canva Pro (1 năm)', category: 'Design', default_duration_days: 365, default_sell: 150000, price_ctv: 110000, price_si: 80000, default_cost: 45000 },
       { id: 2, name: 'Google AI Pro (Gemini Advanced 1 năm)', category: 'AI', default_duration_days: 365, default_sell: 220000, price_ctv: 170000, price_si: 135000, default_cost: 95000 },
       { id: 3, name: 'Netflix Premium (1 tháng)', category: 'Entertainment', default_duration_days: 30, default_sell: 90000, price_ctv: 75000, price_si: 60000, default_cost: 40000 },
       { id: 4, name: 'ChatGPT Plus (1 tháng)', category: 'AI', default_duration_days: 30, default_sell: 250000, price_ctv: 210000, price_si: 180000, default_cost: 150000 }
     ]);
-    setLocal('orders', []);
-    setLocal('suppliers', []);
-    setLocal('teams', []);
     setLocal('channels', [
       { id: 1, main_channel: 'Facebook Page', sub_channel_name: 'Page Canva Sỉ #01' },
       { id: 2, main_channel: 'Zalo', sub_channel_name: 'Zalo Hotline CSKH 02' }
@@ -40,16 +45,8 @@ const seedDemoData = () => {
       memo_prefix: 'DON',
       template: 'compact2'
     });
-    setLocal('supplier_prices', []);
-    setLocal('supplier_catalog', []);
-    setLocal('purchases', []);
-    setLocal('cash_transactions', []);
-    setLocal('expenses', []);
-    setLocal('staff_members', []);
-    setLocal('payroll_records', []);
-    setLocal('inventory_items', []);
-    setLocal('inventory_logs', []);
 
+    localStorage.setItem('crm_demo_version', RESET_VERSION);
     localStorage.setItem('crm_demo_seeded', 'true');
   }
 };
