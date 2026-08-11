@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { SupplierService, TeamService, OrderService, ProductService, SupplierPriceService, SupplierCatalogService } from '../utils/dataService';
@@ -35,6 +35,7 @@ export default function SupplierDetail() {
   const [dailyProductName, setDailyProductName] = useState('');
   const [dailyPrice, setDailyPrice] = useState('');
   const [dailyNotes, setDailyNotes] = useState('');
+  const [dailySyncToProduct, setDailySyncToProduct] = useState(true);
 
   const loadData = async () => {
     if (!shopId || !id) return;
@@ -149,9 +150,10 @@ export default function SupplierDetail() {
         supplierId: id,
         productName: dailyProductName,
         price: Number(dailyPrice),
-        notes: dailyNotes
+        notes: dailyNotes,
+        syncToProduct: dailySyncToProduct
       });
-      toast.success('Đã cập nhật bảng giá sỉ hôm nay!');
+      toast.success(dailySyncToProduct ? 'Đã lưu giá sỉ & đồng bộ giá vốn POS!' : 'Đã cập nhật bảng giá sỉ hôm nay!');
       setDailyPrice('');
       setDailyNotes('');
       const updatedPrices = await SupplierPriceService.listBySupplier(shopId, id);
@@ -335,6 +337,15 @@ export default function SupplierDetail() {
               <label className="form-label">Ghi Chú Giá (Tùy chọn)</label>
               <input type="text" className="glass-input" placeholder="VD: Đang xả kho sale 10%" value={dailyNotes} onChange={e => setDailyNotes(e.target.value)} />
             </div>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12.5px', color: '#38bdf8', cursor: 'pointer', background: 'rgba(56,189,248,0.08)', padding: '8px 10px', borderRadius: '8px', border: '1px solid rgba(56,189,248,0.2)' }}>
+              <input
+                type="checkbox"
+                checked={dailySyncToProduct}
+                onChange={e => setDailySyncToProduct(e.target.checked)}
+                style={{ accentColor: '#38bdf8', cursor: 'pointer' }}
+              />
+              <span>⚡ Đồng bộ làm Giá vốn mặc định cho POS</span>
+            </label>
             <button type="submit" className="glass-button" style={{ background: 'linear-gradient(135deg, #f59e0b, #10b981)', color: '#fff', fontWeight: 'bold', marginTop: '4px' }}>
               💾 Lưu Giá Sỉ Hôm Nay
             </button>

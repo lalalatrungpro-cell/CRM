@@ -23,7 +23,7 @@ export default function Suppliers() {
   const [showModal, setShowModal] = useState(false);
   const [editingSupplier, setEditingSupplier] = useState(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState(null);
-  const [formData, setFormData] = useState({ name: '', phone: '', zalo: '', telegram: '', bot_link: '', notes: '' });
+  const [formData, setFormData] = useState({ name: '', phone: '', zalo: '', telegram: '', bot_link: '', notes: '', warranty_policy: 'FULL_WARRANTY', warranty_duration_days: 30, warranty_note: '' });
 
   // Filters
   const [searchTerm, setSearchTerm] = useState('');
@@ -445,6 +445,41 @@ export default function Suppliers() {
                 />
               </div>
 
+              
+              {/* [Phase 4] Chính Sách Bảo Hành NCC */}
+              <div style={{ borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: '14px', marginTop: '4px' }}>
+                <label style={{ fontSize: '11px', fontWeight: '700', color: '#f59e0b', textTransform: 'uppercase', letterSpacing: '0.06em', display: 'block', marginBottom: '10px' }}>
+                  🛡️ Chính Sách Bảo Hành NCC Cho Shop
+                </label>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '10px' }}>
+                  <div>
+                    <label className="form-label">Chính Sách BH</label>
+                    <select
+                      className="glass-input"
+                      value={formData.warranty_policy} onChange={e => setFormData({ ...formData, warranty_policy: e.target.value })}
+                    >
+                      <option value="FULL_WARRANTY">✅ Bảo hành 100%</option>
+                      <option value="PARTIAL_WARRANTY">⚡ Bảo hành 1 phần</option>
+                      <option value="EXCHANGE_ONLY">🔄 Đổi acc (không hoàn tiền)</option>
+                      <option value="NO_WARRANTY">❌ Không bảo hành</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="form-label">Thời Hạn BH (ngày)</label>
+                    <input
+                      type="number" className="glass-input" min="0" placeholder="VD: 30"
+                      value={formData.warranty_duration_days} onChange={e => setFormData({ ...formData, warranty_duration_days: e.target.value })}
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="form-label">Ghi Chú BH NCC</label>
+                  <input
+                    type="text" className="glass-input" placeholder="VD: Đổi acc trong 7 ngày, claim qua Zalo 0977..."
+                    value={formData.warranty_note} onChange={e => setFormData({ ...formData, warranty_note: e.target.value })}
+                  />
+                </div>
+              </div>
               <div style={{ display: 'flex', gap: '10px', marginTop: '6px' }}>
                 <button type="submit" className="glass-button" style={{ flex: 1, background: '#38bdf8', color: '#fff', fontWeight: 'bold' }}>
                   Lưu Nhà Cung Cấp

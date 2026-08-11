@@ -44,10 +44,16 @@ CREATE TABLE products (
   category TEXT NOT NULL,
   default_cost NUMERIC DEFAULT 0,
   default_sell NUMERIC DEFAULT 0,
+  price_ctv NUMERIC DEFAULT 0,
+  price_si NUMERIC DEFAULT 0,
   default_duration_days INTEGER DEFAULT 30,
   max_slots INTEGER DEFAULT 1,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+-- Migration nếu bảng products đã tồn tại:
+-- ALTER TABLE products ADD COLUMN IF NOT EXISTS price_ctv NUMERIC DEFAULT 0;
+-- ALTER TABLE products ADD COLUMN IF NOT EXISTS price_si NUMERIC DEFAULT 0;
 
 -- Block 5: Bảng suppliers
 CREATE TABLE suppliers (
@@ -250,3 +256,187 @@ CREATE POLICY "Shop isolation - vietqr_settings" ON vietqr_settings
 
 CREATE POLICY "Shop isolation - audit_logs" ON audit_logs
   FOR ALL USING (shop_id = get_my_shop_id());
+
+-- ==========================================
+-- ENTERPRISE ERP & FINANCIAL ACCOUNTING EXPANSION
+-- ==========================================
+
+-- Block 14: Bảng purchases (Phiếu Nhập Hàng & Mua Kho Trọn Gói)
+CREATE TABLE IF NOT EXISTS purchases (
+  id BIGSERIAL PRIMARY KEY,
+  shop_id UUID NOT NULL REFERENCES shops(id) ON DELETE CASCADE,
+  supplier_id BIGINT REFERENCES suppliers(id) ON DELETE SET NULL,
+  supplier_name TEXT DEFAULT '',
+  team_id BIGINT REFERENCES teams(id) ON DELETE SET NULL,
+  product_name TEXT NOT NULL,
+  import_cost NUMERIC NOT NULL DEFAULT 0,
+  quantity INTEGER NOT NULL DEFAULT 1,
+  unit_cost NUMERIC GENERATED ALWAYS AS (CASE WHEN quantity > 0 THEN import_cost / quantity ELSE 0 END) STORED,
+  payment_status TEXT CHECK (payment_status IN ('PAID', 'DEBT')) DEFAULT 'PAID',
+  payment_date DATE DEFAULT CURRENT_DATE,
+  purchase_date DATE DEFAULT CURRENT_DATE,
+  notes TEXT DEFAULT '',
+  created_by UUID REFERENCES auth.users(id),
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Migration cho teams:
+ALTER TABLE teams 
+ADD COLUMN IF NOT EXISTS import_cost NUMERIC DEFAULT 0,
+ADD COLUMN IF NOT EXISTS is_paid_to_supplier BOOLEAN DEFAULT TRUE,
+ADD COLUMN IF NOT EXISTS purchase_id BIGINT REFERENCES purchases(id);
+
+-- Block 15: Bảng cash_transactions (Sổ Quỹ Thu Chi & Dòng Tiền)
+CREATE TABLE IF NOT EXISTS cash_transactions (
+  id BIGSERIAL PRIMARY KEY,
+  shop_id UUID NOT NULL REFERENCES shops(id) ON DELETE CASCADE,
+  type TEXT CHECK (type IN ('INCOME', 'EXPENSE')) NOT NULL,
+  category TEXT NOT NULL,
+  amount NUMERIC NOT NULL DEFAULT 0,
+  account_type TEXT DEFAULT 'BANK', -- 'CASH', 'BANK'
+  reference_type TEXT DEFAULT '',   -- 'ORDER', 'PURCHASE', 'PAYROLL', 'EXPENSE', 'MANUAL'
+  reference_id TEXT DEFAULT '',
+  counterpart_name TEXT DEFAULT '',
+  notes TEXT DEFAULT '',
+  transaction_date DATE DEFAULT CURRENT_DATE,
+  created_by UUID REFERENCES auth.users(id),
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Block 16: Bảng expenses (Quản Lý Chi Phí Doanh Nghiệp OPEX)
+CREATE TABLE IF NOT EXISTS expenses (
+  id BIGSERIAL PRIMARY KEY,
+  shop_id UUID NOT NULL REFERENCES shops(id) ON DELETE CASCADE,
+  name TEXT NOT NULL,
+  expense_type TEXT CHECK (expense_type IN ('FIXED', 'VARIABLE')) NOT NULL,
+  category TEXT NOT NULL,
+  amount NUMERIC NOT NULL DEFAULT 0,
+  recurrence TEXT DEFAULT 'ONE_TIME', -- 'ONE_TIME', 'MONTHLY', 'YEARLY'
+  expense_date DATE DEFAULT CURRENT_DATE,
+  notes TEXT DEFAULT '',
+  is_paid BOOLEAN DEFAULT TRUE,
+  created_by UUID REFERENCES auth.users(id),
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Block 17: Bảng staff_members (Hồ Sơ Nhân Sự & Cơ Chế Lương/Hoa Hồng)
+CREATE TABLE IF NOT EXISTS staff_members (
+  id BIGSERIAL PRIMARY KEY,
+  shop_id UUID NOT NULL REFERENCES shops(id) ON DELETE CASCADE,
+  user_id UUID REFERENCES auth.users(id),
+  full_name TEXT NOT NULL,
+  phone TEXT DEFAULT '',
+  role TEXT DEFAULT 'Sale',
+  base_salary NUMERIC DEFAULT 0,
+  commission_type TEXT DEFAULT 'PERCENT', -- 'PERCENT', 'FIXED_PER_ORDER'
+  commission_rate NUMERIC DEFAULT 0,     -- % hoa hồng trên doanh thu (VD: 5 = 5%)
+  commission_fixed NUMERIC DEFAULT 0,    -- tiền cố định/đơn (VD: 5000)
+  status TEXT DEFAULT 'ACTIVE',
+  joined_date DATE DEFAULT CURRENT_DATE,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Block 18: Bảng payroll_records (Bảng Tính Lương & Hoa Hồng Hằng Tháng)
+CREATE TABLE IF NOT EXISTS payroll_records (
+  id BIGSERIAL PRIMARY KEY,
+  shop_id UUID NOT NULL REFERENCES shops(id) ON DELETE CASCADE,
+  staff_id BIGINT NOT NULL REFERENCES staff_members(id) ON DELETE CASCADE,
+  staff_name TEXT NOT NULL,
+  month_period TEXT NOT NULL,            -- 'YYYY-MM'
+  base_salary NUMERIC DEFAULT 0,
+  orders_count INTEGER DEFAULT 0,
+  revenue_generated NUMERIC DEFAULT 0,
+  commission_amount NUMERIC DEFAULT 0,
+  bonus_kpi NUMERIC DEFAULT 0,
+  advance_deduction NUMERIC DEFAULT 0,
+  net_salary NUMERIC GENERATED ALWAYS AS (base_salary + commission_amount + bonus_kpi - advance_deduction) STORED,
+  status TEXT DEFAULT 'DRAFT',           -- 'DRAFT', 'CONFIRMED', 'PAID'
+  paid_date DATE,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- RLS Policies cho các bảng mới
+ALTER TABLE purchases ENABLE ROW LEVEL SECURITY;
+ALTER TABLE cash_transactions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE expenses ENABLE ROW LEVEL SECURITY;
+ALTER TABLE staff_members ENABLE ROW LEVEL SECURITY;
+ALTER TABLE payroll_records ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Shop isolation - purchases" ON purchases
+  FOR ALL USING (shop_id = get_my_shop_id());
+
+CREATE POLICY "Shop isolation - cash_transactions" ON cash_transactions
+  FOR ALL USING (shop_id = get_my_shop_id());
+
+CREATE POLICY "Shop isolation - expenses" ON expenses
+  FOR ALL USING (shop_id = get_my_shop_id());
+
+CREATE POLICY "Shop isolation - staff_members" ON staff_members
+  FOR ALL USING (shop_id = get_my_shop_id());
+
+CREATE POLICY "Shop isolation - payroll_records" ON payroll_records
+  FOR ALL USING (shop_id = get_my_shop_id());
+
+-- ==========================================
+-- DIGITAL INVENTORY MANAGEMENT 360°
+-- ==========================================
+
+-- Migration cho products: Thêm ngưỡng cảnh báo tồn kho tối thiểu
+ALTER TABLE products ADD COLUMN IF NOT EXISTS min_stock_alert INTEGER DEFAULT 5;
+
+-- Block 19: Bảng inventory_items (Kho Key / License / Account Rời & Slot Số)
+CREATE TABLE IF NOT EXISTS inventory_items (
+  id BIGSERIAL PRIMARY KEY,
+  shop_id UUID NOT NULL REFERENCES shops(id) ON DELETE CASCADE,
+  product_id BIGINT REFERENCES products(id) ON DELETE SET NULL,
+  product_name TEXT NOT NULL,
+  category TEXT DEFAULT '',
+  asset_type TEXT CHECK (asset_type IN ('SINGLE_KEY', 'ACCOUNT', 'INVITE_LINK', 'SLOT_SEAT')) DEFAULT 'SINGLE_KEY',
+  item_code TEXT NOT NULL,            -- Email|Pass, License Key, Invite URL
+  cost_price NUMERIC DEFAULT 0,       -- Giá vốn nhập của item
+  supplier_id BIGINT REFERENCES suppliers(id) ON DELETE SET NULL,
+  supplier_name TEXT DEFAULT '',
+  purchase_id BIGINT REFERENCES purchases(id) ON DELETE SET NULL,
+  team_id BIGINT REFERENCES teams(id) ON DELETE SET NULL,
+  status TEXT CHECK (status IN ('AVAILABLE', 'SOLD', 'RESERVED', 'FAULTY', 'SUPPLIER_CLAIM', 'EXPIRED')) DEFAULT 'AVAILABLE',
+  order_id BIGINT REFERENCES orders(id) ON DELETE SET NULL,
+  customer_id BIGINT REFERENCES customers(id) ON DELETE SET NULL,
+  customer_name TEXT DEFAULT '',
+  import_date DATE DEFAULT CURRENT_DATE,
+  sold_date DATE,
+  activation_deadline DATE,          -- Hạn chót kích hoạt (nếu có)
+  expire_date DATE,                  -- Hạn dùng của tài khoản
+  faulty_reason TEXT DEFAULT '',     -- Lý do lỗi (khi chuyển FAULTY)
+  supplier_claim_status TEXT DEFAULT '', -- 'PENDING_CLAIM', 'REFUNDED', 'REPLACED'
+  notes TEXT DEFAULT '',
+  created_by UUID REFERENCES auth.users(id),
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Index tối ưu tốc độ bốc key FIFO cực nhanh
+CREATE INDEX IF NOT EXISTS idx_inv_fifo ON inventory_items (shop_id, product_name, status, import_date ASC);
+
+-- Block 20: Bảng inventory_logs (Sổ Nhật Ký Luân Chuyển Kho 360°)
+CREATE TABLE IF NOT EXISTS inventory_logs (
+  id BIGSERIAL PRIMARY KEY,
+  shop_id UUID NOT NULL REFERENCES shops(id) ON DELETE CASCADE,
+  inventory_item_id BIGINT REFERENCES inventory_items(id) ON DELETE CASCADE,
+  action_type TEXT NOT NULL,         -- 'IMPORT', 'EXPORT_POS', 'RESTOCK', 'WARRANTY_FAULTY', 'SUPPLIER_EXCHANGE'
+  product_name TEXT NOT NULL,
+  quantity INTEGER DEFAULT 1,
+  unit_cost NUMERIC DEFAULT 0,
+  reference_id TEXT DEFAULT '',      -- order_id, purchase_id, warranty_id
+  performed_by TEXT DEFAULT '',
+  notes TEXT DEFAULT '',
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- RLS Isolation cho Inventory
+ALTER TABLE inventory_items ENABLE ROW LEVEL SECURITY;
+ALTER TABLE inventory_logs ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Shop isolation - inventory_items" ON inventory_items FOR ALL USING (shop_id = get_my_shop_id());
+CREATE POLICY "Shop isolation - inventory_logs" ON inventory_logs FOR ALL USING (shop_id = get_my_shop_id());
+
+

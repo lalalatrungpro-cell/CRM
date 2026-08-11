@@ -1,17 +1,19 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import {
   OrderService, CustomerService, ProductService, SupplierService,
-  TeamService, ChannelService, VietQRService, WarrantyLogService, SupplierPriceService
+  TeamService, ChannelService, VietQRService, WarrantyLogService, SupplierPriceService, InventoryService,
+  CashTransactionService, clearAllSystemData
 } from '../utils/dataService';
 import { supabase } from '../utils/supabaseClient';
 import { getVietQRUrl } from '../utils/storage';
 import { useToast } from '../components/Toast';
 import ConfirmDialog from '../components/ConfirmDialog';
+import { convertAllOldOrderIds, convertAllOldCustomerIds } from '../utils/orderMigrator';
 import {
   Plus, Users, Copy, Check, ShieldAlert, FileText, UserPlus, Search,
   Filter, Eye, EyeOff, ChevronLeft, ChevronRight, X, QrCode, CreditCard,
-  Trash2, Printer, RefreshCw, Edit3, Edit, AlertTriangle, ShieldCheck
+  Trash2, Printer, RefreshCw, Edit3, Edit, AlertTriangle, ShieldCheck, Boxes
 } from 'lucide-react';
 
 const PAGE_SIZE = 15;
@@ -98,10 +100,12 @@ export default function Orders() {
     if (!lowestPriceHint) return;
     setFormData(prev => ({
       ...prev,
+      supplierId: String(lowestPriceHint.supplier_id),
+      costPrice: lowestPriceHint.price,
       supplier_id: String(lowestPriceHint.supplier_id),
       cost_price: lowestPriceHint.price
     }));
-    toast.success('Đã áp dụng Nguồn Sỉ rẻ nhất (' + lowestPriceHint.supplier_name + ' - ' + lowestPriceHint.price.toLocaleString() + 'đ)!');
+    toast.success('Đã áp dụng Nguồn Sỉ rẻ nhất (' + lowestPriceHint.supplier_name + ' - ' + Number(lowestPriceHint.price).toLocaleString() + 'đ)!');
   };
   
   const handleOpenEditModal = (order) => {
@@ -206,6 +210,23 @@ export default function Orders() {
     try {
       await OrderService.update(order.id, updatedOrderPayload);
       await WarrantyLogService.create(shopId, auditLogPayload);
+      // [Phase 2] Tự động ghi chi phí hoàn tiền vào CashFlow (tài khoản Ngân Hàng)
+      if (warrantyMode === 'FULL_REFUND' || warrantyMode === 'PARTIAL_REFUND') {
+        const _refAmt = warrantyMode === 'FULL_REFUND' ? currentSell : Number(warrantyRefundAmount || 0);
+        if (_refAmt > 0) {
+          await CashTransactionService.create(shopId, {
+            type: 'EXPENSE',
+            category: 'Hoàn Tiền Bảo Hành',
+            amount: _refAmt,
+            account_type: 'BANK',
+            reference_type: 'warranty',
+            reference_id: order.id,
+            counterpart_name: order.customer_name || '',
+            notes: `Hoàn tiền BH đơn #${order.id} — ${order.product_name || ''} — KH: ${order.customer_name || ''}`,
+            transaction_date: new Date().toISOString().split('T')[0]
+          });
+        }
+      }
       toast.success('Đã ghi nhận xử lý bảo hành 360°!');
       setShowWarrantyModal(null);
       loadData();
@@ -273,14 +294,6 @@ export default function Orders() {
   useEffect(() => {
     loadData();
   }, [shopId]);
-  useEffect(() => {
-    if (showDetailModal && showDetailModal.id) {
-      WarrantyLogService.listByOrder(shopId, showDetailModal.id).then(setWarrantyAuditLogs).catch(console.error);
-    } else {
-      setWarrantyAuditLogs([]);
-    }
-  }, [showDetailModal, shopId]);
-  
 
   const todayStr = new Date().toISOString().split('T')[0];
   const nextMonthStr = new Date(Date.now() + 30 * 86400000).toISOString().split('T')[0];
@@ -297,6 +310,8 @@ export default function Orders() {
     productName: 'Canva Pro (1 tháng)',
     teamId: '',
     supplierId: '',
+    inventoryItemId: null,
+    inventoryHint: null,
     infor: '',
     sellPrice: 150000,
     costPrice: 50000,
@@ -309,6 +324,12 @@ export default function Orders() {
   };
 
   const [formData, setFormData] = useState(emptyForm);
+
+  // [Phase 5] Detect if selected product is EVERGREEN (no expire date)
+  const selectedProduct = products.find(p => p.name === formData.productName);
+  const isEvergreen = (selectedProduct?.product_type || selectedProduct?.productType) === 'EVERGREEN';
+  const isTeamSlot = (selectedProduct?.product_type || selectedProduct?.productType) === 'TEAM_SLOT';
+
 
   // ESC modal close
   useEffect(() => {
@@ -325,15 +346,70 @@ export default function Orders() {
     return () => window.removeEventListener('keydown', handler);
   }, []);
 
-  const closeModal = () => { setShowModal(false); setFormData(emptyForm); };
+  const closeModal = () => {
+    setShowModal(false);
+    setFormData(emptyForm);
+  };
 
-  const handleProductSelect = (pName) => {
+  const getCustomerTypeFromState = (fData) => {
+    if (fData.customerId === 'NEW') return fData.newCustomerType || 'Le';
+    const c = customers.find(cust => String(cust.id) === String(fData.customerId));
+    return c?.type || 'Le';
+  };
+
+  const getTierPriceForProduct = (prod, custType) => {
+    if (!prod) return 150000;
+    const sellP = Number(prod.default_sell || prod.defaultSell || 150000);
+    const ctvP = Number(prod.price_ctv || prod.priceCtv || 0);
+    const siP = Number(prod.price_si || prod.priceSi || 0);
+
+    if (custType === 'CTV') return ctvP > 0 ? ctvP : sellP;
+    if (custType === 'Si') return siP > 0 ? siP : (ctvP > 0 ? ctvP : sellP);
+    return sellP;
+  };
+
+  const handleCustomerChange = (cId) => {
+    setFormData(f => {
+      const nextCustType = cId === 'NEW' ? (f.newCustomerType || 'Le') : (customers.find(c => String(c.id) === String(cId))?.type || 'Le');
+      const prod = products.find(p => p.name === f.productName);
+      const newSellPrice = prod ? getTierPriceForProduct(prod, nextCustType) : f.sellPrice;
+
+      return {
+        ...f,
+        customerId: cId,
+        sellPrice: newSellPrice
+      };
+    });
+  };
+
+  const handleNewCustomerTypeChange = (newType) => {
+    setFormData(f => {
+      const prod = products.find(p => p.name === f.productName);
+      const newSellPrice = prod ? getTierPriceForProduct(prod, newType) : f.sellPrice;
+      return {
+        ...f,
+        newCustomerType: newType,
+        sellPrice: newSellPrice
+      };
+    });
+  };
+
+  const handleProductSelect = async (pName) => {
     const prod = products.find(p => p.name === pName);
     if (prod) {
       const dur = prod.default_duration_days || prod.defaultDurationDays || 30;
-      const sellP = prod.default_sell || prod.defaultSell || 100000;
+      const custType = getCustomerTypeFromState(formData);
+      const sellP = getTierPriceForProduct(prod, custType);
       const costP = prod.default_cost || prod.defaultCost || 50000;
       const exp = new Date(Date.now() + dur * 86400000).toISOString().split('T')[0];
+
+      // Check available inventory key (FIFO)
+      let invItem = null;
+      let invCount = 0;
+      try {
+        invItem = await InventoryService.pickAvailableItem(shopId, pName);
+        invCount = await InventoryService.getAvailableCount(shopId, pName);
+      } catch (e) {}
 
       const availTeam = teams.find(t => {
         if (t.category !== prod.category) return false;
@@ -341,16 +417,21 @@ export default function Orders() {
         return (t.max_slots || t.maxSlots || 1) - used > 0;
       });
 
+      // Check lowest supplier price today
+      checkLowestPriceForProduct(pName);
+
       setFormData(f => ({
         ...f,
         productName: pName,
         durationDays: dur,
         sellPrice: sellP,
-        costPrice: costP,
+        costPrice: invItem ? (invItem.cost_price || costP) : costP,
         expireDate: exp,
-        teamId: availTeam ? availTeam.id : f.teamId,
-        infor: availTeam ? (availTeam.infor || f.infor) : f.infor,
-        supplierId: availTeam ? (availTeam.supplier_id || availTeam.supplierId || f.supplierId) : f.supplierId
+        inventoryItemId: invItem ? invItem.id : null,
+        inventoryHint: { count: invCount, item: invItem },
+        teamId: (!invItem && availTeam) ? availTeam.id : f.teamId,
+        infor: invItem ? invItem.item_code : (availTeam ? (availTeam.infor || f.infor) : f.infor),
+        supplierId: invItem ? (invItem.supplier_id || f.supplierId) : (availTeam ? (availTeam.supplier_id || availTeam.supplierId || f.supplierId) : f.supplierId)
       }));
     }
   };
@@ -438,6 +519,16 @@ export default function Orders() {
       };
 
       const newOrder = await OrderService.create(shopId, payload);
+
+      // Auto-assign inventory item if used
+      if (formData.inventoryItemId) {
+        try {
+          await InventoryService.assignItemToOrder(shopId, formData.inventoryItemId, newOrder.id, finalCustId, finalCustName);
+        } catch (e) {
+          console.error('Lỗi khi cập nhật kho tồn:', e);
+        }
+      }
+
       setOrders(prev => [newOrder, ...prev]);
       closeModal();
       toast.success(`Đã tạo đơn hàng POS thành công cho ${finalCustName}!`);
@@ -759,7 +850,26 @@ export default function Orders() {
   const totalPages = Math.ceil(filteredOrders.length / PAGE_SIZE) || 1;
   const paginatedOrders = filteredOrders.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
 
-  const filterChannels = channels.filter(c => c.channel_type === formData.source);
+  const handleConvertOldOrders = () => {
+    toast.info('Đang chuẩn hóa mã đơn & mã khách hàng...');
+    try {
+      const ordRes = convertAllOldOrderIds();
+      const custRes = convertAllOldCustomerIds();
+      toast.success(`🎉 Đã chuẩn hóa ${ordRes.totalConverted} đơn hàng & ${custRes.totalConverted} khách hàng! Trang sẽ tự reload...`);
+      setTimeout(() => window.location.reload(), 1500);
+    } catch (err) {
+      console.error(err);
+      toast.error('Lỗi khi chuyển đổi mã. Xem console để biết chi tiết.');
+    }
+  };
+
+  const handleClearAllData = () => {
+    if (window.confirm('🚨 BẠN CÓ CHẮC CHẮN MUỐN XÓA TRẮNG 100% DỮ LIỆU?\n\nThao tác này sẽ xóa sạch tất cả Đơn hàng, Khách hàng, Kho Teams và Sổ quỹ để bắt đầu sử dụng phần mềm mới tinh.')) {
+      clearAllSystemData();
+      toast.success('🎉 Đã xóa sạch 100% dữ liệu! Hệ thống đã hoàn toàn mới tinh.');
+      setTimeout(() => window.location.reload(), 800);
+    }
+  };
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
@@ -843,8 +953,45 @@ export default function Orders() {
                         <strong style={{ fontSize: '14px', color: '#fff' }}>{custName}</strong>
                         <div style={{ fontSize: '11px', color: '#94a3b8' }}>{order.phone || 'N/A'}</div>
                       </td>
-                      <td style={{ padding: '14px 16px' }}>
-                        <strong style={{ color: '#818cf8' }}>{prodName}</strong>
+                      <td style={{ padding: '14px 16px', maxWidth: '240px' }}>
+                        <strong style={{ color: '#818cf8', display: 'block', marginBottom: '2px' }}>{prodName}</strong>
+                        {(() => {
+                          const linkedTeam = teams.find(t => String(t.id) === String(order.team_id || order.teamId));
+                          const rawTeamName = linkedTeam ? linkedTeam.name : (order.team_name || order.teamName || (order.team_id ? `Team #${order.team_id}` : null));
+                          if (!rawTeamName) return null;
+                          
+                          let cleanName = String(rawTeamName).trim();
+                          if (cleanName.includes('|')) cleanName = cleanName.split('|')[0].trim();
+                          cleanName = cleanName.replace(/^Mail\s*\|\s*Pass\s*\|\s*2FA\s*/i, '').trim();
+
+                          return (
+                            <div
+                              title={rawTeamName}
+                              style={{
+                                fontSize: '11px',
+                                color: '#10b981',
+                                fontWeight: '700',
+                                marginTop: '3px',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '4px',
+                                background: 'rgba(16,185,129,0.12)',
+                                padding: '2px 8px',
+                                borderRadius: '4px',
+                                border: '1px solid rgba(16,185,129,0.25)',
+                                maxWidth: '200px',
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                                whiteSpace: 'nowrap'
+                              }}
+                            >
+                              <ShieldCheck size={12} style={{ flexShrink: 0 }} />
+                              <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                {cleanName}
+                              </span>
+                            </div>
+                          );
+                        })()}
                         {order.infor && (
                           <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '4px' }}>
                             <code style={{ fontSize: '11px', color: isRevealed ? '#fff' : '#64748b', background: 'rgba(0,0,0,0.2)', padding: '2px 6px', borderRadius: '4px' }}>
@@ -1380,7 +1527,7 @@ export default function Orders() {
                 <label className="form-label">Chọn Khách Hàng</label>
                 <select
                   className="glass-input"
-                  value={formData.customerId} onChange={e => setFormData({ ...formData, customerId: e.target.value })}
+                  value={formData.customerId} onChange={e => handleCustomerChange(e.target.value)}
                   required
                 >
                   <option value="">-- Chọn Khách Hàng --</option>
@@ -1409,27 +1556,6 @@ export default function Orders() {
                         type="text" required className="glass-input" placeholder="0987654321"
                         value={formData.newCustomerPhone} onChange={e => setFormData({ ...formData, newCustomerPhone: e.target.value })}
                       />
-                    </div>
-                  </div>
-
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-                    <div>
-                      <label className="form-label">Email Liên Hệ</label>
-                      <input
-                        type="email" className="glass-input" placeholder="VD: khach@gmail.com"
-                        value={formData.newCustomerEmail || ''} onChange={e => setFormData({ ...formData, newCustomerEmail: e.target.value })}
-                      />
-                    </div>
-                    <div>
-                      <label className="form-label">Phân Loại Khách Hàng</label>
-                      <select
-                        className="glass-input"
-                        value={formData.newCustomerType || 'Le'} onChange={e => setFormData({ ...formData, newCustomerType: e.target.value })}
-                      >
-                        <option value="Le">Khách Lẻ (Giá chuẩn)</option>
-                        <option value="CTV">Cộng Tác Viên (Chiết khấu nhẹ)</option>
-                        <option value="Si">Khách Sỉ / Đại Lý (Chiết khấu cao)</option>
-                      </select>
                     </div>
                   </div>
 
@@ -1527,19 +1653,22 @@ export default function Orders() {
                 />
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: isEvergreen ? '1fr 1fr' : '1fr 1fr 1fr', gap: '10px' }}>
+                {!isEvergreen && (
                 <div>
                   <label className="form-label">Thời Hạn (Ngày)</label>
                   <input
-                    type="number" required className="glass-input"
+                    type="number" className="glass-input"
                     value={formData.durationDays} onChange={e => handleDurationChange(e.target.value)}
                   />
                 </div>
+                )}
                 <div>
                   <label className="form-label">Giá Bán Khách (VNĐ)</label>
                   <input
                     type="number" required className="glass-input"
                     value={formData.sellPrice} onChange={e => setFormData({ ...formData, sellPrice: e.target.value })}
+                  data-tier-price="true"
                   />
                 </div>
                 <div>
@@ -1550,6 +1679,46 @@ export default function Orders() {
                   />
                 </div>
               </div>
+
+              {/* Live Order Margin & Anti-Loss Guard Widget */}
+              {formData.productName && (
+                <div style={{
+                  background: (parseFloat(formData.sellPrice || 0) <= parseFloat(formData.costPrice || 0)) ? 'rgba(239,68,68,0.15)' : 'rgba(16,185,129,0.08)',
+                  border: (parseFloat(formData.sellPrice || 0) <= parseFloat(formData.costPrice || 0)) ? '1px solid #ef4444' : '1px solid rgba(16,185,129,0.25)',
+                  borderRadius: '10px',
+                  padding: '10px 14px',
+                  fontSize: '12.5px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '4px'
+                }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ color: '#cbd5e1' }}>
+                      🏷️ Nhóm: <strong style={{ color: getCustomerTypeFromState(formData) === 'Si' ? '#a855f7' : getCustomerTypeFromState(formData) === 'CTV' ? '#f59e0b' : '#10b981' }}>
+                        {getCustomerTypeFromState(formData) === 'Si' ? '🟣 Khách Sỉ' : getCustomerTypeFromState(formData) === 'CTV' ? '🟡 Khách CTV' : '🟢 Khách Lẻ'}
+                      </strong>
+                    </span>
+                    <span style={{ color: (parseFloat(formData.sellPrice || 0) <= parseFloat(formData.costPrice || 0)) ? '#ef4444' : '#10b981', fontWeight: 'bold' }}>
+                      {parseFloat(formData.sellPrice || 0) <= parseFloat(formData.costPrice || 0)
+                        ? '⚠️ CẢNH BÁO LỖ VỐN'
+                        : `Lãi đơn: +${(parseFloat(formData.sellPrice || 0) - parseFloat(formData.costPrice || 0)).toLocaleString()}đ (${parseFloat(formData.sellPrice || 0) > 0 ? Math.round(((parseFloat(formData.sellPrice || 0) - parseFloat(formData.costPrice || 0)) / parseFloat(formData.sellPrice || 0)) * 100) : 0}%)`
+                      }
+                    </span>
+                  </div>
+                  {lowestPriceHint && (
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '11px', color: '#38bdf8', borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: '4px', marginTop: '2px' }}>
+                      <span>⚡ Nguồn sỉ tốt nhất: {lowestPriceHint.supplier_name} ({Number(lowestPriceHint.price).toLocaleString()}đ)</span>
+                      <button
+                        type="button"
+                        onClick={handleApplyLowestPriceHint}
+                        style={{ background: 'rgba(56,189,248,0.2)', border: '1px solid #38bdf8', color: '#38bdf8', borderRadius: '4px', padding: '1px 6px', fontSize: '10px', cursor: 'pointer' }}
+                      >
+                        Áp dụng
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                 <div>
@@ -1562,6 +1731,7 @@ export default function Orders() {
                     <option value="Nợ">Nợ</option>
                   </select>
                 </div>
+                {!isEvergreen ? (
                 <div>
                   <label className="form-label">Ngày Hết Hạn Đơn</label>
                   <input
@@ -1569,6 +1739,12 @@ export default function Orders() {
                     value={formData.expireDate} onChange={e => setFormData({ ...formData, expireDate: e.target.value })}
                   />
                 </div>
+                ) : (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'rgba(168,85,247,0.12)', border: '1px solid rgba(168,85,247,0.3)', borderRadius: '8px', padding: '10px 14px' }}>
+                  <span style={{ fontSize: '20px' }}>♾️</span>
+                  <span style={{ fontSize: '12px', color: '#c084fc', fontWeight: '600' }}>Sản phẩm Vĩnh Viễn<br/><span style={{ color: '#94a3b8', fontWeight: '400' }}>Không có ngày hết hạn</span></span>
+                </div>
+                )}
               </div>
 
               <div style={{ display: 'flex', gap: '10px', marginTop: '12px', paddingBottom: '6px' }}>
@@ -1707,5 +1883,6 @@ export default function Orders() {
     </div>
   );
 }
+
 
 

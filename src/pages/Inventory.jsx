@@ -1,0 +1,1377 @@
+import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
+import { useAuth } from '../contexts/AuthContext';
+import {
+  InventoryService, InventoryLogService, ProductService,
+  SupplierService, TeamService, OrderService, PurchaseService
+} from '../utils/dataService';
+import { useToast } from '../components/Toast';
+import ConfirmDialog from '../components/ConfirmDialog';
+import {
+  Boxes, Plus, Search, Filter, Copy, Check, Eye, EyeOff,
+  Trash2, RefreshCw, AlertTriangle, ShieldAlert, ArrowDownLeft,
+  ArrowUpRight, Download, Layers, ShieldCheck, Clock, CheckCircle2,
+  FileSpreadsheet, Tag, Truck, ExternalLink, X, HelpCircle,
+  PackagePlus, Edit2, DollarSign, Wallet, Building2
+} from 'lucide-react';
+
+const STATUS_CONFIG = {
+  'AVAILABLE': { label: 'Sẵn Sàng Bán', color: '#10b981', bg: 'rgba(16,185,129,0.15)' },
+  'SOLD': { label: 'Đã Bán POS', color: '#818cf8', bg: 'rgba(129,140,248,0.15)' },
+  'FAULTY': { label: 'Lỗi / Chờ NCC', color: '#ef4444', bg: 'rgba(239,68,68,0.15)' },
+  'SUPPLIER_CLAIM': { label: 'Đang Đòi NCC', color: '#f59e0b', bg: 'rgba(245,158,11,0.15)' },
+  'EXPIRED': { label: 'Hết Hạn', color: '#64748b', bg: 'rgba(100,116,139,0.15)' }
+};
+
+const ASSET_TYPE_CONFIG = {
+  'SINGLE_KEY': { label: 'Key / Code', color: '#38bdf8', bg: 'rgba(56,189,248,0.12)' },
+  'ACCOUNT': { label: 'Tài Khoản', color: '#a855f7', bg: 'rgba(168,85,247,0.12)' },
+  'INVITE_LINK': { label: 'Link Invite', color: '#ec4899', bg: 'rgba(236,72,153,0.12)' },
+  'SLOT_SEAT': { label: 'Slot Seat', color: '#f59e0b', bg: 'rgba(245,158,11,0.12)' }
+};
+
+const CATEGORY_SLOTS = {
+  'Canva Pro': 49, 'Netflix Premium': 5, 'Google AI Pro': 5,
+  'CapCut Pro': 5, 'Zoom Pro': 1, 'ChatGPT Plus': 1,
+  'Youtube Premium': 5, 'Spotify Premium': 6, 'Gói Khác': 1
+};
+const CATEGORY_COLORS = {
+  'Canva Pro': '#10b981', 'Netflix Premium': '#ef4444', 'Google AI Pro': '#4285f4',
+  'CapCut Pro': '#ec4899', 'Zoom Pro': '#2d8cff', 'ChatGPT Plus': '#10a37f',
+  'Youtube Premium': '#ff0000', 'Spotify Premium': '#1ed760', 'Gói Khác': '#64748b'
+};
+
+export default function Inventory() {
+  const toast = useToast();
+  const { shopId } = useAuth();
+
+  const [activeTab, setActiveTab] = useState('single_keys'); // 'single_keys', 'teams_pool', 'purchases', 'nxt_report', 'rma_alerts'
+  const [items, setItems] = useState([]);
+  const [summary, setSummary] = useState({
+    totalItems: 0, availableCount: 0, soldCount: 0, faultyCount: 0, expiredCount: 0, totalInventoryValue: 0, productBreakdown: []
+  });
+  const [products, setProducts] = useState([]);
+  const [suppliers, setSuppliers] = useState([]);
+  const [teams, setTeams] = useState([]);
+  const [orders, setOrders] = useState([]);
+  const [nxtReport, setNxtReport] = useState([]);
+  const [alerts, setAlerts] = useState({ lowStockAlerts: [], shelfLifeAlerts: [] });
+  const [loading, setLoading] = useState(true);
+
+  // Modals
+  const [showBulkModal, setShowBulkModal] = useState(false);
+  const [showFaultyModal, setShowFaultyModal] = useState(null);
+  const [confirmDeleteId, setConfirmDeleteId] = useState(null);
+
+  // Filters & State
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterStatus, setFilterStatus] = useState('ALL');
+  const [filterProduct, setFilterProduct] = useState('ALL');
+  const [filterSupplier, setFilterSupplier] = useState('ALL');
+  const [revealedItems, setRevealedItems] = useState({});
+  const [copiedId, setCopiedId] = useState('');
+
+  // Bulk Import Form
+  const todayStr = new Date().toISOString().split('T')[0];
+  const nextMonthStr = new Date(Date.now() + 30 * 86400000).toISOString().split('T')[0];
+
+  const emptyBulkForm = {
+    productId: '',
+    productName: '',
+    category: '',
+    assetType: 'ACCOUNT',
+    supplierId: '',
+    costPrice: 0,
+    isPaidToSupplier: true,
+    linesText: '',
+    activationDeadline: '',
+    expireDate: nextMonthStr,
+    notes: ''
+  };
+
+  const [bulkFormData, setBulkFormData] = useState(emptyBulkForm);
+  const [faultyReason, setFaultyReason] = useState('');
+
+  // ── Teams CRUD State (GĐ1) ──
+  const nextYearStr = new Date(Date.now() + 365 * 86400000).toISOString().split('T')[0];
+  const emptyTeamForm = {
+    name: '', category: 'Canva Pro', infor: '', maxSlots: 49,
+    importCost: 0, purchaseDate: todayStr, expireDate: nextYearStr,
+    supplierId: '', notes: ''
+  };
+  const [showTeamModal, setShowTeamModal] = useState(false);
+  const [editingTeam, setEditingTeam] = useState(null);
+  const [confirmDeleteTeamId, setConfirmDeleteTeamId] = useState(null);
+  const [teamRevealedInfors, setTeamRevealedInfors] = useState({});
+  const [teamCopiedId, setTeamCopiedId] = useState('');
+  const [teamSearchTerm, setTeamSearchTerm] = useState('');
+  const [teamFilterCategory, setTeamFilterCategory] = useState('ALL');
+  const [teamFormData, setTeamFormData] = useState(emptyTeamForm);
+
+  // ── Purchases State (GĐ2) ──
+  const emptyPurchaseForm = {
+    supplierId: '', productName: 'Canva Pro (1 năm)', teamId: '',
+    importCost: 2000000, quantity: 49, paymentStatus: 'PAID',
+    purchaseDate: todayStr, notes: ''
+  };
+  const [purchases, setPurchases] = useState([]);
+  const [showPurchaseModal, setShowPurchaseModal] = useState(false);
+  const [confirmDeletePurchaseId, setConfirmDeletePurchaseId] = useState(null);
+  const [purchaseSearchTerm, setPurchaseSearchTerm] = useState('');
+  const [filterPayment, setFilterPayment] = useState('ALL');
+  const [purchaseFormData, setPurchaseFormData] = useState(emptyPurchaseForm);
+
+  const loadData = async () => {
+    if (!shopId) return;
+    setLoading(true);
+    try {
+      const [itemList, sumData, prodList, suppList, teamList, ordList, nxtData, alertData, purList] = await Promise.all([
+        InventoryService.list(shopId),
+        InventoryService.getSummary(shopId),
+        ProductService.list(shopId),
+        SupplierService.list(shopId),
+        TeamService.list(shopId),
+        OrderService.list(shopId),
+        InventoryService.getNxtReport(shopId),
+        InventoryService.getLowStockAlerts(shopId),
+        PurchaseService.list(shopId)
+      ]);
+
+      setItems(itemList || []);
+      setSummary(sumData || { totalItems: 0, availableCount: 0, soldCount: 0, faultyCount: 0, expiredCount: 0, totalInventoryValue: 0, productBreakdown: [] });
+      setProducts(prodList || []);
+      setSuppliers(suppList || []);
+      setTeams(teamList || []);
+      setOrders(ordList || []);
+      setNxtReport(nxtData || []);
+      setAlerts(alertData || { lowStockAlerts: [], shelfLifeAlerts: [] });
+      setPurchases(purList || []);
+    } catch (err) {
+      console.error(err);
+      toast.error('Lỗi khi tải dữ liệu tồn kho!');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadData();
+  }, [shopId]);
+
+  // ─── TEAM CRUD HANDLERS (GĐ1) ────────────────────────────────────
+  const closeTeamModal = () => { setShowTeamModal(false); setEditingTeam(null); setTeamFormData(emptyTeamForm); };
+  const handleOpenAddTeamModal = () => { setEditingTeam(null); setTeamFormData(emptyTeamForm); setShowTeamModal(true); };
+  const handleOpenEditTeamModal = (team) => {
+    setEditingTeam(team);
+    setTeamFormData({
+      name: team.name || '', category: team.category || 'Canva Pro',
+      infor: team.infor || '', maxSlots: team.max_slots || team.maxSlots || 49,
+      importCost: team.import_cost || team.importCost || 0,
+      purchaseDate: team.purchase_date || team.purchaseDate || todayStr,
+      expireDate: team.expire_date || team.expireDate || nextYearStr,
+      supplierId: team.supplier_id || team.supplierId || '', notes: team.notes || ''
+    });
+    setShowTeamModal(true);
+  };
+  const handleTeamCategoryChange = (cat) => {
+    const defaultSlot = CATEGORY_SLOTS[cat] || 1;
+    setTeamFormData(f => ({ ...f, category: cat, maxSlots: defaultSlot }));
+  };
+  const handleSaveTeam = async (e) => {
+    e.preventDefault();
+    if (!teamFormData.name.trim()) return toast.error('Vui lòng nhập tên team!');
+    const supp = suppliers.find(s => String(s.id) === String(teamFormData.supplierId));
+    const suppName = supp ? supp.name : '';
+    const cost = Number(teamFormData.importCost || 0);
+    const slots = parseInt(teamFormData.maxSlots) || 1;
+    const payload = {
+      name: teamFormData.name.trim(), category: teamFormData.category,
+      infor: teamFormData.infor.trim(), max_slots: slots, import_cost: cost,
+      purchase_date: teamFormData.purchaseDate || todayStr,
+      expire_date: teamFormData.expireDate || nextYearStr,
+      supplier_id: teamFormData.supplierId ? parseInt(teamFormData.supplierId) : null,
+      supplier_name: suppName, notes: teamFormData.notes.trim()
+    };
+    try {
+      if (editingTeam) {
+        const updated = await TeamService.update(editingTeam.id, payload);
+        setTeams(prev => prev.map(t => t.id === editingTeam.id ? updated : t));
+        toast.success('Đã cập nhật kho team "' + (updated.name) + '"!');
+      } else {
+        const created = await TeamService.create(shopId, payload);
+        setTeams(prev => [created, ...prev]);
+        if (cost > 0) {
+          await PurchaseService.create(shopId, {
+            supplier_id: payload.supplier_id, supplier_name: payload.supplier_name,
+            team_id: created.id, product_name: created.name,
+            import_cost: cost, quantity: slots, payment_status: 'PAID',
+            purchase_date: payload.purchase_date,
+            notes: 'Mua kho team "' + created.name + '" (' + slots + ' slots)'
+          });
+        }
+        toast.success('Đã khởi tạo kho team "' + created.name + '" thành công!');
+      }
+      closeTeamModal(); loadData();
+    } catch (err) { console.error(err); toast.error('Lỗi khi lưu kho team.'); }
+  };
+  const handleDeleteTeamConfirmed = async () => {
+    const id = confirmDeleteTeamId;
+    const usedOrders = orders.filter(o => String(o.team_id || o.teamId) === String(id));
+    if (usedOrders.length > 0) {
+      toast.error('Không thể xóa kho team đang có đơn hàng liên kết!');
+      setConfirmDeleteTeamId(null); return;
+    }
+    try {
+      await TeamService.remove(id);
+      setTeams(prev => prev.filter(t => String(t.id) !== String(id)));
+      setConfirmDeleteTeamId(null); toast.success('Đã xóa kho team!');
+    } catch (err) { console.error(err); toast.error('Lỗi khi xóa kho team.'); }
+  };
+  const handleCopyTeamInfor = (text, teamId) => {
+    navigator.clipboard.writeText(text);
+    setTeamCopiedId('team-' + teamId); toast.success('Đã copy thông tin!');
+    setTimeout(() => setTeamCopiedId(''), 2000);
+  };
+  const toggleTeamRevealInfor = (teamId) => {
+    setTeamRevealedInfors(prev => ({ ...prev, [teamId]: !prev[teamId] }));
+  };
+
+  // ─── PURCHASE HANDLERS (GĐ2) ────────────────────────────────────
+  const closePurchaseModal = () => { setShowPurchaseModal(false); setPurchaseFormData(emptyPurchaseForm); };
+  const handleOpenAddPurchaseModal = () => {
+    setPurchaseFormData({ ...emptyPurchaseForm, supplierId: suppliers.length > 0 ? suppliers[0].id : '' });
+    setShowPurchaseModal(true);
+  };
+  const handleSavePurchase = async (e) => {
+    e.preventDefault();
+    const cost = Number(purchaseFormData.importCost || 0);
+    const qty = parseInt(purchaseFormData.quantity || 1) || 1;
+    if (cost <= 0) return toast.error('Vui lòng nhập tổng tiền vốn > 0!');
+    const supp = suppliers.find(s => String(s.id) === String(purchaseFormData.supplierId));
+    const payload = {
+      supplier_id: purchaseFormData.supplierId ? parseInt(purchaseFormData.supplierId) : null,
+      supplier_name: supp ? supp.name : '',
+      team_id: purchaseFormData.teamId ? parseInt(purchaseFormData.teamId) : null,
+      product_name: purchaseFormData.productName,
+      import_cost: cost, quantity: qty,
+      payment_status: purchaseFormData.paymentStatus,
+      purchase_date: purchaseFormData.purchaseDate || todayStr,
+      notes: purchaseFormData.notes.trim()
+    };
+    try {
+      const created = await PurchaseService.create(shopId, payload);
+      setPurchases(prev => [created, ...prev]);
+      toast.success('Đã lập phiếu nhập "' + created.product_name + '" thành công!');
+      closePurchaseModal(); loadData();
+    } catch (err) { console.error(err); toast.error('Lỗi khi lập phiếu nhập hàng.'); }
+  };
+  const handleDeletePurchaseConfirmed = async () => {
+    const id = confirmDeletePurchaseId;
+    try {
+      await PurchaseService.remove(id);
+      setPurchases(prev => prev.filter(p => String(p.id) !== String(id)));
+      setConfirmDeletePurchaseId(null); toast.success('Đã xóa phiếu nhập hàng!'); loadData();
+    } catch (err) { console.error(err); toast.error('Lỗi khi xóa phiếu nhập hàng.'); }
+  };
+
+  // ─── TEAM + PURCHASE COMPUTED VALS ───────────────────────────────
+  const teamLiveCost = Number(teamFormData.importCost || 0);
+  const teamLiveSlots = parseInt(teamFormData.maxSlots || 1) || 1;
+  const teamLiveUnitCost = teamLiveSlots > 0 ? Math.round(teamLiveCost / teamLiveSlots) : 0;
+  const filteredTeamCards = teams.filter(t => {
+    const matchSearch = (t.name || '').toLowerCase().includes(teamSearchTerm.toLowerCase()) ||
+                        (t.category || '').toLowerCase().includes(teamSearchTerm.toLowerCase());
+    const matchCat = teamFilterCategory === 'ALL' || t.category === teamFilterCategory;
+    return matchSearch && matchCat;
+  });
+  const purchaseLiveCost = Number(purchaseFormData.importCost || 0);
+  const purchaseLiveQty = parseInt(purchaseFormData.quantity || 1) || 1;
+  const purchaseLiveUnit = purchaseLiveQty > 0 ? Math.round(purchaseLiveCost / purchaseLiveQty) : 0;
+  const totalImportCost = purchases.reduce((s, p) => s + Number(p.import_cost || 0), 0);
+  const paidImportCost = purchases.filter(p => p.payment_status === 'PAID').reduce((s, p) => s + Number(p.import_cost || 0), 0);
+  const debtImportCost = purchases.filter(p => p.payment_status === 'DEBT').reduce((s, p) => s + Number(p.import_cost || 0), 0);
+  const totalSlots = purchases.reduce((s, p) => s + parseInt(p.quantity || 0), 0);
+  const filteredPurchases = purchases.filter(p => {
+    const matchSearch = (p.product_name || '').toLowerCase().includes(purchaseSearchTerm.toLowerCase()) ||
+                        (p.supplier_name || '').toLowerCase().includes(purchaseSearchTerm.toLowerCase());
+    const matchPay = filterPayment === 'ALL' || p.payment_status === filterPayment;
+    return matchSearch && matchPay;
+  });
+
+  const handleProductSelect = (pName) => {
+    const prod = products.find(p => p.name === pName);
+    if (prod) {
+      setBulkFormData(prev => ({
+        ...prev,
+        productId: String(prod.id),
+        productName: prod.name,
+        category: prod.category || 'AI',
+        costPrice: prod.default_cost || prod.defaultCost || 0
+      }));
+    } else {
+      setBulkFormData(prev => ({ ...prev, productName: pName }));
+    }
+  };
+
+  const handleBulkImport = async (e) => {
+    e.preventDefault();
+    if (!bulkFormData.productName) return toast.error('Vui lòng chọn hoặc nhập tên sản phẩm!');
+    if (!bulkFormData.linesText.trim()) return toast.error('Vui lòng dán danh sách key / tài khoản!');
+
+    const supp = suppliers.find(s => String(s.id) === String(bulkFormData.supplierId));
+    const suppName = supp ? supp.name : '';
+
+    try {
+      const res = await InventoryService.bulkImport(shopId, {
+        product_id: bulkFormData.productId,
+        product_name: bulkFormData.productName,
+        category: bulkFormData.category,
+        asset_type: bulkFormData.assetType,
+        supplier_id: bulkFormData.supplierId,
+        supplier_name: suppName,
+        cost_price: Number(bulkFormData.costPrice || 0),
+        is_paid_to_supplier: bulkFormData.isPaidToSupplier,
+        lines_text: bulkFormData.linesText,
+        activation_deadline: bulkFormData.activationDeadline || null,
+        expire_date: bulkFormData.expireDate || null,
+        notes: bulkFormData.notes
+      });
+
+      let msg = `Đã nhập thành công ${res.importedCount} key vào kho!`;
+      if (res.alreadyExistingCount > 0) {
+        msg += ` (Đã tự động loại bỏ ${res.alreadyExistingCount} key đã tồn tại trong kho)`;
+      }
+      toast.success(msg);
+      setShowBulkModal(false);
+      setBulkFormData(emptyBulkForm);
+      loadData();
+    } catch (err) {
+      console.error(err);
+      toast.error(err.message || 'Lỗi khi nhập kho hàng loạt.');
+    }
+  };
+
+  const handleCopyCode = (text, id) => {
+    navigator.clipboard.writeText(text);
+    setCopiedId(id);
+    toast.success('Đã copy mã / thông tin tài khoản!');
+    setTimeout(() => setCopiedId(''), 2000);
+  };
+
+  const toggleReveal = (id) => {
+    setRevealedItems(prev => ({ ...prev, [id]: !prev[id] }));
+  };
+
+  const maskCode = (code) => {
+    if (!code) return '---';
+    if (code.includes('@')) {
+      const parts = code.split('@');
+      const user = parts[0];
+      const maskedUser = user.length > 2 ? user.slice(0, 2) + '***' : user + '***';
+      return `${maskedUser}@${parts[1].split(' ')[0]} | ******`;
+    }
+    if (code.length > 8) {
+      return code.slice(0, 4) + '****' + code.slice(-4);
+    }
+    return '******';
+  };
+
+  const handleRestock = async (item) => {
+    try {
+      await InventoryService.restockItem(shopId, item.id, 'Thu hồi thủ công');
+      toast.success(`Đã thu hồi key "${item.product_name}" về kho sẵn sàng bán!`);
+      loadData();
+    } catch (err) {
+      console.error(err);
+      toast.error('Lỗi khi thu hồi key.');
+    }
+  };
+
+  const handleConfirmFaulty = async (e) => {
+    e.preventDefault();
+    if (!showFaultyModal) return;
+    try {
+      await InventoryService.markFaultyAndReplace(shopId, showFaultyModal.id, faultyReason.trim() || 'Khách báo lỗi');
+      toast.success(`Đã chuyển key sang danh sách LỖI / ĐÒI BẢO HÀNH NCC!`);
+      setShowFaultyModal(null);
+      setFaultyReason('');
+      loadData();
+    } catch (err) {
+      console.error(err);
+      toast.error('Lỗi khi xử lý key hỏng.');
+    }
+  };
+
+  const handleDeleteItem = async () => {
+    if (!confirmDeleteId) return;
+    try {
+      await InventoryService.remove(confirmDeleteId);
+      toast.success('Đã xóa key khỏi kho tồn!');
+      setConfirmDeleteId(null);
+      loadData();
+    } catch (err) {
+      console.error(err);
+      toast.error('Lỗi khi xóa key.');
+    }
+  };
+
+  const handleExportNxtCsv = () => {
+    let csv = '\uFEFFSản Phẩm,Danh Mục,Tồn Đầu Kỳ,Nhập Trong Kỳ,Xuất Bán POS,Xuất Lỗi Hỏng,Tồn Cuối Kỳ,Đơn Giá Vốn (VNĐ),Tổng Giá Trị Tồn (VNĐ)\n';
+    nxtReport.forEach(r => {
+      csv += `"${r.product_name}","${r.category}",${r.opening_stock},${r.imported_qty},${r.exported_sold_qty},${r.exported_faulty_qty},${r.closing_stock},${r.avg_cost},${r.total_closing_value}\n`;
+    });
+
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `Bao_Cao_NXT_Kho_So_${todayStr}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success('Đã xuất báo cáo Nhập - Xuất - Tồn (.csv) thành công!');
+  };
+
+  const handleCopyFaultyKeysList = () => {
+    const faultyItems = items.filter(i => i.status === 'FAULTY' || i.status === 'SUPPLIER_CLAIM');
+    if (faultyItems.length === 0) return toast.info('Không có key lỗi nào cần đòi bảo hành.');
+
+    let text = `📋 DANH SÁCH KEY / TÀI KHOẢN LỖI YÊU CẦU NCC ĐỔI MỚI / HOÀN TIỀN\n`;
+    text += `🏢 Cửa Hàng: DROPSHIP CRM STORE\n`;
+    text += `🗓️ Ngày xuất: ${new Date().toLocaleDateString('vi-VN')}\n`;
+    text += `--------------------------------------------------\n`;
+    faultyItems.forEach((f, idx) => {
+      text += `${idx + 1}. [${f.product_name}] - NCC: ${f.supplier_name || 'N/A'}\n`;
+      text += `   Acc/Key: ${f.item_code}\n`;
+      text += `   Lý do lỗi: ${f.faulty_reason || 'Không đăng nhập được'}\n`;
+      text += `   Giá vốn: ${Number(f.cost_price || 0).toLocaleString()}đ\n\n`;
+    });
+    text += `--------------------------------------------------\n`;
+    text += `Kính đề nghị Quý NCC kiểm tra và cấp key thay thế hoặc trừ công nợ. Cảm ơn!`;
+
+    navigator.clipboard.writeText(text);
+    toast.success('Đã copy danh sách key lỗi! Dán gửi Zalo/Telegram cho NCC ngay.');
+  };
+
+  // Filter items for tab 1
+  const filteredSingleItems = items.filter(item => {
+    if (filterStatus !== 'ALL' && item.status !== filterStatus) return false;
+    if (filterProduct !== 'ALL' && item.product_name !== filterProduct) return false;
+    if (filterSupplier !== 'ALL' && String(item.supplier_id) !== String(filterSupplier)) return false;
+    if (searchTerm) {
+      const s = searchTerm.toLowerCase();
+      const matchCode = (item.item_code || '').toLowerCase().includes(s);
+      const matchProd = (item.product_name || '').toLowerCase().includes(s);
+      const matchCust = (item.customer_name || '').toLowerCase().includes(s);
+      const matchSupp = (item.supplier_name || '').toLowerCase().includes(s);
+      if (!matchCode && !matchProd && !matchCust && !matchSupp) return false;
+    }
+    return true;
+  });
+
+  // Calculate live lines in Bulk Import modal
+  const liveLinesCount = bulkFormData.linesText.split('\n').map(l => l.trim()).filter(l => l.length > 0).length;
+  const liveTotalBatchCost = liveLinesCount * Number(bulkFormData.costPrice || 0);
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+      {/* Header */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
+        <div>
+          <h1 style={{ fontSize: '24px', fontWeight: '800', letterSpacing: '-0.02em', margin: 0, display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <Boxes size={26} color="#6366f1" /> Quản Lý Tồn Kho Số & Key License 360°
+          </h1>
+          <p style={{ color: '#64748b', marginTop: '4px', fontSize: '13px', margin: 0 }}>
+            Quản lý kho key rời, kho slot team, tự động xuất kho FIFO vào POS, báo cáo Nhập-Xuất-Tồn & đòi bảo hành NCC.
+          </p>
+        </div>
+
+        <div style={{ display: 'flex', gap: '10px' }}>
+          {activeTab === 'single_keys' && (
+            <button
+              className="glass-button"
+              onClick={() => setShowBulkModal(true)}
+              style={{ background: 'linear-gradient(135deg, #6366f1, #10b981)', color: '#fff', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '6px' }}
+            >
+              <Plus size={18} /> Nhập Key Hàng Loạt (Bulk Add)
+            </button>
+          )}
+
+          {activeTab === 'teams_pool' && (
+            <button
+              className="glass-button"
+              onClick={handleOpenAddTeamModal}
+              style={{ background: 'linear-gradient(135deg, #10b981, #059669)', color: '#fff', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '6px' }}
+            >
+              <Plus size={18} /> Tạo Kho Team Mới
+            </button>
+          )}
+
+          {activeTab === 'purchases' && (
+            <button
+              className="glass-button"
+              onClick={handleOpenAddPurchaseModal}
+              style={{ background: 'linear-gradient(135deg, #10b981, #059669)', color: '#fff', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '6px' }}
+            >
+              <Plus size={18} /> Lập Phiếu Nhập Hàng Mới
+            </button>
+          )}
+
+          {activeTab === 'nxt_report' && (
+            <button
+              className="glass-button"
+              onClick={handleExportNxtCsv}
+              style={{ background: 'rgba(255,255,255,0.06)', color: '#38bdf8', border: '1px solid rgba(56,189,248,0.3)', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '6px' }}
+            >
+              <Download size={16} /> Xuất Báo Cáo (.csv)
+            </button>
+          )}
+
+          {activeTab === 'rma_alerts' && summary.faultyCount > 0 && (
+            <button
+              className="glass-button"
+              onClick={handleCopyFaultyKeysList}
+              style={{ background: 'rgba(239,68,68,0.15)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.3)', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '6px' }}
+            >
+              <Copy size={16} /> Copy Danh Sách Gửi NCC
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* KPI Summary Cards */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '14px' }}>
+        <div className="glass-panel" style={{ padding: '16px 20px', borderLeft: '4px solid #6366f1' }}>
+          <span style={{ fontSize: '12px', color: '#94a3b8', fontWeight: '600' }}>TỔNG KEY TRONG KHO</span>
+          <div style={{ fontSize: '24px', fontWeight: '800', color: '#fff', marginTop: '4px' }}>
+            {summary.totalItems} <span style={{ fontSize: '13px', color: '#64748b' }}>items</span>
+          </div>
+        </div>
+
+        <div className="glass-panel" style={{ padding: '16px 20px', borderLeft: '4px solid #10b981' }}>
+          <span style={{ fontSize: '12px', color: '#94a3b8', fontWeight: '600' }}>SẴN SÀNG BÁN (AVAILABLE)</span>
+          <div style={{ fontSize: '24px', fontWeight: '800', color: '#10b981', marginTop: '4px' }}>
+            {summary.availableCount} <span style={{ fontSize: '13px', color: '#64748b' }}>khả dụng</span>
+          </div>
+        </div>
+
+        <div className="glass-panel" style={{ padding: '16px 20px', borderLeft: '4px solid #818cf8' }}>
+          <span style={{ fontSize: '12px', color: '#94a3b8', fontWeight: '600' }}>ĐÃ BÁN POS (SOLD)</span>
+          <div style={{ fontSize: '24px', fontWeight: '800', color: '#818cf8', marginTop: '4px' }}>
+            {summary.soldCount} <span style={{ fontSize: '13px', color: '#64748b' }}>đơn hàng</span>
+          </div>
+        </div>
+
+        <div className="glass-panel" style={{ padding: '16px 20px', borderLeft: '4px solid #ef4444' }}>
+          <span style={{ fontSize: '12px', color: '#94a3b8', fontWeight: '600' }}>LỖI / ĐÒI BẢO HÀNH</span>
+          <div style={{ fontSize: '24px', fontWeight: '800', color: '#ef4444', marginTop: '4px' }}>
+            {summary.faultyCount} <span style={{ fontSize: '13px', color: '#64748b' }}>cần xử lý</span>
+          </div>
+        </div>
+
+        <div className="glass-panel" style={{ padding: '16px 20px', borderLeft: '4px solid #f59e0b' }}>
+          <span style={{ fontSize: '12px', color: '#94a3b8', fontWeight: '600' }}>TỔNG GIÁ TRỊ TỒN KHO (VỐN)</span>
+          <div style={{ fontSize: '22px', fontWeight: '800', color: '#f59e0b', marginTop: '4px' }}>
+            {(summary.totalInventoryValue || 0).toLocaleString()} <span style={{ fontSize: '13px', color: '#64748b' }}>VNĐ</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Navigation Tabs */}
+      <div style={{ display: 'flex', gap: '8px', borderBottom: '1px solid rgba(255,255,255,0.08)', paddingBottom: '12px', flexWrap: 'wrap' }}>
+        <button
+          onClick={() => setActiveTab('single_keys')}
+          className="glass-button"
+          style={{
+            background: activeTab === 'single_keys' ? '#6366f1' : 'rgba(255,255,255,0.04)',
+            color: activeTab === 'single_keys' ? '#fff' : '#94a3b8',
+            fontWeight: activeTab === 'single_keys' ? '700' : '500'
+          }}
+        >
+          <Boxes size={16} /> Kho Key & Account Rời ({summary.totalItems})
+        </button>
+
+        <button
+          onClick={() => setActiveTab('teams_pool')}
+          className="glass-button"
+          style={{
+            background: activeTab === 'teams_pool' ? '#6366f1' : 'rgba(255,255,255,0.04)',
+            color: activeTab === 'teams_pool' ? '#fff' : '#94a3b8',
+            fontWeight: activeTab === 'teams_pool' ? '700' : '500'
+          }}
+        >
+          <ShieldCheck size={16} /> Kho Team & Gói Slot ({teams.length} teams)
+        </button>
+
+        <button
+          onClick={() => setActiveTab('purchases')}
+          className="glass-button"
+          style={{
+            background: activeTab === 'purchases' ? '#10b981' : 'rgba(255,255,255,0.04)',
+            color: activeTab === 'purchases' ? '#fff' : '#94a3b8',
+            fontWeight: activeTab === 'purchases' ? '700' : '500'
+          }}
+        >
+          <PackagePlus size={16} /> Phiếu Nhập Hàng ({purchases.length})
+        </button>
+
+        <button
+          onClick={() => setActiveTab('nxt_report')}
+          className="glass-button"
+          style={{
+            background: activeTab === 'nxt_report' ? '#6366f1' : 'rgba(255,255,255,0.04)',
+            color: activeTab === 'nxt_report' ? '#fff' : '#94a3b8',
+            fontWeight: activeTab === 'nxt_report' ? '700' : '500'
+          }}
+        >
+          <FileSpreadsheet size={16} /> Báo Cáo Nhập - Xuất - Tồn (N-X-T)
+        </button>
+
+        <button
+          onClick={() => setActiveTab('rma_alerts')}
+          className="glass-button"
+          style={{
+            background: activeTab === 'rma_alerts' ? '#ef4444' : 'rgba(255,255,255,0.04)',
+            color: activeTab === 'rma_alerts' ? '#fff' : '#94a3b8',
+            fontWeight: activeTab === 'rma_alerts' ? '700' : '500',
+            position: 'relative'
+          }}
+        >
+          <AlertTriangle size={16} /> Đòi Bảo Hành NCC & Cảnh Báo
+          {(summary.faultyCount > 0 || alerts.lowStockAlerts.length > 0) && (
+            <span style={{
+              position: 'absolute', top: '-6px', right: '-6px', background: '#ef4444', color: '#fff',
+              fontSize: '10px', fontWeight: '800', width: '18px', height: '18px', borderRadius: '50%',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 6px rgba(239,68,68,0.5)'
+            }}>
+              {summary.faultyCount + alerts.lowStockAlerts.length}
+            </span>
+          )}
+        </button>
+      </div>
+
+      {/* ==================== TAB 1: SINGLE KEYS / ACCOUNTS ==================== */}
+      {activeTab === 'single_keys' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          {/* Filters Bar */}
+          <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'center' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: '280px', flex: 1, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '10px', padding: '8px 14px' }}>
+              <Search size={16} color="#475569" />
+              <input
+                type="text"
+                placeholder="Tìm theo email, license key, sản phẩm, NCC hoặc mã đơn..."
+                value={searchTerm}
+                onChange={e => setSearchTerm(e.target.value)}
+                style={{ background: 'none', border: 'none', color: '#fff', outline: 'none', width: '100%', fontSize: '13.5px' }}
+              />
+              {searchTerm && <button onClick={() => setSearchTerm('')} style={{ background: 'none', border: 'none', color: '#475569', cursor: 'pointer' }}><X size={14} /></button>}
+            </div>
+
+            <select
+              className="glass-input" style={{ width: 'auto' }}
+              value={filterStatus} onChange={e => setFilterStatus(e.target.value)}
+            >
+              <option value="ALL">Tất Cả Trạng Thái</option>
+              <option value="AVAILABLE">🟢 Sẵn Sàng Bán (AVAILABLE)</option>
+              <option value="SOLD">🟣 Đã Bán POS (SOLD)</option>
+              <option value="FAULTY">🔴 Lỗi / Chờ NCC (FAULTY)</option>
+              <option value="EXPIRED">⚪ Hết Hạn (EXPIRED)</option>
+            </select>
+
+            <select
+              className="glass-input" style={{ width: 'auto' }}
+              value={filterProduct} onChange={e => setFilterProduct(e.target.value)}
+            >
+              <option value="ALL">Tất Cả Sản Phẩm</option>
+              {products.map(p => (
+                <option key={p.id} value={p.name}>{p.name}</option>
+              ))}
+            </select>
+
+            <select
+              className="glass-input" style={{ width: 'auto' }}
+              value={filterSupplier} onChange={e => setFilterSupplier(e.target.value)}
+            >
+              <option value="ALL">Tất Cả Nhà Cung Cấp</option>
+              {suppliers.map(s => (
+                <option key={s.id} value={s.id}>{s.name}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Items Table */}
+          <div className="glass-panel" style={{ padding: 0, overflow: 'hidden' }}>
+            {loading ? (
+              <div style={{ padding: '40px', textAlign: 'center', color: '#94a3b8' }}>Đang tải danh sách kho key...</div>
+            ) : filteredSingleItems.length === 0 ? (
+              <div className="empty-state">
+                <Boxes size={40} />
+                <h3>Không tìm thấy tài khoản / key nào</h3>
+                <p>Nhấn "+ Nhập Key Hàng Loạt" để nạp tài khoản vào kho.</p>
+              </div>
+            ) : (
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+                <thead>
+                  <tr style={{ background: 'rgba(255,255,255,0.04)', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+                    <th style={{ padding: '12px 16px', textAlign: 'left', color: '#475569', fontSize: '11px', textTransform: 'uppercase', fontWeight: '700' }}>Tài Khoản / License Key</th>
+                    <th style={{ padding: '12px 16px', textAlign: 'left', color: '#475569', fontSize: '11px', textTransform: 'uppercase', fontWeight: '700' }}>Sản Phẩm & Loại</th>
+                    <th style={{ padding: '12px 16px', textAlign: 'right', color: '#475569', fontSize: '11px', textTransform: 'uppercase', fontWeight: '700' }}>Giá Vốn</th>
+                    <th style={{ padding: '12px 16px', textAlign: 'left', color: '#475569', fontSize: '11px', textTransform: 'uppercase', fontWeight: '700' }}>Nguồn Sỉ</th>
+                    <th style={{ padding: '12px 16px', textAlign: 'left', color: '#475569', fontSize: '11px', textTransform: 'uppercase', fontWeight: '700' }}>Ngày Nhập</th>
+                    <th style={{ padding: '12px 16px', textAlign: 'left', color: '#475569', fontSize: '11px', textTransform: 'uppercase', fontWeight: '700' }}>Trạng Thái</th>
+                    <th style={{ padding: '12px 16px', textAlign: 'center', color: '#475569', fontSize: '11px', textTransform: 'uppercase', fontWeight: '700' }}>Thao Tác</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredSingleItems.map(item => {
+                    const isRev = revealedItems[item.id];
+                    const isCopied = copiedId === `code-${item.id}`;
+                    const stCfg = STATUS_CONFIG[item.status] || STATUS_CONFIG['AVAILABLE'];
+                    const typeCfg = ASSET_TYPE_CONFIG[item.asset_type] || ASSET_TYPE_CONFIG['ACCOUNT'];
+
+                    return (
+                      <tr key={item.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                        <td style={{ padding: '12px 16px', maxWidth: '280px' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            <code style={{
+                              fontSize: '12px',
+                              color: isRev ? '#fff' : '#94a3b8',
+                              background: 'rgba(0,0,0,0.3)',
+                              padding: '3px 8px',
+                              borderRadius: '6px',
+                              fontFamily: 'monospace',
+                              wordBreak: 'break-all'
+                            }}>
+                              {isRev ? item.item_code : maskCode(item.item_code)}
+                            </code>
+                            <button
+                              onClick={() => toggleReveal(item.id)}
+                              title={isRev ? 'Ẩn thông tin' : 'Hiện thông tin'}
+                              style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer', padding: '2px' }}
+                            >
+                              {isRev ? <EyeOff size={13} /> : <Eye size={13} />}
+                            </button>
+                            <button
+                              onClick={() => handleCopyCode(item.item_code, `code-${item.id}`)}
+                              title="Copy mã / tài khoản"
+                              style={{ background: 'none', border: 'none', color: isCopied ? '#10b981' : '#94a3b8', cursor: 'pointer', padding: '2px' }}
+                            >
+                              {isCopied ? <Check size={13} /> : <Copy size={13} />}
+                            </button>
+                          </div>
+                          {item.order_id && (
+                            <div style={{ fontSize: '11px', color: '#818cf8', marginTop: '4px' }}>
+                              ⚡ Gán đơn POS <strong>#{item.order_id}</strong> ({item.customer_name || 'Khách'})
+                            </div>
+                          )}
+                          {item.faulty_reason && (
+                            <div style={{ fontSize: '11px', color: '#ef4444', marginTop: '2px' }}>
+                              ⚠️ Lỗi: {item.faulty_reason}
+                            </div>
+                          )}
+                        </td>
+
+                        <td style={{ padding: '12px 16px' }}>
+                          <strong style={{ color: '#fff' }}>{item.product_name}</strong>
+                          <div style={{ marginTop: '3px' }}>
+                            <span className="badge" style={{ background: typeCfg.bg, color: typeCfg.color, fontSize: '10px' }}>
+                              {typeCfg.label}
+                            </span>
+                          </div>
+                        </td>
+
+                        <td style={{ padding: '12px 16px', textAlign: 'right' }}>
+                          <strong style={{ color: '#f59e0b' }}>{Number(item.cost_price || 0).toLocaleString()}đ</strong>
+                        </td>
+
+                        <td style={{ padding: '12px 16px' }}>
+                          <span style={{ color: '#cbd5e1' }}>{item.supplier_name || 'Nguồn Nhập Sỉ'}</span>
+                        </td>
+
+                        <td style={{ padding: '12px 16px' }}>
+                          <span style={{ color: '#94a3b8', fontSize: '12px' }}>{item.import_date}</span>
+                        </td>
+
+                        <td style={{ padding: '12px 16px' }}>
+                          <span className="badge" style={{ background: stCfg.bg, color: stCfg.color, fontWeight: '700' }}>
+                            {stCfg.label}
+                          </span>
+                        </td>
+
+                        <td style={{ padding: '12px 16px', textAlign: 'center' }}>
+                          <div style={{ display: 'flex', gap: '6px', justifyContent: 'center' }}>
+                            {item.status === 'SOLD' && (
+                              <button
+                                className="glass-button"
+                                onClick={() => handleRestock(item)}
+                                title="Thu hồi key về kho (Restock)"
+                                style={{ padding: '4px 8px', fontSize: '11px', background: 'rgba(16,185,129,0.15)', color: '#10b981' }}
+                              >
+                                <RefreshCw size={12} /> Thu hồi
+                              </button>
+                            )}
+
+                            {item.status === 'AVAILABLE' && (
+                              <button
+                                className="glass-button"
+                                onClick={() => setShowFaultyModal(item)}
+                                title="Đánh dấu lỗi & Đòi bảo hành NCC"
+                                style={{ padding: '4px 8px', fontSize: '11px', background: 'rgba(239,68,68,0.15)', color: '#ef4444' }}
+                              >
+                                <AlertTriangle size={12} /> Báo lỗi
+                              </button>
+                            )}
+
+                            <button
+                              onClick={() => setConfirmDeleteId(item.id)}
+                              title="Xóa key"
+                              style={{ background: 'none', border: 'none', color: '#64748b', cursor: 'pointer', padding: '4px' }}
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ==================== TAB 2: TEAMS POOL SUMMARY ==================== */}
+      {activeTab === 'teams_pool' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          {/* Header & Actions */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, flexWrap: 'wrap' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '10px', padding: '8px 14px', minWidth: '220px', flex: 1 }}>
+                <Search size={15} color="#475569" />
+                <input type="text" placeholder="Tìm tên team, loại dịch vụ..." value={teamSearchTerm}
+                  onChange={e => setTeamSearchTerm(e.target.value)}
+                  style={{ background: 'none', border: 'none', color: '#fff', outline: 'none', width: '100%', fontSize: '13px' }} />
+              </div>
+              <select value={teamFilterCategory} onChange={e => setTeamFilterCategory(e.target.value)}
+                style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '10px', padding: '8px 12px', color: '#fff', fontSize: '13px', cursor: 'pointer' }}>
+                <option value="ALL">Tất cả dịch vụ</option>
+                {Object.keys(CATEGORY_SLOTS).map(cat => <option key={cat} value={cat}>{cat}</option>)}
+              </select>
+            </div>
+          </div>
+
+          {/* Team Grid Cards */}
+          {filteredTeamCards.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '40px', color: '#64748b', fontSize: '14px' }}>
+              Chưa có kho team nào. Bấm "+ Tạo Kho Team Mới" để bắt đầu.
+            </div>
+          ) : (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(320px,1fr))', gap: '16px' }}>
+              {filteredTeamCards.map(team => {
+                const usedSlots = orders.filter(o => String(o.team_id || o.teamId) === String(team.id)).length;
+                const maxSlots = team.max_slots || team.maxSlots || 1;
+                const availSlots = Math.max(0, maxSlots - usedSlots);
+                const usagePct = Math.min(100, Math.round((usedSlots / maxSlots) * 100));
+                const importCost = Number(team.import_cost || team.importCost || 0);
+                const unitCost = maxSlots > 0 ? Math.round(importCost / maxSlots) : 0;
+                const catColor = CATEGORY_COLORS[team.category] || '#64748b';
+                const isRevealed = teamRevealedInfors[team.id];
+                const expireDate = team.expire_date || team.expireDate || '';
+                const daysLeft = expireDate ? Math.ceil((new Date(expireDate) - new Date()) / 86400000) : null;
+                return (
+                  <div key={team.id} className="glass-panel" style={{ display: 'flex', flexDirection: 'column', gap: '12px', border: '1px solid ' + catColor + '30', position: 'relative' }}>
+                    {/* Card Header */}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                      <div>
+                        <div style={{ fontSize: '15px', fontWeight: '800', color: '#fff', marginBottom: '4px' }}>{team.name}</div>
+                        <div style={{ display: 'inline-block', background: catColor + '20', color: catColor, fontSize: '11px', fontWeight: '700', padding: '2px 8px', borderRadius: '20px', border: '1px solid ' + catColor + '40' }}>
+                          {team.category}
+                        </div>
+                      </div>
+                      <div style={{ display: 'flex', gap: '6px' }}>
+                        <button onClick={() => handleOpenEditTeamModal(team)} style={{ background: 'rgba(99,102,241,0.15)', border: '1px solid rgba(99,102,241,0.3)', borderRadius: '8px', padding: '5px 8px', color: '#818cf8', cursor: 'pointer' }} title="Sửa team"><Edit2 size={13} /></button>
+                        <button onClick={() => setConfirmDeleteTeamId(team.id)} style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.25)', borderRadius: '8px', padding: '5px 8px', color: '#f87171', cursor: 'pointer' }} title="Xóa team"><Trash2 size={13} /></button>
+                      </div>
+                    </div>
+
+                    {/* Slot Fill Rate */}
+                    <div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', color: '#94a3b8', marginBottom: '6px' }}>
+                        <span>Slot đã bán: <strong style={{ color: '#fff' }}>{usedSlots}/{maxSlots}</strong></span>
+                        <span style={{ color: availSlots === 0 ? '#ef4444' : availSlots <= 3 ? '#f59e0b' : '#10b981', fontWeight: '700' }}>{availSlots} slot trống</span>
+                      </div>
+                      <div style={{ height: '6px', background: 'rgba(255,255,255,0.08)', borderRadius: '3px', overflow: 'hidden' }}>
+                        <div style={{ height: '100%', width: usagePct + '%', background: usagePct >= 100 ? '#ef4444' : usagePct >= 80 ? '#f59e0b' : catColor, borderRadius: '3px', transition: 'width 0.4s ease' }} />
+                      </div>
+                    </div>
+
+                    {/* Finance Info */}
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                      <div style={{ background: 'rgba(255,255,255,0.04)', borderRadius: '8px', padding: '8px' }}>
+                        <div style={{ fontSize: '10px', color: '#64748b', marginBottom: '2px' }}>Giá Vốn/Slot</div>
+                        <div style={{ fontSize: '13px', fontWeight: '700', color: '#f59e0b' }}>{unitCost.toLocaleString()}đ</div>
+                      </div>
+                      <div style={{ background: 'rgba(255,255,255,0.04)', borderRadius: '8px', padding: '8px' }}>
+                        <div style={{ fontSize: '10px', color: '#64748b', marginBottom: '2px' }}>Tổng Vốn Team</div>
+                        <div style={{ fontSize: '13px', fontWeight: '700', color: '#ef4444' }}>{importCost.toLocaleString()}đ</div>
+                      </div>
+                    </div>
+
+                    {/* Supplier & Expiry */}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11.5px', color: '#64748b' }}>
+                      <span>{team.supplier_name || team.supplierName ? '🏭 ' + (team.supplier_name || team.supplierName) : '—'}</span>
+                      {daysLeft !== null && (
+                        <span style={{ color: daysLeft <= 7 ? '#ef4444' : daysLeft <= 30 ? '#f59e0b' : '#64748b', fontWeight: daysLeft <= 30 ? '700' : '400' }}>
+                          {daysLeft <= 0 ? '⛔ Đã hết hạn' : '📅 Còn ' + daysLeft + ' ngày'}
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Account Credentials */}
+                    {team.infor && (
+                      <div style={{ background: 'rgba(0,0,0,0.3)', borderRadius: '8px', padding: '8px 10px', fontSize: '12px', border: '1px solid rgba(255,255,255,0.06)' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                          <span style={{ color: '#64748b', fontSize: '10px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Tài Khoản Gốc</span>
+                          <div style={{ display: 'flex', gap: '4px' }}>
+                            <button onClick={() => toggleTeamRevealInfor(team.id)} style={{ background: 'none', border: 'none', color: '#64748b', cursor: 'pointer', padding: '2px' }}>
+                              {isRevealed ? <EyeOff size={12} /> : <Eye size={12} />}
+                            </button>
+                            <button onClick={() => handleCopyTeamInfor(team.infor, team.id)} style={{ background: 'none', border: 'none', color: teamCopiedId === 'team-' + team.id ? '#10b981' : '#64748b', cursor: 'pointer', padding: '2px' }}>
+                              {teamCopiedId === 'team-' + team.id ? <Check size={12} /> : <Copy size={12} />}
+                            </button>
+                          </div>
+                        </div>
+                        <div style={{ color: '#fff', fontFamily: 'monospace', fontSize: '11.5px', filter: isRevealed ? 'none' : 'blur(4px)', userSelect: isRevealed ? 'text' : 'none', wordBreak: 'break-all' }}>
+                          {team.infor}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {/* Team CRUD Modal */}
+          {showTeamModal && createPortal(
+            <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999, padding: '20px' }} onClick={closeTeamModal}>
+              <div style={{ background: '#111528', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '16px', padding: '28px', width: '100%', maxWidth: '560px', maxHeight: '90vh', overflowY: 'auto' }} onClick={e => e.stopPropagation()}>
+                <h3 style={{ fontSize: '18px', fontWeight: '800', color: '#fff', margin: '0 0 20px 0' }}>
+                  {editingTeam ? '✏️ Chỉnh Sửa Kho Team' : '➕ Tạo Kho Team Mới'}
+                </h3>
+                <form onSubmit={handleSaveTeam} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                  <div>
+                    <label style={{ fontSize: '12px', color: '#94a3b8', display: 'block', marginBottom: '6px', fontWeight: '600' }}>Tên Team / Tên Kho Tài Khoản *</label>
+                    <input required value={teamFormData.name} onChange={e => setTeamFormData(f => ({ ...f, name: e.target.value }))}
+                      placeholder="VD: Team Canva VIP 01 — 49 slot" style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: '10px', padding: '10px 14px', color: '#fff', fontSize: '14px', boxSizing: 'border-box' }} />
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                    <div>
+                      <label style={{ fontSize: '12px', color: '#94a3b8', display: 'block', marginBottom: '6px', fontWeight: '600' }}>Loại Dịch Vụ</label>
+                      <select value={teamFormData.category} onChange={e => handleTeamCategoryChange(e.target.value)}
+                        style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: '10px', padding: '10px 14px', color: '#fff', fontSize: '14px', boxSizing: 'border-box' }}>
+                        {Object.keys(CATEGORY_SLOTS).map(cat => <option key={cat} value={cat}>{cat}</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <label style={{ fontSize: '12px', color: '#94a3b8', display: 'block', marginBottom: '6px', fontWeight: '600' }}>Số Slot Tối Đa</label>
+                      <input type="number" min="1" value={teamFormData.maxSlots} onChange={e => setTeamFormData(f => ({ ...f, maxSlots: e.target.value }))}
+                        style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: '10px', padding: '10px 14px', color: '#fff', fontSize: '14px', boxSizing: 'border-box' }} />
+                    </div>
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                    <div>
+                      <label style={{ fontSize: '12px', color: '#94a3b8', display: 'block', marginBottom: '6px', fontWeight: '600' }}>Tổng Tiền Vốn Mua (đ)</label>
+                      <input type="number" min="0" value={teamFormData.importCost} onChange={e => setTeamFormData(f => ({ ...f, importCost: e.target.value }))}
+                        style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: '10px', padding: '10px 14px', color: '#fff', fontSize: '14px', boxSizing: 'border-box' }} />
+                    </div>
+                    <div style={{ background: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.2)', borderRadius: '10px', padding: '10px 14px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                      <div style={{ fontSize: '10px', color: '#64748b', fontWeight: '600' }}>GIỐNG VỐN / 1 SLOT</div>
+                      <div style={{ fontSize: '16px', fontWeight: '800', color: '#10b981' }}>{teamLiveUnitCost.toLocaleString()}đ</div>
+                    </div>
+                  </div>
+                  <div>
+                    <label style={{ fontSize: '12px', color: '#94a3b8', display: 'block', marginBottom: '6px', fontWeight: '600' }}>Thông Tin Tài Khoản Gốc (Email | Pass | 2FA)</label>
+                    <textarea rows={3} value={teamFormData.infor} onChange={e => setTeamFormData(f => ({ ...f, infor: e.target.value }))}
+                      placeholder="email@gmail.com | password123 | 2FA_secret" style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: '10px', padding: '10px 14px', color: '#fff', fontSize: '13px', fontFamily: 'monospace', resize: 'vertical', boxSizing: 'border-box' }} />
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                    <div>
+                      <label style={{ fontSize: '12px', color: '#94a3b8', display: 'block', marginBottom: '6px', fontWeight: '600' }}>Nhà Cung Cấp</label>
+                      <select value={teamFormData.supplierId} onChange={e => setTeamFormData(f => ({ ...f, supplierId: e.target.value }))}
+                        style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: '10px', padding: '10px 14px', color: '#fff', fontSize: '14px', boxSizing: 'border-box' }}>
+                        <option value="">— Chọn NCC —</option>
+                        {suppliers.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <label style={{ fontSize: '12px', color: '#94a3b8', display: 'block', marginBottom: '6px', fontWeight: '600' }}>Hết Hạn Nguồn Sỉ</label>
+                      <input type="date" value={teamFormData.expireDate} onChange={e => setTeamFormData(f => ({ ...f, expireDate: e.target.value }))}
+                        style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: '10px', padding: '10px 14px', color: '#fff', fontSize: '14px', boxSizing: 'border-box' }} />
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', marginTop: '6px' }}>
+                    <button type="button" onClick={closeTeamModal} className="glass-button" style={{ color: '#94a3b8' }}>Hủy</button>
+                    <button type="submit" className="glass-button" style={{ background: 'linear-gradient(135deg,#10b981,#059669)', color: '#fff', fontWeight: '700' }}>
+                      {editingTeam ? '💾 Lưu Thay Đổi' : '✅ Tạo Kho Team'}
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>,
+            document.body
+          )}
+
+          {/* Delete Team Confirm */}
+          <ConfirmDialog
+            isOpen={!!confirmDeleteTeamId}
+            title="Xóa Kho Team?"
+            message="Hành động này không thể hoàn tác. Team sẽ bị xóa vĩnh viễn."
+            onConfirm={handleDeleteTeamConfirmed}
+            onCancel={() => setConfirmDeleteTeamId(null)}
+          />
+        </div>
+      )}
+
+      {activeTab === 'nxt_report' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
+            <p style={{ color: '#94a3b8', fontSize: '13px', margin: 0 }}>
+              Báo cáo biến động kho chuẩn kế toán: <strong>Tồn Đầu + Nhập - Xuất Bán - Xuất Lỗi = Tồn Cuối</strong>
+            </p>
+          </div>
+
+          <div className="glass-panel" style={{ padding: 0, overflow: 'hidden' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+              <thead>
+                <tr style={{ background: 'rgba(255,255,255,0.04)', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+                  <th style={{ padding: '14px 16px', textAlign: 'left', color: '#475569', fontSize: '11px', textTransform: 'uppercase', fontWeight: '700' }}>Sản Phẩm</th>
+                  <th style={{ padding: '14px 16px', textAlign: 'center', color: '#475569', fontSize: '11px', textTransform: 'uppercase', fontWeight: '700' }}>Tồn Đầu Kỳ</th>
+                  <th style={{ padding: '14px 16px', textAlign: 'center', color: '#10b981', fontSize: '11px', textTransform: 'uppercase', fontWeight: '700' }}>(+) Nhập Mới</th>
+                  <th style={{ padding: '14px 16px', textAlign: 'center', color: '#818cf8', fontSize: '11px', textTransform: 'uppercase', fontWeight: '700' }}>(-) Xuất Bán POS</th>
+                  <th style={{ padding: '14px 16px', textAlign: 'center', color: '#ef4444', fontSize: '11px', textTransform: 'uppercase', fontWeight: '700' }}>(-) Xuất Lỗi</th>
+                  <th style={{ padding: '14px 16px', textAlign: 'center', color: '#f59e0b', fontSize: '11px', textTransform: 'uppercase', fontWeight: '700' }}>(=) Tồn Cuối Kỳ</th>
+                  <th style={{ padding: '14px 16px', textAlign: 'right', color: '#475569', fontSize: '11px', textTransform: 'uppercase', fontWeight: '700' }}>Đơn Giá Vốn</th>
+                  <th style={{ padding: '14px 16px', textAlign: 'right', color: '#f59e0b', fontSize: '11px', textTransform: 'uppercase', fontWeight: '700' }}>Tổng Giá Trị Tồn</th>
+                </tr>
+              </thead>
+              <tbody>
+                {nxtReport.map((row, idx) => (
+                  <tr key={idx} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                    <td style={{ padding: '14px 16px' }}>
+                      <strong style={{ color: '#fff' }}>{row.product_name}</strong>
+                      <div style={{ fontSize: '11px', color: '#64748b' }}>{row.category}</div>
+                    </td>
+                    <td style={{ padding: '14px 16px', textAlign: 'center', color: '#94a3b8' }}>{row.opening_stock}</td>
+                    <td style={{ padding: '14px 16px', textAlign: 'center', color: '#10b981', fontWeight: '700' }}>+{row.imported_qty}</td>
+                    <td style={{ padding: '14px 16px', textAlign: 'center', color: '#818cf8', fontWeight: '700' }}>-{row.exported_sold_qty}</td>
+                    <td style={{ padding: '14px 16px', textAlign: 'center', color: '#ef4444' }}>-{row.exported_faulty_qty}</td>
+                    <td style={{ padding: '14px 16px', textAlign: 'center' }}>
+                      <strong style={{ color: row.closing_stock > 0 ? '#10b981' : '#ef4444', fontSize: '14px' }}>
+                        {row.closing_stock}
+                      </strong>
+                    </td>
+                    <td style={{ padding: '14px 16px', textAlign: 'right', color: '#cbd5e1' }}>{row.avg_cost.toLocaleString()}đ</td>
+                    <td style={{ padding: '14px 16px', textAlign: 'right' }}>
+                      <strong style={{ color: '#f59e0b' }}>{row.total_closing_value.toLocaleString()}đ</strong>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* ==================== TAB 4: ĐÒI BẢO HÀNH NCC & CẢNH BÁO ==================== */}
+      {activeTab === 'rma_alerts' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          {/* Low Stock Alerts Box */}
+          <div className="glass-panel" style={{ padding: '20px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '14px' }}>
+              <AlertTriangle size={20} color="#ef4444" />
+              <h3 style={{ fontSize: '16px', fontWeight: '800', margin: 0, color: '#ef4444' }}>
+                Cảnh Báo Sản Phẩm Chạm Ngưỡng Tồn Kho Thấp ({alerts.lowStockAlerts.length})
+              </h3>
+            </div>
+
+            {alerts.lowStockAlerts.length === 0 ? (
+              <div style={{ color: '#10b981', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13.5px' }}>
+                <CheckCircle2 size={16} /> Toàn bộ các sản phẩm đều đang duy trì mức tồn kho an toàn!
+              </div>
+            ) : (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '12px' }}>
+                {alerts.lowStockAlerts.map((a, idx) => (
+                  <div key={idx} style={{
+                    background: a.is_out_of_stock ? 'rgba(239,68,68,0.12)' : 'rgba(245,158,11,0.1)',
+                    border: a.is_out_of_stock ? '1px solid #ef4444' : '1px solid rgba(245,158,11,0.3)',
+                    borderRadius: '10px', padding: '14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center'
+                  }}>
+                    <div>
+                      <strong style={{ color: '#fff', fontSize: '14px' }}>{a.product_name}</strong>
+                      <div style={{ fontSize: '12px', color: a.is_out_of_stock ? '#ef4444' : '#f59e0b', marginTop: '2px', fontWeight: '700' }}>
+                        {a.is_out_of_stock ? '🔴 ĐÃ HẾT HÀNG (0 tồn)' : `🟡 Chỉ còn ${a.total_available} key/slot (Ngưỡng: ${a.min_threshold})`}
+                      </div>
+                    </div>
+                    <button
+                      className="glass-button"
+                      onClick={() => {
+                        setBulkFormData({ ...emptyBulkForm, productName: a.product_name });
+                        setShowBulkModal(true);
+                      }}
+                      style={{ padding: '6px 12px', fontSize: '11.5px', background: '#6366f1', color: '#fff', fontWeight: '700' }}
+                    >
+                      Nhập Thêm
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Supplier Faulty Claim List */}
+          <div className="glass-panel" style={{ padding: '20px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', flexWrap: 'wrap', gap: '10px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <ShieldAlert size={20} color="#f59e0b" />
+                <h3 style={{ fontSize: '16px', fontWeight: '800', margin: 0 }}>
+                  Danh Sách Key Lỗi Cần Đòi Bảo Hành / Đổi Trả NCC ({summary.faultyCount})
+                </h3>
+              </div>
+            </div>
+
+            {summary.faultyCount === 0 ? (
+              <div style={{ color: '#10b981', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13.5px' }}>
+                <CheckCircle2 size={16} /> Không có key lỗi nào tồn đọng. 100% kho hoạt động hoàn hảo!
+              </div>
+            ) : (
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+                  <thead>
+                    <tr style={{ background: 'rgba(255,255,255,0.04)', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+                      <th style={{ padding: '10px 14px', textAlign: 'left', color: '#475569' }}>Sản Phẩm</th>
+                      <th style={{ padding: '10px 14px', textAlign: 'left', color: '#475569' }}>Mã Key / Tài Khoản Lỗi</th>
+                      <th style={{ padding: '10px 14px', textAlign: 'left', color: '#475569' }}>Lý Do Lỗi</th>
+                      <th style={{ padding: '10px 14px', textAlign: 'left', color: '#475569' }}>NCC Cung Cấp</th>
+                      <th style={{ padding: '10px 14px', textAlign: 'right', color: '#475569' }}>Giá Vốn</th>
+                      <th style={{ padding: '10px 14px', textAlign: 'center', color: '#475569' }}>Thao Tác</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {items.filter(i => i.status === 'FAULTY' || i.status === 'SUPPLIER_CLAIM').map(item => (
+                      <tr key={item.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                        <td style={{ padding: '10px 14px', fontWeight: '700', color: '#fff' }}>{item.product_name}</td>
+                        <td style={{ padding: '10px 14px', fontFamily: 'monospace', color: '#ef4444' }}>{item.item_code}</td>
+                        <td style={{ padding: '10px 14px', color: '#fca5a5' }}>{item.faulty_reason || 'Lỗi pass'}</td>
+                        <td style={{ padding: '10px 14px', color: '#cbd5e1' }}>{item.supplier_name || 'N/A'}</td>
+                        <td style={{ padding: '10px 14px', textAlign: 'right', color: '#f59e0b', fontWeight: '700' }}>
+                          {Number(item.cost_price || 0).toLocaleString()}đ
+                        </td>
+                        <td style={{ padding: '10px 14px', textAlign: 'center' }}>
+                          <button
+                            className="glass-button"
+                            onClick={() => handleRestock(item)}
+                            title="NCC đã đổi key mới -> Trả về kho sẵn sàng bán"
+                            style={{ padding: '4px 10px', fontSize: '11px', background: '#10b981', color: '#fff', fontWeight: '700' }}
+                          >
+                            <Check size={12} /> Đã Đổi Key Mới
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ==================== MODAL: BULK IMPORT KEYS ==================== */}
+      {showBulkModal && createPortal(
+        <div className="global-modal-overlay" onClick={() => setShowBulkModal(false)}>
+          <div className="global-modal-box" onClick={e => e.stopPropagation()} style={{ maxWidth: '640px' }}>
+            <div className="modal-header">
+              <h2 style={{ fontSize: '18px', fontWeight: '800', color: '#fff', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Plus size={20} color="#10b981" /> Nhập Key / Account Số Lượng Lớn (Bulk Import)
+              </h2>
+              <button className="modal-close-btn" onClick={() => setShowBulkModal(false)}><X size={18} /></button>
+            </div>
+
+            <form onSubmit={handleBulkImport} style={{ display: 'flex', flexDirection: 'column', gap: '14px', marginTop: '10px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                <div>
+                  <label className="form-label">Chọn Sản Phẩm *</label>
+                  <select
+                    className="glass-input"
+                    value={bulkFormData.productName}
+                    onChange={e => handleProductSelect(e.target.value)}
+                    required
+                  >
+                    <option value="">-- Chọn sản phẩm --</option>
+                    {products.map(p => (
+                      <option key={p.id} value={p.name}>{p.name}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="form-label">Loại Tài Sản Số</label>
+                  <select
+                    className="glass-input"
+                    value={bulkFormData.assetType}
+                    onChange={e => setBulkFormData({ ...bulkFormData, assetType: e.target.value })}
+                  >
+                    <option value="ACCOUNT">Tài Khoản (Email|Pass)</option>
+                    <option value="SINGLE_KEY">License Key / Serial</option>
+                    <option value="INVITE_LINK">Link Mời (Invite URL)</option>
+                    <option value="SLOT_SEAT">Slot Hồ Bơi</option>
+                  </select>
+                </div>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                <div>
+                  <label className="form-label">Nhà Cung Cấp</label>
+                  <select
+                    className="glass-input"
+                    value={bulkFormData.supplierId}
+                    onChange={e => setBulkFormData({ ...bulkFormData, supplierId: e.target.value })}
+                  >
+                    <option value="">-- Chọn nhà cung cấp --</option>
+                    {suppliers.map(s => (
+                      <option key={s.id} value={s.id}>{s.name}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="form-label">Giá Vốn / 1 Key (VNĐ)</label>
+                  <input
+                    type="number"
+                    className="glass-input"
+                    value={bulkFormData.costPrice}
+                    onChange={e => setBulkFormData({ ...bulkFormData, costPrice: e.target.value })}
+                    placeholder="VD: 50000"
+                  />
+                </div>
+              </div>
+
+              {/* Large Textarea for pasting batch keys */}
+              <div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                  <label className="form-label" style={{ margin: 0 }}>Danh Sách Key / Account (Mỗi dòng 1 key) *</label>
+                  <span style={{ fontSize: '11.5px', color: liveLinesCount > 0 ? '#10b981' : '#64748b', fontWeight: '700' }}>
+                    ⚡ Đã nhập: {liveLinesCount} dòng
+                  </span>
+                </div>
+                <textarea
+                  className="glass-input"
+                  style={{ minHeight: '140px', fontFamily: 'monospace', fontSize: '12.5px', lineHeight: 1.5 }}
+                  placeholder={`Dán danh sách key vào đây (mỗi dòng 1 key):\nuser01@gmail.com|Pass123\nuser02@gmail.com|Pass456\nWIN11-PRO-XXXXX-YYYYY`}
+                  value={bulkFormData.linesText}
+                  onChange={e => setBulkFormData({ ...bulkFormData, linesText: e.target.value })}
+                  required
+                />
+              </div>
+
+              {/* Auto-accounting summary bar */}
+              <div style={{ background: 'rgba(99,102,241,0.08)', border: '1px solid rgba(99,102,241,0.2)', padding: '10px 14px', borderRadius: '10px', fontSize: '12.5px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div>
+                  <span style={{ color: '#94a3b8' }}>Tổng tiền vốn đợt nhập:</span>
+                  <strong style={{ color: '#f59e0b', fontSize: '14px', marginLeft: '6px' }}>
+                    {liveTotalBatchCost.toLocaleString()} VNĐ
+                  </strong>
+                </div>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#fff', cursor: 'pointer' }}>
+                  <input
+                    type="checkbox"
+                    checked={bulkFormData.isPaidToSupplier}
+                    onChange={e => setBulkFormData({ ...bulkFormData, isPaidToSupplier: e.target.checked })}
+                  />
+                  <span>Đã thanh toán ngay (Ghi sổ quỹ)</span>
+                </label>
+              </div>
+
+              <div style={{ display: 'flex', gap: '10px', marginTop: '6px' }}>
+                <button
+                  type="submit"
+                  className="glass-button"
+                  style={{ flex: 1, background: 'linear-gradient(135deg, #10b981, #059669)', color: '#fff', fontWeight: '700' }}
+                >
+                  <Plus size={16} /> Xác Nhận Nhập {liveLinesCount} Key Vào Kho
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowBulkModal(false)}
+                  style={{ padding: '10px 20px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)', background: 'transparent', color: '#94a3b8', cursor: 'pointer' }}
+                >
+                  Hủy
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* ==================== MODAL: MARK FAULTY ==================== */}
+      {showFaultyModal && createPortal(
+        <div className="global-modal-overlay" onClick={() => setShowFaultyModal(null)}>
+          <div className="global-modal-box" onClick={e => e.stopPropagation()} style={{ maxWidth: '480px' }}>
+            <div className="modal-header">
+              <h2 style={{ fontSize: '17px', fontWeight: '800', color: '#ef4444', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <AlertTriangle size={18} /> Đánh Dấu Key Lỗi / Chờ Đổi Trả NCC
+              </h2>
+              <button className="modal-close-btn" onClick={() => setShowFaultyModal(null)}><X size={18} /></button>
+            </div>
+
+            <form onSubmit={handleConfirmFaulty} style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '10px' }}>
+              <p style={{ fontSize: '13px', color: '#94a3b8', margin: 0 }}>
+                Sản phẩm: <strong style={{ color: '#fff' }}>{showFaultyModal.product_name}</strong>
+              </p>
+              <code style={{ fontSize: '12px', color: '#ef4444', background: 'rgba(0,0,0,0.3)', padding: '6px 10px', borderRadius: '6px', wordBreak: 'break-all' }}>
+                {showFaultyModal.item_code}
+              </code>
+
+              <div>
+                <label className="form-label">Lý do lỗi *</label>
+                <input
+                  type="text"
+                  required
+                  className="glass-input"
+                  placeholder="VD: Sai password, bị khóa tài khoản sau 2 ngày..."
+                  value={faultyReason}
+                  onChange={e => setFaultyReason(e.target.value)}
+                />
+              </div>
+
+              <div style={{ display: 'flex', gap: '10px', marginTop: '6px' }}>
+                <button type="submit" className="glass-button" style={{ flex: 1, background: '#ef4444', color: '#fff', fontWeight: '700' }}>
+                  Xác Nhận Đưa Vào Mục Đòi NCC
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowFaultyModal(null)}
+                  style={{ padding: '8px 16px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)', background: 'transparent', color: '#94a3b8', cursor: 'pointer' }}
+                >
+                  Hủy
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* Delete Confirmation Dialog */}
+      <ConfirmDialog
+        isOpen={Boolean(confirmDeleteId)}
+        title="Xác Nhận Xóa Key Khỏi Kho"
+        message="Bạn có chắc chắn muốn xóa key này khỏi kho hàng? Hành động này không thể hoàn tác."
+        onConfirm={handleDeleteItem}
+        onCancel={() => setConfirmDeleteId(null)}
+      />
+    </div>
+  );
+}

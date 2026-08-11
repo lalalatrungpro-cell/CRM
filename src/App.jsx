@@ -2,11 +2,17 @@ import React, { useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ToastProvider } from './components/Toast';
+import ErrorBoundary from './components/ErrorBoundary';
 import { initData } from './utils/storage';
 
 import Layout from './components/Layout';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
+import Purchases from './pages/Purchases';
+import Inventory from './pages/Inventory';
+import CashFlow from './pages/CashFlow';
+import Expenses from './pages/Expenses';
+import Payroll from './pages/Payroll';
 import Products from './pages/Products';
 import Teams from './pages/Teams';
 import ExpiringAccounts from './pages/ExpiringAccounts';
@@ -45,10 +51,15 @@ const AppRoutes = () => {
       <Route path="/login" element={user ? <Navigate to="/" replace /> : <Login />} />
       <Route path="/" element={<RequireAuth><Layout /></RequireAuth>}>
         <Route index element={<Dashboard />} />
-        <Route path="products" element={<Products />} />
-        <Route path="teams" element={<Teams />} />
-        <Route path="expiring" element={<ExpiringAccounts />} />
+        <Route path="inventory" element={<Inventory />} />
+        <Route path="purchases" element={<Navigate to="/inventory" replace />} />
+        <Route path="cashflow" element={<CashFlow />} />
+        <Route path="expenses" element={<Expenses />} />
+        <Route path="payroll" element={<Payroll />} />
         <Route path="orders" element={<Orders />} />
+        <Route path="products" element={<Products />} />
+        <Route path="teams" element={<Navigate to="/inventory" replace />} />
+        <Route path="expiring" element={<ExpiringAccounts />} />
         <Route path="customers" element={<Customers />} />
         <Route path="customers/:id" element={<CustomerDetail />} />
         <Route path="suppliers" element={<Suppliers />} />
@@ -74,12 +85,14 @@ export default function App() {
   useEffect(() => { initData(); }, []);
 
   return (
-    <ToastProvider>
-      <AuthProvider>
-        <BrowserRouter>
-          <AppRoutes />
-        </BrowserRouter>
-      </AuthProvider>
-    </ToastProvider>
+    <ErrorBoundary>
+      <ToastProvider>
+        <AuthProvider>
+          <BrowserRouter>
+            <AppRoutes />
+          </BrowserRouter>
+        </AuthProvider>
+      </ToastProvider>
+    </ErrorBoundary>
   );
 }

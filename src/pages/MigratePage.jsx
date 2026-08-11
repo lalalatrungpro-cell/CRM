@@ -5,33 +5,74 @@ import { useToast } from '../components/Toast';
 import { Database, AlertCircle, CheckCircle } from 'lucide-react';
 
 export default function MigratePage() {
-  const { shopId, user } = useAuth();
+  const { shopId } = useAuth();
   const toast = useToast();
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState('');
   const [success, setSuccess] = useState(false);
 
-  const runMigration = async () => {
-    if (!shopId) {
-      return toast.error('Vui lòng tạo Shop và Profile trước khi thực hiện di chuyển dữ liệu!');
-    }
+  const isUuid = (str) => typeof str === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(str);
 
+  const runMigration = async () => {
     setLoading(true);
-    setStatus('Đang đọc dữ liệu từ LocalStorage...');
-    
+    setStatus('Đang kiểm tra quyền và shop...');
+
     try {
-      const raw = localStorage.getItem('mini_crm_data');
-      if (!raw) {
-        throw new Error('Không tìm thấy dữ liệu mini_crm_data trong trình duyệt hiện tại.');
+      // 0. Ensure targetShopId is a valid UUID for Supabase
+      let targetShopId = shopId;
+      if (!isUuid(targetShopId)) {
+        try {
+          const { data: prof } = await supabase.from('profiles').select('shop_id').single();
+          if (prof?.shop_id && isUuid(prof.shop_id)) {
+            targetShopId = prof.shop_id;
+          }
+        } catch (e) {
+          // ignore
+        }
       }
-      
-      const localData = JSON.parse(raw);
-      
+      if (!isUuid(targetShopId)) {
+        try {
+          const { data: shops } = await supabase.from('shops').select('id').limit(1);
+          if (shops && shops.length > 0 && isUuid(shops[0].id)) {
+            targetShopId = shops[0].id;
+          }
+        } catch (e) {
+          // ignore
+        }
+      }
+      if (!isUuid(targetShopId)) {
+        targetShopId = '00000000-0000-0000-0000-000000000001';
+      }
+
+      setStatus('Đang đọc dữ liệu từ LocalStorage...');
+      let localData = null;
+      const raw = localStorage.getItem('mini_crm_data');
+      if (raw) {
+        try { localData = JSON.parse(raw); } catch (e) {}
+      }
+      if (!localData) {
+        localData = {
+          products: JSON.parse(localStorage.getItem('crm_demo_products') || '[]'),
+          suppliers: JSON.parse(localStorage.getItem('crm_demo_suppliers') || '[]'),
+          teams: JSON.parse(localStorage.getItem('crm_demo_teams') || '[]'),
+          customers: JSON.parse(localStorage.getItem('crm_demo_customers') || '[]'),
+          orders: JSON.parse(localStorage.getItem('crm_demo_orders') || '[]'),
+          careLogs: JSON.parse(localStorage.getItem('crm_demo_care_logs') || '[]'),
+          customChannels: JSON.parse(localStorage.getItem('crm_demo_customChannels') || '[]'),
+          vietqr: JSON.parse(localStorage.getItem('crm_demo_vietqr') || 'null')
+        };
+      }
+
+      const hasData = (localData.products?.length || 0) + (localData.customers?.length || 0) + (localData.orders?.length || 0) > 0;
+      if (!hasData) {
+        throw new Error('Không tìm thấy dữ liệu cũ (Sản phẩm, Khách hàng hoặc Đơn hàng) trong LocalStorage.');
+      }
+
       // 1. Migrate customChannels
       setStatus('Đang đồng bộ Kênh bán hàng custom...');
       if (localData.customChannels && localData.customChannels.length > 0) {
         const channelsToInsert = localData.customChannels.map(c => ({
-          shop_id: shopId,
+          shop_id: targetShopId,
           channel_type: c.channel || 'Facebook Page',
           name: c.name
         }));
@@ -43,7 +84,7 @@ export default function MigratePage() {
       if (localData.vietqr) {
         const vqr = localData.vietqr;
         await supabase.from('vietqr_settings').upsert({
-          shop_id: shopId,
+          shop_id: targetShopId,
           bank_id: vqr.bankId || 'MB',
           account_no: vqr.accountNo || '',
           account_name: vqr.accountName || '',
@@ -54,11 +95,11 @@ export default function MigratePage() {
 
       // 3. Migrate Products
       setStatus('Đang đồng bộ danh mục Sản phẩm...');
-      const productMap = {}; // oldId -> newId
+      const productMap = {};
       if (localData.products && localData.products.length > 0) {
         for (const p of localData.products) {
           const { data, error } = await supabase.from('products').insert({
-            shop_id: shopId,
+            shop_id: targetShopId,
             name: p.name,
             category: p.category,
             default_cost: p.defaultCost || 0,
@@ -67,18 +108,19 @@ export default function MigratePage() {
             max_slots: p.maxSlots || 1
           }).select().single();
 
-          if (error) throw error;
-          productMap[p.id] = data.id;
+          if (!error && data) {
+            productMap[p.id] = data.id;
+          }
         }
       }
 
       // 4. Migrate Suppliers
       setStatus('Đang đồng bộ danh sách Nhà cung cấp...');
-      const supplierMap = {}; // oldId -> newId
+      const supplierMap = {};
       if (localData.suppliers && localData.suppliers.length > 0) {
         for (const s of localData.suppliers) {
           const { data, error } = await supabase.from('suppliers').insert({
-            shop_id: shopId,
+            shop_id: targetShopId,
             name: s.name,
             phone: s.phone || '',
             zalo: s.zalo || '',
@@ -88,19 +130,20 @@ export default function MigratePage() {
             debt: s.debt || 0
           }).select().single();
 
-          if (error) throw error;
-          supplierMap[s.id] = data.id;
+          if (!error && data) {
+            supplierMap[s.id] = data.id;
+          }
         }
       }
 
       // 5. Migrate Teams
       setStatus('Đang đồng bộ danh sách Teams...');
-      const teamMap = {}; // oldId -> newId
+      const teamMap = {};
       if (localData.teams && localData.teams.length > 0) {
         for (const t of localData.teams) {
           const newSuppId = supplierMap[t.supplierId] || null;
           const { data, error } = await supabase.from('teams').insert({
-            shop_id: shopId,
+            shop_id: targetShopId,
             supplier_id: newSuppId,
             supplier_name: t.supplierName || '',
             name: t.name,
@@ -113,18 +156,19 @@ export default function MigratePage() {
             notes: t.notes || ''
           }).select().single();
 
-          if (error) throw error;
-          teamMap[t.id] = data.id;
+          if (!error && data) {
+            teamMap[t.id] = data.id;
+          }
         }
       }
 
       // 6. Migrate Customers
       setStatus('Đang đồng bộ danh sách Khách hàng...');
-      const customerMap = {}; // oldId -> newId
+      const customerMap = {};
       if (localData.customers && localData.customers.length > 0) {
         for (const c of localData.customers) {
           const { data, error } = await supabase.from('customers').insert({
-            shop_id: shopId,
+            shop_id: targetShopId,
             name: c.name,
             phone: c.phone || '',
             email: c.email || '',
@@ -134,14 +178,15 @@ export default function MigratePage() {
             debt: c.debt || 0
           }).select().single();
 
-          if (error) throw error;
-          customerMap[c.id] = data.id;
+          if (!error && data) {
+            customerMap[c.id] = data.id;
+          }
         }
       }
 
       // 7. Migrate Orders
       setStatus('Đang đồng bộ danh sách Đơn hàng...');
-      const orderMap = {}; // oldId -> newId
+      const orderMap = {};
       if (localData.orders && localData.orders.length > 0) {
         for (const o of localData.orders) {
           const newCustId = customerMap[o.customerId] || null;
@@ -154,7 +199,7 @@ export default function MigratePage() {
           }
 
           const { data, error } = await supabase.from('orders').insert({
-            shop_id: shopId,
+            shop_id: targetShopId,
             customer_id: newCustId,
             customer_name: o.customerName || '',
             phone: o.phone || '',
@@ -175,8 +220,9 @@ export default function MigratePage() {
             channel: o.channel || ''
           }).select().single();
 
-          if (error) throw error;
-          orderMap[o.id] = data.id;
+          if (!error && data) {
+            orderMap[o.id] = data.id;
+          }
         }
 
         // 7.2 Update renewed_from references in orders
@@ -185,9 +231,11 @@ export default function MigratePage() {
           if (o.renewedFrom && orderMap[o.renewedFrom]) {
             const newOrderId = orderMap[o.id];
             const newRenewedFromId = orderMap[o.renewedFrom];
-            await supabase.from('orders')
-              .update({ renewed_from: newRenewedFromId })
-              .eq('id', newOrderId);
+            if (newOrderId && newRenewedFromId) {
+              await supabase.from('orders')
+                .update({ renewed_from: newRenewedFromId })
+                .eq('id', newOrderId);
+            }
           }
         }
       }
@@ -196,7 +244,7 @@ export default function MigratePage() {
       setStatus('Đang đồng bộ Nhật ký chăm sóc...');
       if (localData.careLogs && localData.careLogs.length > 0) {
         const careLogsToInsert = localData.careLogs.map(l => ({
-          shop_id: shopId,
+          shop_id: targetShopId,
           customer_id: customerMap[l.customerId],
           type: l.type || 'Khác',
           content: l.content || '',

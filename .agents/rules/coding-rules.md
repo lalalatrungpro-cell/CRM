@@ -48,3 +48,11 @@ Da dinh nghia trong src/index.css - khong override bang inline style.
   npm run build
 
 Neu build loi - sua ngay, khong de loi tich luy.
+
+## QUY TAC 8: BAT BUOC KIEM TRA KHAI BAO BIEN (UNBOUND VARS CHECK)
+
+Khi sua file .jsx, AI PHAI chay script quet bien tinh (AST / Scope check) de dam bao KHONG CUNG CAP ma chua khai bao (nhu todayStr, nextMonthStr, closeModal...). Build tinh (vite build) khong phat hien duoc ReferenceError runtime neu bien duoc tham chieu trong function body, do do PHAI kiem tra scopemap tinh.
+
+## QUY TAC 9: TOC ERROR BOUNDARY CHONG TRANG MAN HINH
+
+Tất cả Route & Component chính PHẢI được bọc bởi <ErrorBoundary> để khoanh vùng sự cố và hiển thị giao diện báo lỗi chuyên nghiệp thay vì sập màn hình tối/trắng.

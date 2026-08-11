@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { CustomerService, OrderService } from '../utils/dataService';
+import { CustomerService, OrderService, clearAllSystemData } from '../utils/dataService';
 import { exportToExcel } from '../utils/excelExport';
 import { useToast } from '../components/Toast';
 import ConfirmDialog from '../components/ConfirmDialog';
+import { parseAndImportCanvaExcel } from '../utils/canvaImporter';
 import {
-  Users, Plus, Download, Search, Eye, Edit2, Trash2, X, ChevronLeft, ChevronRight, Wallet, DollarSign, MapPin, Mail, MessageCircle
+  Users, Plus, Download, Search, Eye, Edit2, Trash2, X, ChevronLeft, ChevronRight, Wallet, DollarSign, MapPin, Mail, MessageCircle, FileSpreadsheet
 } from 'lucide-react';
 
 const PAGE_SIZE = 15;
@@ -35,6 +36,7 @@ export default function Customers() {
   const [customers, setCustomers] = useState([]);
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [importing, setImporting] = useState(false);
 
   // Modals & Forms
   const [showModal, setShowModal] = useState(false);
@@ -185,6 +187,25 @@ export default function Customers() {
     exportToExcel(exportData, 'Danh_Sach_Khach_Hang', 'Khách Hàng');
   };
 
+  const handleImportExcelFile = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setImporting(true);
+    toast.info('Đang đọc và import file Excel Canva...');
+    try {
+      const buffer = await file.arrayBuffer();
+      const res = await parseAndImportCanvaExcel(buffer, shopId);
+      toast.success(`🎉 Import thành công: ${res.teamsCount} Kho Teams, ${res.customersCount} Khách Hàng, ${res.ordersCount} Đơn Hàng Canva!`);
+      loadData();
+    } catch (err) {
+      console.error(err);
+      toast.error('Lỗi khi import file Excel: ' + (err.message || 'File không hợp lệ'));
+    } finally {
+      setImporting(false);
+      e.target.value = '';
+    }
+  };
+
   const filteredCustomers = customers.filter(c => {
     const matchesSearch = (c.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
                           (c.phone || '').includes(searchTerm) ||
@@ -200,6 +221,14 @@ export default function Customers() {
   const totalSpentAll = orders.filter(o => o.status === 'Đã thanh toán').reduce((sum, o) => sum + (o.sell_price || o.sellPrice || 0), 0);
   const totalDebtAll = customers.reduce((sum, c) => sum + (c.debt || 0), 0);
 
+  const handleClearAllData = () => {
+    if (window.confirm('🚨 BẠN CÓ CHẮC CHẮN MUỐN XÓA TRẮNG 100% DỮ LIỆU?\n\nThao tác này sẽ xóa sạch tất cả Đơn hàng, Khách hàng, Kho Teams và Sổ quỹ để bắt đầu sử dụng phần mềm mới tinh.')) {
+      clearAllSystemData();
+      toast.success('🎉 Đã xóa sạch 100% dữ liệu! Hệ thống đã hoàn toàn mới tinh.');
+      setTimeout(() => window.location.reload(), 800);
+    }
+  };
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
       {/* Header */}
@@ -211,7 +240,12 @@ export default function Customers() {
           </p>
         </div>
 
-        <div style={{ display: 'flex', gap: '10px' }}>
+        <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+          <label className="glass-button" style={{ background: 'linear-gradient(135deg, #a855f7, #6366f1)', color: '#fff', fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <FileSpreadsheet size={17} />
+            {importing ? 'Đang Import...' : 'Import Canva Excel (.xlsx)'}
+            <input type="file" accept=".xlsx,.xls" onChange={handleImportExcelFile} style={{ display: 'none' }} disabled={importing} />
+          </label>
           <button className="glass-button" onClick={handleExportExcel} style={{ background: 'rgba(16,185,129,0.18)', color: '#10b981', border: '1px solid rgba(16,185,129,0.25)' }}>
             <Download size={17} /> Xuất Excel (.xlsx)
           </button>

@@ -80,7 +80,7 @@ export default function ExpiringAccounts() {
 
         return { ...o, daysLeft, warnDays };
       })
-      .filter(o => o && o.daysLeft <= o.warnDays)
+      .filter(o => o && o.daysLeft <= o.warnDays && (o.product_type || o.productType) !== 'EVERGREEN')
       .sort((a, b) => a.daysLeft - b.daysLeft);
   }, [orders]);
 

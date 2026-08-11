@@ -1,41 +1,70 @@
 import React from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import ErrorBoundary from './ErrorBoundary';
 import {
   LayoutDashboard, Tag, ShieldCheck, ShoppingCart, Clock,
-  Users, Truck, Wallet, Settings, LogOut, Database
+  Users, Truck, Wallet, Settings, LogOut, Database,
+  PackagePlus, TrendingDown, Calculator, Landmark, Boxes
 } from 'lucide-react';
 
 export default function Layout() {
   const { user, profile, logout } = useAuth();
 
-  const navItems = [
-    { to: '/', label: 'Tổng Quan Dashboard', icon: <LayoutDashboard size={18} /> },
-    { to: '/orders', label: 'Đơn Hàng & POS', icon: <ShoppingCart size={18} /> },
-    { to: '/customers', label: 'Quản Lý Khách Hàng', icon: <Users size={18} /> },
-    { to: '/products', label: 'Bảng Giá & Sản Phẩm', icon: <Tag size={18} /> },
-    { to: '/teams', label: 'Kho Tài Khoản & Teams', icon: <ShieldCheck size={18} /> },
-    { to: '/expiring', label: 'Cảnh Báo Hết Hạn', icon: <Clock size={18} /> },
-    { to: '/suppliers', label: 'Nhà Cung Cấp & Sỉ', icon: <Truck size={18} /> },
-    { to: '/debt', label: 'Công Nợ Thu / Chi', icon: <Wallet size={18} /> },
-    { to: '/settings', label: 'Cấu Hình VietQR', icon: <Settings size={18} /> }
+  const navSections = [
+    {
+      title: 'TÀI CHÍNH & KẾ TOÁN',
+      items: [
+        { to: '/', label: 'Báo Cáo P&L Tài Chính', icon: <LayoutDashboard size={17} /> },
+        { to: '/cashflow', label: 'Sổ Quỹ Thu / Chi', icon: <Wallet size={17} /> },
+        { to: '/expenses', label: 'Chi Phí Vận Hành OPEX', icon: <TrendingDown size={17} /> },
+        { to: '/payroll', label: 'Nhân Sự & Bảng Lương', icon: <Calculator size={17} /> }
+      ]
+    },
+    {
+      title: 'BÁN HÀNG & KHO HÀNG',
+      items: [
+        { to: '/orders', label: 'Đơn Hàng & POS', icon: <ShoppingCart size={17} /> },
+        { to: '/inventory', label: 'Kho & Nhập Hàng', icon: <Boxes size={17} /> },
+        { to: '/products', label: 'Bảng Giá & Sản Phẩm', icon: <Tag size={17} /> },
+        { to: '/expiring', label: 'Cảnh Báo Hết Hạn', icon: <Clock size={17} /> }
+      ]
+    },
+    {
+      title: 'ĐỐI TÁC & CÔNG NỢ',
+      items: [
+        { to: '/customers', label: 'Quản Lý Khách Hàng', icon: <Users size={17} /> },
+        { to: '/suppliers', label: 'Nhà Cung Cấp & Sỉ', icon: <Truck size={17} /> },
+        { to: '/debt', label: 'Công Nợ 2 Chiều', icon: <Landmark size={17} /> }
+      ]
+    },
+    {
+      title: 'HỆ THỐNG',
+      items: [
+        { to: '/settings', label: 'Cấu Hình VietQR', icon: <Settings size={17} /> }
+      ]
+    }
   ];
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', background: '#0a0d18', color: '#f8fafc' }}>
+    <div style={{ display: 'flex', height: '100vh', overflow: 'hidden', background: '#0a0d18', color: '#f8fafc' }}>
       {/* Sidebar */}
       <aside style={{
         width: '260px',
+        height: '100vh',
+        position: 'sticky',
+        top: 0,
         background: '#111528',
         borderRight: '1px solid rgba(255,255,255,0.06)',
         display: 'flex',
         flexDirection: 'column',
-        justify: 'space-between',
-        flexShrink: 0
+        justifyContent: 'space-between',
+        flexShrink: 0,
+        zIndex: 100
       }}>
         {/* Header Logo */}
-        <div>
-          <div style={{ padding: '24px 20px', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+        <div style={{ overflowY: 'auto', flex: 1 }}>
+          <div style={{ padding: '20px 18px', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
               <div style={{
                 width: '36px', height: '36px', borderRadius: '10px',
@@ -46,42 +75,49 @@ export default function Layout() {
                 <Database size={20} color="#fff" />
               </div>
               <div>
-                <h2 style={{ fontSize: '16px', fontWeight: '800', letterSpacing: '-0.02em', margin: 0 }}>Dropship CRM</h2>
-                <p style={{ fontSize: '11px', color: '#64748b', margin: 0 }}>Hệ Thống Quản Lý 360°</p>
+                <h2 style={{ fontSize: '15px', fontWeight: '800', letterSpacing: '-0.02em', margin: 0 }}>Dropship ERP 360°</h2>
+                <p style={{ fontSize: '11px', color: '#64748b', margin: 0 }}>Quản Trị Doanh Nghiệp</p>
               </div>
             </div>
           </div>
 
-          {/* Navigation Links */}
-          <nav style={{ padding: '16px 12px' }}>
-            <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '4px' }}>
-              {navItems.map(item => (
-                <li key={item.to}>
-                  <NavLink
-                    to={item.to}
-                    end={item.to === '/'}
-                    className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}
-                    style={({ isActive }) => ({
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '10px',
-                      padding: '10px 14px',
-                      borderRadius: '10px',
-                      color: isActive ? '#fff' : '#94a3b8',
-                      background: isActive ? 'linear-gradient(90deg, rgba(99,102,241,0.25) 0%, rgba(99,102,241,0.08) 100%)' : 'transparent',
-                      borderLeft: isActive ? '3px solid #6366f1' : '3px solid transparent',
-                      fontWeight: isActive ? '600' : '500',
-                      fontSize: '13.5px',
-                      transition: 'all 0.15s ease',
-                      textDecoration: 'none'
-                    })}
-                  >
-                    {item.icon}
-                    <span>{item.label}</span>
-                  </NavLink>
-                </li>
-              ))}
-            </ul>
+          {/* Navigation Links Grouped */}
+          <nav style={{ padding: '12px 10px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            {navSections.map(section => (
+              <div key={section.title}>
+                <div style={{ fontSize: '10.5px', fontWeight: '700', color: '#64748b', letterSpacing: '0.06em', padding: '0 10px 6px 10px' }}>
+                  {section.title}
+                </div>
+                <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                  {section.items.map(item => (
+                    <li key={item.to}>
+                      <NavLink
+                        to={item.to}
+                        end={item.to === '/'}
+                        className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}
+                        style={({ isActive }) => ({
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '10px',
+                          padding: '8px 12px',
+                          borderRadius: '8px',
+                          color: isActive ? '#fff' : '#94a3b8',
+                          background: isActive ? 'linear-gradient(90deg, rgba(99,102,241,0.25) 0%, rgba(99,102,241,0.08) 100%)' : 'transparent',
+                          borderLeft: isActive ? '3px solid #6366f1' : '3px solid transparent',
+                          fontWeight: isActive ? '700' : '500',
+                          fontSize: '13px',
+                          transition: 'all 0.15s ease',
+                          textDecoration: 'none'
+                        })}
+                      >
+                        {item.icon}
+                        <span>{item.label}</span>
+                      </NavLink>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
           </nav>
         </div>
 
@@ -116,8 +152,10 @@ export default function Layout() {
       </aside>
 
       {/* Main Content */}
-      <main style={{ flex: 1, padding: '24px', overflowY: 'auto', minWidth: 0 }}>
-        <Outlet />
+      <main style={{ flex: 1, padding: '24px', overflowY: 'auto', height: '100vh', boxSizing: 'border-box', minWidth: 0 }}>
+        <ErrorBoundary>
+          <Outlet />
+        </ErrorBoundary>
       </main>
     </div>
   );

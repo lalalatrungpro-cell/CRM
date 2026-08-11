@@ -1,12 +1,16 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { TeamService, SupplierService, OrderService } from '../utils/dataService';
+import { TeamService, SupplierService, OrderService, PurchaseService } from '../utils/dataService';
 import { useToast } from '../components/Toast';
 import ConfirmDialog from '../components/ConfirmDialog';
-import { ShieldCheck, Plus, Copy, Check, Trash2, Eye, EyeOff, Edit2, X, Search } from 'lucide-react';
+import {
+  ShieldCheck, Plus, Copy, Check, Trash2, Eye, EyeOff, Edit2, X, Search,
+  DollarSign, CheckCircle2, AlertCircle, Layers, TrendingUp
+} from 'lucide-react';
 
 const CATEGORY_SLOTS = {
-  'Canva Pro': 500,
+  'Canva Pro': 49,
   'Netflix Premium': 5,
   'Google AI Pro': 5,
   'CapCut Pro': 5,
@@ -58,7 +62,8 @@ export default function Teams() {
     name: '',
     category: 'Canva Pro',
     infor: '',
-    maxSlots: 500,
+    maxSlots: 49,
+    importCost: 2000000,
     purchaseDate: todayStr,
     expireDate: nextYearStr,
     supplierId: '',
@@ -81,7 +86,7 @@ export default function Teams() {
       setOrders(oList || []);
     } catch (err) {
       console.error(err);
-      toast.error('Lỗi khi tải danh sách kho team từ Supabase!');
+      toast.error('Lỗi khi tải danh sách kho team!');
     } finally {
       setLoading(false);
     }
@@ -109,7 +114,8 @@ export default function Teams() {
       name: team.name || '',
       category: team.category || 'Canva Pro',
       infor: team.infor || '',
-      maxSlots: team.max_slots || team.maxSlots || 5,
+      maxSlots: team.max_slots || team.maxSlots || 49,
+      importCost: team.import_cost || team.importCost || 0,
       purchaseDate: team.purchase_date || team.purchaseDate || todayStr,
       expireDate: team.expire_date || team.expireDate || nextYearStr,
       supplierId: team.supplier_id || team.supplierId || '',
@@ -129,12 +135,15 @@ export default function Teams() {
 
     const supp = suppliers.find(s => String(s.id) === String(formData.supplierId));
     const suppName = supp ? supp.name : '';
+    const cost = Number(formData.importCost || 0);
+    const slots = parseInt(formData.maxSlots) || 1;
 
     const payload = {
       name: formData.name.trim(),
       category: formData.category,
       infor: formData.infor.trim(),
-      max_slots: parseInt(formData.maxSlots) || 1,
+      max_slots: slots,
+      import_cost: cost,
       purchase_date: formData.purchaseDate || todayStr,
       expire_date: formData.expireDate || nextYearStr,
       supplier_id: formData.supplierId ? parseInt(formData.supplierId) : null,
@@ -150,9 +159,25 @@ export default function Teams() {
       } else {
         const created = await TeamService.create(shopId, payload);
         setTeams(prev => [created, ...prev]);
+
+        // Auto record purchase if cost > 0
+        if (cost > 0) {
+          await PurchaseService.create(shopId, {
+            supplier_id: payload.supplier_id,
+            supplier_name: payload.supplier_name,
+            team_id: created.id,
+            product_name: created.name,
+            import_cost: cost,
+            quantity: slots,
+            payment_status: 'PAID',
+            purchase_date: payload.purchase_date,
+            notes: `Mua kho team "${created.name}" (${slots} slots)`
+          });
+        }
         toast.success(`Đã khởi tạo kho team "${created.name}" thành công!`);
       }
       closeModal();
+      loadData();
     } catch (err) {
       console.error(err);
       toast.error('Lỗi khi lưu kho team.');
@@ -190,6 +215,11 @@ export default function Teams() {
     setRevealedInfors(prev => ({ ...prev, [teamId]: !prev[teamId] }));
   };
 
+  // Live Unit Cost calculation in Modal
+  const liveCost = Number(formData.importCost || 0);
+  const liveSlots = parseInt(formData.maxSlots || 1) || 1;
+  const liveUnitCost = liveSlots > 0 ? Math.round(liveCost / liveSlots) : 0;
+
   const filteredTeams = teams.filter(t => {
     const matchesSearch = (t.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
                           (t.category || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -203,13 +233,15 @@ export default function Teams() {
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
         <div>
-          <h1 style={{ fontSize: '24px', fontWeight: '800' }}>Quản Lý Kho Tài Khoản & Teams 360°</h1>
-          <p style={{ color: '#64748b', marginTop: '4px', fontSize: '13px' }}>
-            Quản lý tài khoản gốc, số lượng slot đã dùng/còn trống và theo dõi hạn dùng nguồn sỉ.
+          <h1 style={{ fontSize: '24px', fontWeight: '800', letterSpacing: '-0.02em', margin: 0, display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <ShieldCheck size={26} color="#6366f1" /> Quản Lý Kho Tài Khoản & Teams 360°
+          </h1>
+          <p style={{ color: '#64748b', marginTop: '4px', fontSize: '13px', margin: 0 }}>
+            Quản lý tài khoản gốc, giá vốn trọn gói, giá vốn phân bổ từng slot và tỷ lệ hoàn vốn theo thời gian thực.
           </p>
         </div>
 
-        <button className="glass-button" onClick={handleOpenAddModal}>
+        <button className="glass-button" onClick={handleOpenAddModal} style={{ background: 'linear-gradient(135deg, #6366f1, #10b981)', color: '#fff', fontWeight: '700' }}>
           <Plus size={18} /> Thêm Kho Team Mới
         </button>
       </div>
@@ -220,7 +252,7 @@ export default function Teams() {
           <Search size={16} color="#475569" />
           <input
             type="text"
-            placeholder="Tìm tên kho, loại dịch vụ hoặc tài khoản gốc..."
+            placeholder="Tìm theo tên team, dịch vụ, thông tin gốc..."
             value={searchTerm}
             onChange={e => setSearchTerm(e.target.value)}
             style={{ background: 'none', border: 'none', color: '#fff', outline: 'none', width: '100%', fontSize: '13.5px' }}
@@ -229,10 +261,10 @@ export default function Teams() {
         </div>
 
         <select
-          className="glass-input" style={{ width: 'auto' }}
+          className="glass-input" style={{ width: 'auto', padding: '8px 14px' }}
           value={filterCategory} onChange={e => setFilterCategory(e.target.value)}
         >
-          <option value="ALL">Tất cả loại dịch vụ</option>
+          <option value="ALL">Tất Cả Loại Dịch Vụ</option>
           {Object.keys(CATEGORY_SLOTS).map(cat => (
             <option key={cat} value={cat}>{cat}</option>
           ))}
@@ -251,10 +283,17 @@ export default function Teams() {
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: '20px' }}>
           {filteredTeams.map(team => {
-            const usedSlots = orders.filter(o => String(o.team_id || o.teamId) === String(team.id)).length;
+            const teamOrders = orders.filter(o => String(o.team_id || o.teamId) === String(team.id));
+            const usedSlots = teamOrders.length;
             const maxSlots = team.max_slots || team.maxSlots || 1;
             const availableSlots = Math.max(0, maxSlots - usedSlots);
             const usagePercent = Math.min(100, Math.round((usedSlots / maxSlots) * 100));
+
+            // Cost & Financial tracking
+            const importCost = Number(team.import_cost || team.importCost || 0);
+            const unitCost = maxSlots > 0 ? Math.round(importCost / maxSlots) : 0;
+            const totalEarned = teamOrders.reduce((sum, o) => sum + Number(o.sell_price || o.sellPrice || 0), 0);
+            const recoveryPercent = importCost > 0 ? Math.round((totalEarned / importCost) * 100) : 100;
 
             const isRevealed = revealedInfors[team.id];
             const isCopied = copiedId === `team-${team.id}`;
@@ -280,6 +319,18 @@ export default function Teams() {
                   </div>
                 </div>
 
+                {/* Cost Box & Unit Cost */}
+                <div style={{ background: 'rgba(255,255,255,0.03)', padding: '10px 12px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.06)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '12px' }}>
+                  <div>
+                    <span style={{ color: '#94a3b8' }}>Vốn mua Team: </span>
+                    <strong style={{ color: '#f59e0b' }}>{importCost.toLocaleString()}đ</strong>
+                  </div>
+                  <div>
+                    <span style={{ color: '#94a3b8' }}>Giá vốn/slot: </span>
+                    <strong style={{ color: '#10b981' }}>~{unitCost.toLocaleString()}đ</strong>
+                  </div>
+                </div>
+
                 {/* Progress Bar */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px' }}>
@@ -297,6 +348,14 @@ export default function Teams() {
                       transition: 'width 0.3s ease'
                     }} />
                   </div>
+                </div>
+
+                {/* Financial Recovery */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '11.5px', color: '#cbd5e1' }}>
+                  <span>Đã thu về: <strong style={{ color: '#10b981' }}>{totalEarned.toLocaleString()}đ</strong></span>
+                  <span style={{ color: recoveryPercent >= 100 ? '#10b981' : '#f59e0b', fontWeight: '700' }}>
+                    {recoveryPercent >= 100 ? `Đã có lãi (${recoveryPercent}%)` : `Thu hồi ${recoveryPercent}%`}
+                  </span>
                 </div>
 
                 {/* Account Credentials */}
@@ -330,12 +389,13 @@ export default function Teams() {
         </div>
       )}
 
-      {/* Add / Edit Modal */}
-      {showModal && (
-        <div className="modal-overlay" onClick={closeModal}>
-          <div className="modal-box" onClick={e => e.stopPropagation()} style={{ maxWidth: '520px' }}>
-            <div className="modal-header">
-              <h2 style={{ fontSize: '18px', fontWeight: '700' }}>
+      {/* ==================== POPUP MODAL: ADD / EDIT TEAM ==================== */}
+      {showModal && createPortal(
+        <div className="global-modal-overlay" onClick={closeModal}>
+          <div className="global-modal-card" onClick={e => e.stopPropagation()} style={{ maxWidth: '540px', padding: '24px' }}>
+            <div className="modal-header" style={{ marginBottom: '16px' }}>
+              <h2 style={{ fontSize: '18px', fontWeight: '800', color: '#fff', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <ShieldCheck size={20} color="#6366f1" />
                 {editingTeam ? 'Chỉnh Sửa Kho Team' : 'Thêm Kho Team / Tài Khoản Mới'}
               </h2>
               <button className="modal-close-btn" onClick={closeModal}><X size={18} /></button>
@@ -343,7 +403,7 @@ export default function Teams() {
 
             <form onSubmit={handleSaveTeam} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
               <div>
-                <label className="form-label">Tên Team / Tên Kho Tài Khoản</label>
+                <label className="form-label">Tên Team / Tên Kho Tài Khoản *</label>
                 <input
                   type="text" required className="glass-input" placeholder="VD: Team Canva VIP Pro #01"
                   value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })}
@@ -363,11 +423,28 @@ export default function Teams() {
                   </select>
                 </div>
                 <div>
-                  <label className="form-label">Số Slot Tối Đa</label>
+                  <label className="form-label">Số Slot Tối Đa *</label>
                   <input
                     type="number" required className="glass-input"
                     value={formData.maxSlots} onChange={e => setFormData({ ...formData, maxSlots: e.target.value })}
                   />
+                </div>
+              </div>
+
+              {/* Total Purchase Cost & Live Unit Cost */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                <div>
+                  <label className="form-label" style={{ color: '#f59e0b' }}>Tổng Tiền Vốn Mua Team (VNĐ)</label>
+                  <input
+                    type="number" className="glass-input" placeholder="2000000"
+                    value={formData.importCost} onChange={e => setFormData({ ...formData, importCost: e.target.value })}
+                  />
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                  <span style={{ fontSize: '11.5px', color: '#94a3b8' }}>Giá vốn 1 slot phân bổ:</span>
+                  <strong style={{ fontSize: '16px', color: '#10b981', marginTop: '4px' }}>
+                    ~{liveUnitCost.toLocaleString()}đ / slot
+                  </strong>
                 </div>
               </div>
 
@@ -379,29 +456,21 @@ export default function Teams() {
                 />
               </div>
 
-              <div>
-                <label className="form-label">Nhà Cung Cấp (Nguồn Sỉ)</label>
-                <select
-                  className="glass-input"
-                  value={formData.supplierId} onChange={e => setFormData({ ...formData, supplierId: e.target.value })}
-                >
-                  <option value="">-- Chọn Nhà Cung Cấp --</option>
-                  {suppliers.map(s => (
-                    <option key={s.id} value={s.id}>{s.name} ({s.phone || 'N/A'})</option>
-                  ))}
-                </select>
-              </div>
-
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                 <div>
-                  <label className="form-label">Ngày Mua Nguồn</label>
-                  <input
-                    type="date" className="glass-input"
-                    value={formData.purchaseDate} onChange={e => setFormData({ ...formData, purchaseDate: e.target.value })}
-                  />
+                  <label className="form-label">Nhà Cung Cấp / Nguồn Sỉ</label>
+                  <select
+                    className="glass-input"
+                    value={formData.supplierId} onChange={e => setFormData({ ...formData, supplierId: e.target.value })}
+                  >
+                    <option value="">-- Tự nhập / Không chọn --</option>
+                    {suppliers.map(s => (
+                      <option key={s.id} value={s.id}>{s.name}</option>
+                    ))}
+                  </select>
                 </div>
                 <div>
-                  <label className="form-label">Ngày Hết Hạn Nguồn</label>
+                  <label className="form-label">Ngày Hết Hạn Nguồn Sỉ</label>
                   <input
                     type="date" className="glass-input"
                     value={formData.expireDate} onChange={e => setFormData({ ...formData, expireDate: e.target.value })}
@@ -409,17 +478,29 @@ export default function Teams() {
                 </div>
               </div>
 
-              <div style={{ display: 'flex', gap: '10px', marginTop: '8px' }}>
-                <button type="submit" className="glass-button" style={{ flex: 1, background: '#6366f1', color: '#fff', fontWeight: '700' }}>
-                  {editingTeam ? 'Cập Nhật Kho Team' : 'Hoàn Tất Thêm Kho'}
+              <div>
+                <label className="form-label">Ghi Chú Thêm</label>
+                <input
+                  type="text" className="glass-input" placeholder="Ghi chú về team..."
+                  value={formData.notes} onChange={e => setFormData({ ...formData, notes: e.target.value })}
+                />
+              </div>
+
+              <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
+                <button type="submit" className="glass-button" style={{ flex: 1, background: 'linear-gradient(135deg, #6366f1, #10b981)', color: '#fff', fontWeight: '700' }}>
+                  {editingTeam ? '💾 Cập Nhật Kho Team' : '✨ Khởi Tạo Kho Team'}
                 </button>
-                <button type="button" onClick={closeModal} style={{ padding: '10px 20px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)', background: 'transparent', color: '#94a3b8', cursor: 'pointer' }}>Hủy</button>
+                <button type="button" onClick={closeModal} style={{ padding: '10px 20px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)', background: 'transparent', color: '#94a3b8', cursor: 'pointer' }}>
+                  Hủy
+                </button>
               </div>
             </form>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
+      {/* Delete Confirm */}
       <ConfirmDialog
         isOpen={!!confirmDeleteId}
         title="Xóa Kho Team?"

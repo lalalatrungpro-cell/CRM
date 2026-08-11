@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { CustomerService, OrderService, SupplierService, VietQRService } from '../utils/dataService';
+import { CustomerService, OrderService, SupplierService, VietQRService, CashTransactionService } from '../utils/dataService';
 import { getVietQRUrl } from '../utils/storage';
 import { useToast } from '../components/Toast';
 import { Wallet, ArrowDownLeft, ArrowUpRight, FileText, Printer, Copy, X } from 'lucide-react';
@@ -153,13 +153,26 @@ export default function Debt() {
 
   const handlePayCustomerDebt = async (customer) => {
     try {
+      const debtAmount = Number(customer.debt || 0);
       const unpaidOrders = customer.unpaidOrdersList || [];
       for (const order of unpaidOrders) {
         await OrderService.update(order.id, { status: 'Đã thanh toán' });
       }
       await CustomerService.update(customer.id, { debt: 0 });
 
-      toast.success(`Đã thu xong nợ từ khách hàng "${customer.name}"!`);
+      // Auto record in Cash Ledger
+      if (debtAmount > 0) {
+        await CashTransactionService.create(shopId, {
+          type: 'INCOME',
+          category: 'Thu nợ khách',
+          amount: debtAmount,
+          account_type: 'BANK',
+          counterpart_name: customer.name,
+          notes: `Thu hồi công nợ từ khách hàng "${customer.name}"`
+        });
+      }
+
+      toast.success(`Đã thu xong nợ ${debtAmount.toLocaleString()}đ từ khách hàng "${customer.name}" & ghi sổ quỹ!`);
       loadData();
     } catch (err) {
       console.error(err);
@@ -169,13 +182,26 @@ export default function Debt() {
 
   const handlePaySupplierDebt = async (supplier) => {
     try {
+      const debtAmount = Number(supplier.debt || 0);
       const unpaidOrders = supplier.unpaidOrdersList || [];
       for (const order of unpaidOrders) {
         await OrderService.update(order.id, { supplier_paid: true, supplierPaid: true });
       }
       await SupplierService.update(supplier.id, { debt: 0 });
 
-      toast.success(`Đã thanh toán xong nợ cho Nguồn sỉ "${supplier.name}"!`);
+      // Auto record in Cash Ledger
+      if (debtAmount > 0) {
+        await CashTransactionService.create(shopId, {
+          type: 'EXPENSE',
+          category: 'Trả nợ NCC',
+          amount: debtAmount,
+          account_type: 'BANK',
+          counterpart_name: supplier.name,
+          notes: `Thanh toán công nợ cho Nhà Cung Cấp "${supplier.name}"`
+        });
+      }
+
+      toast.success(`Đã thanh toán xong nợ ${debtAmount.toLocaleString()}đ cho Nguồn sỉ "${supplier.name}" & ghi sổ quỹ!`);
       loadData();
     } catch (err) {
       console.error(err);

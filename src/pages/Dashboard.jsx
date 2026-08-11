@@ -1,8 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { OrderService, CustomerService } from '../utils/dataService';
 import {
-  DollarSign, TrendingUp, RotateCcw, Download, Wallet, BarChart2
+  OrderService, CustomerService, SupplierService,
+  CashTransactionService, ExpenseService, PayrollService, PurchaseService, InventoryService
+} from '../utils/dataService';
+import {
+  DollarSign, TrendingUp, Download, Wallet, Landmark,
+  Building, Megaphone, Users, ArrowDownRight, ArrowUpRight,
+  ShieldCheck, AlertTriangle, CheckCircle2, PieChart, BarChart3, RefreshCw, Boxes
 } from 'lucide-react';
 
 const SOURCE_CONFIG = {
@@ -20,20 +25,38 @@ export default function Dashboard() {
 
   const [orders, setOrders] = useState([]);
   const [customers, setCustomers] = useState([]);
+  const [suppliers, setSuppliers] = useState([]);
+  const [cashSummary, setCashSummary] = useState({ totalIncome: 0, totalExpense: 0, netBalance: 0, cashBalance: 0, bankBalance: 0 });
+  const [opexSummary, setOpexSummary] = useState({ totalFixed: 0, totalVariable: 0, totalOpex: 0 });
+  const [payrolls, setPayrolls] = useState([]);
+  const [purchases, setPurchases] = useState([]);
+  const [inventorySummary, setInventorySummary] = useState({ availableCount: 0, totalInventoryValue: 0 });
   const [loading, setLoading] = useState(true);
 
   const loadData = async () => {
     if (!shopId) return;
     setLoading(true);
     try {
-      const [oList, cList] = await Promise.all([
+      const [oList, cList, sList, cSum, oSum, pList, purList, invSum] = await Promise.all([
         OrderService.list(shopId),
-        CustomerService.list(shopId)
+        CustomerService.list(shopId),
+        SupplierService.list(shopId),
+        CashTransactionService.getBalanceSummary(shopId),
+        ExpenseService.getOpexSummary(shopId),
+        PayrollService.list(shopId),
+        PurchaseService.list(shopId),
+        InventoryService.getSummary(shopId)
       ]);
       setOrders(oList || []);
       setCustomers(cList || []);
+      setSuppliers(sList || []);
+      setCashSummary(cSum || { totalIncome: 0, totalExpense: 0, netBalance: 0, cashBalance: 0, bankBalance: 0 });
+      setOpexSummary(oSum || { totalFixed: 0, totalVariable: 0, totalOpex: 0 });
+      setPayrolls(pList || []);
+      setPurchases(purList || []);
+      setInventorySummary(invSum || { availableCount: 0, totalInventoryValue: 0 });
     } catch (err) {
-      console.error(err);
+      console.error('Error loading dashboard data:', err);
     } finally {
       setLoading(false);
     }
@@ -43,7 +66,8 @@ export default function Dashboard() {
     loadData();
   }, [shopId]);
 
-    const paidOrders = orders.filter(o => o.status !== 'Từ chối bảo hành' && !String(o.status || '').includes('100%'));
+  // Financial Calculations
+  const paidOrders = orders.filter(o => o.status !== 'Từ chối bảo hành' && !String(o.status || '').includes('100%'));
 
   const totalRevenue = paidOrders.reduce((sum, o) => {
     const sellP = Number(o.sell_price || o.sellPrice || 0);
@@ -51,21 +75,31 @@ export default function Dashboard() {
     return sum + Math.max(0, sellP - refP);
   }, 0);
 
-  const totalCost = paidOrders.reduce((sum, o) => sum + Number(o.cost_price || o.costPrice || 0), 0);
-  const totalProfit = totalRevenue - totalCost;
+  const totalCogs = paidOrders.reduce((sum, o) => sum + Number(o.cost_price || o.costPrice || 0), 0);
+  const grossProfit = totalRevenue - totalCogs;
+  const grossMargin = totalRevenue > 0 ? Math.round((grossProfit / totalRevenue) * 100) : 0;
 
+  // OPEX components
+  const totalPayrollPaid = payrolls.filter(p => p.status === 'PAID').reduce((sum, p) => sum + Number(p.net_salary || 0), 0);
+  const totalOpexExpenses = opexSummary.totalOpex;
+  const totalOperatingCost = totalOpexExpenses + totalPayrollPaid;
+
+  // Real Net Profit
+  const realNetProfit = grossProfit - totalOperatingCost;
+  const netMargin = totalRevenue > 0 ? Math.round((realNetProfit / totalRevenue) * 100) : 0;
+
+  // Debt Metrics
+  const totalCustomerDebt = customers.reduce((sum, c) => sum + Number(c.debt || 0), 0);
+  const totalSupplierDebt = suppliers.reduce((sum, s) => sum + Number(s.debt || 0), 0);
+
+  // Customer Loyalty
   const repeatCustomersCount = customers.filter(c => {
     const custOrders = orders.filter(o => String(o.customer_id || o.customerId) === String(c.id));
     return custOrders.length >= 2;
   }).length;
+  const repeatRate = customers.length > 0 ? Math.round((repeatCustomersCount / customers.length) * 100) : 0;
 
-  const repeatRate = customers.length > 0
-    ? Math.round((repeatCustomersCount / customers.length) * 100)
-    : 0;
-
-  const totalCustomerDebt = customers.reduce((sum, c) => sum + (c.debt || 0), 0);
-
-  // Channel Analytics calculation matching both o.source and o.channel
+  // Channel Analytics
   const channelAnalytics = Object.keys(SOURCE_CONFIG).map(sourceKey => {
     const sourceOrders = paidOrders.filter(o => {
       const mainSrc = o.source || '';
@@ -86,24 +120,50 @@ export default function Dashboard() {
     };
   }).sort((a, b) => b.revenue - a.revenue);
 
-  const handleExportExcel = () => {
-    const headers = ['Mã Đơn', 'Ngày Tạo', 'Khách Hàng', 'Số Điện Thoại', 'Sản Phẩm', 'Giá Bán', 'Giá Vốn', 'Lợi Nhuận', 'Trạng Thái'];
-    const rows = orders.map(o => [
-      o.id,
-      o.purchase_date || o.date || '',
-      '"' + (o.customer_name || o.customerName || '').replace(/"/g, '""') + '"',
-      '"' + (o.phone || '') + '"',
-      '"' + (o.product_name || o.productName || '').replace(/"/g, '""') + '"',
-      o.sell_price || o.sellPrice || 0,
-      o.cost_price || o.costPrice || 0,
-      (o.sell_price || o.sellPrice || 0) - (o.cost_price || o.costPrice || 0),
-      '"' + (o.status || '') + '"'
-    ]);
+  // [Phase 3] Tier analytics: Lẻ / CTV / Sỉ breakdown
+  const TIER_CONFIG = {
+    'Le':  { label: 'Khách Lẻ',  icon: '🟢', color: '#10b981', bg: 'rgba(16,185,129,0.12)' },
+    'CTV': { label: 'CTV',       icon: '🟡', color: '#f59e0b', bg: 'rgba(245,158,11,0.12)' },
+    'Si':  { label: 'Khách Sỉ',  icon: '🟣', color: '#a855f7', bg: 'rgba(168,85,247,0.12)' },
+  };
+  const tierAnalytics = Object.entries(TIER_CONFIG).map(([tierKey, cfg]) => {
+    const tierCustomers = customers.filter(c => (c.type || 'Le') === tierKey);
+    const tierCustIds = new Set(tierCustomers.map(c => String(c.id)));
+    const tierOrders = paidOrders.filter(o => tierCustIds.has(String(o.customer_id || o.customerId || '')));
+    const revenue = tierOrders.reduce((s, o) => s + Math.max(0, Number(o.sell_price || o.sellPrice || 0) - Number(o.refund_amount || 0)), 0);
+    const profit = tierOrders.reduce((s, o) => s + Math.max(0, Number(o.sell_price || o.sellPrice || 0) - Number(o.refund_amount || 0) - Number(o.cost_price || o.costPrice || 0)), 0);
+    return { tierKey, ...cfg, count: tierOrders.length, customers: tierCustomers.length, revenue, profit };
+  });
 
-    const csvContent = '\uFEFF' + [headers.join(','), ...rows.map(e => e.join(','))].join('\n');
+  const handleExportPnL = () => {
+    const lines = [
+      ['BÁO CÁO KẾT QUẢ KINH DOANH & TÀI CHÍNH DOANH NGHIỆP (P&L STATEMENT)', ''],
+      ['Ngày xuất báo cáo:', new Date().toLocaleDateString('vi-VN')],
+      ['', ''],
+      ['1. DOANH THU THUẦN BÁN HÀNG', totalRevenue],
+      ['2. GIÁ VỐN HÀNG BÁN (COGS)', -totalCogs],
+      ['3. LỢI NHUẬN GỘP (GROSS PROFIT)', grossProfit],
+      ['Biên lãi gộp (%):', grossMargin + '%'],
+      ['', ''],
+      ['4. CHI PHÍ VẬN HÀNH (OPEX)', -totalOperatingCost],
+      ['  - Chi phí Cố định (Mặt bằng, VPS, Tool):', -opexSummary.totalFixed],
+      ['  - Chi phí Biến động (Ads, Marketing):', -opexSummary.totalVariable],
+      ['  - Chi phí Lương nhân viên & Hoa hồng:', -totalPayrollPaid],
+      ['', ''],
+      ['5. LÃI RÒNG THỰC TẾ DOANH NGHIỆP (NET PROFIT)', realNetProfit],
+      ['Biên lãi ròng (%):', netMargin + '%'],
+      ['', ''],
+      ['6. SỐ DƯ QUỸ HIỆN TẠI', cashSummary.netBalance],
+      ['  - Quỹ Ngân Hàng:', cashSummary.bankBalance],
+      ['  - Quỹ Tiền Mặt:', cashSummary.cashBalance],
+      ['7. CÔNG NỢ PHẢI THU (Khách nợ):', totalCustomerDebt],
+      ['8. CÔNG NỢ PHẢI TRẢ (Nợ NCC):', totalSupplierDebt]
+    ];
+
+    const csvContent = '\uFEFF' + lines.map(row => row.join(',')).join('\n');
     const link = document.createElement('a');
     link.setAttribute('href', 'data:text/csv;charset=utf-8,' + encodeURIComponent(csvContent));
-    link.setAttribute('download', 'Bao_Cao_Doanh_Thu_' + new Date().toISOString().split('T')[0] + '.csv');
+    link.setAttribute('download', 'Bao_Cao_Tai_Chinh_PnL_' + new Date().toISOString().split('T')[0] + '.csv');
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -114,148 +174,242 @@ export default function Dashboard() {
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
         <div>
-          <h1 style={{ fontSize: '24px', fontWeight: '800' }}>Tổng Quan Kinh Doanh Dashboard</h1>
-          <p style={{ color: '#64748b', marginTop: '4px', fontSize: '13px' }}>
-            Doanh thu, lợi nhuận, công nợ và tỷ lệ khách tái ký. <span style={{ color: '#10b981', fontWeight: '600' }}>Chỉ tính đơn Đã Thanh Toán.</span>
+          <h1 style={{ fontSize: '24px', fontWeight: '800', letterSpacing: '-0.02em', margin: 0, display: 'flex', alignItems: 'center', gap: '10px' }}>
+            📊 Báo Cáo Tài Chính & Kế Toán Quản Trị P&L
+          </h1>
+          <p style={{ color: '#64748b', marginTop: '4px', fontSize: '13px', margin: 0 }}>
+            Tổng quan toàn diện: Doanh thu $\rightarrow$ Giá vốn COGS $\rightarrow$ Lợi nhuận gộp $\rightarrow$ OPEX $\rightarrow$ <strong style={{ color: '#10b981' }}>Lãi ròng thực tế Net Profit</strong>.
           </p>
         </div>
 
-        <button className="glass-button" onClick={handleExportExcel} style={{ background: 'rgba(16,185,129,0.18)', border: '1px solid rgba(16,185,129,0.25)', color: '#10b981' }}>
-          <Download size={17} /> Xuất Báo Cáo CSV (.csv)
-        </button>
+        <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+          <button className="glass-button" onClick={loadData} title="Tải lại dữ liệu" style={{ padding: '8px 12px' }}>
+            <RefreshCw size={16} />
+          </button>
+          <button className="glass-button" onClick={handleExportPnL} style={{ background: 'rgba(16,185,129,0.18)', border: '1px solid rgba(16,185,129,0.25)', color: '#10b981', fontWeight: '700' }}>
+            <Download size={17} /> Xuất Báo Cáo P&L (.csv)
+          </button>
+        </div>
       </div>
 
       {loading ? (
-        <div style={{ padding: '40px', textAlign: 'center', color: '#94a3b8' }}>Đang tải báo cáo tổng quan từ đám mây...</div>
+        <div style={{ padding: '60px', textAlign: 'center', color: '#94a3b8' }}>Đang tổng hợp báo cáo tài chính quản trị...</div>
       ) : (
         <>
-          {/* Key Metrics */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '20px' }}>
-            <div className="glass-panel" style={{ padding: '20px', borderLeft: '4px solid #10b981', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                <span style={{ color: '#94a3b8', fontSize: '13px', fontWeight: '600' }}>Tổng Doanh Thu</span>
-                <div style={{ background: 'rgba(16,185,129,0.15)', padding: '6px', borderRadius: '8px', display: 'flex', alignItems: 'center' }}>
-                  <DollarSign size={18} color="#10b981" />
-                </div>
+          {/* ==================== 1. EXECUTIVE P&L WATERFALL CARD ==================== */}
+          <div className="glass-panel" style={{ padding: '24px', background: 'linear-gradient(135deg, rgba(17,21,40,0.9), rgba(10,13,24,0.95))', border: '1px solid rgba(99,102,241,0.25)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '18px', flexWrap: 'wrap', gap: '10px' }}>
+              <div>
+                <span style={{ fontSize: '11.5px', fontWeight: '700', color: '#818cf8', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                  📈 BẢNG BÁO CÁO KẾT QUẢ KINH DOANH CHUẨN DOANH NGHIỆP (P&L STATEMENT)
+                </span>
+                <h3 style={{ fontSize: '18px', fontWeight: '800', color: '#fff', margin: '4px 0 0 0' }}>
+                  Hiệu Quả Sinh Lời & Lãi Ròng Thực Tế
+                </h3>
               </div>
-              <p style={{ fontSize: '24px', fontWeight: '800', color: '#10b981', margin: '2px 0' }}>
-                {totalRevenue.toLocaleString()}đ
-              </p>
-              <span style={{ fontSize: '12px', color: '#64748b' }}>{paidOrders.length} đơn đã thu tiền</span>
+              <div style={{ padding: '6px 14px', borderRadius: '10px', background: realNetProfit >= 0 ? 'rgba(16,185,129,0.15)' : 'rgba(239,68,68,0.15)', border: realNetProfit >= 0 ? '1px solid #10b981' : '1px solid #ef4444' }}>
+                <span style={{ fontSize: '12px', color: '#94a3b8' }}>Biên Lãi Ròng (Net Margin): </span>
+                <strong style={{ fontSize: '15px', color: realNetProfit >= 0 ? '#10b981' : '#ef4444' }}>{netMargin}%</strong>
+              </div>
             </div>
 
-            <div className="glass-panel" style={{ padding: '20px', borderLeft: '4px solid #6366f1', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                <span style={{ color: '#94a3b8', fontSize: '13px', fontWeight: '600' }}>Tổng Lợi Nhuận Thuần</span>
-                <div style={{ background: 'rgba(99,102,241,0.15)', padding: '6px', borderRadius: '8px', display: 'flex', alignItems: 'center' }}>
-                  <TrendingUp size={18} color="#6366f1" />
+            {/* 5-Step Waterfall Grid */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '14px' }}>
+              {/* 1. Revenue */}
+              <div style={{ background: 'rgba(255,255,255,0.03)', padding: '14px 16px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.06)' }}>
+                <div style={{ fontSize: '11.5px', color: '#94a3b8', fontWeight: '600' }}>1. TỔNG DOANH THU</div>
+                <div style={{ fontSize: '20px', fontWeight: '800', color: '#fff', marginTop: '4px' }}>
+                  {totalRevenue.toLocaleString()}đ
                 </div>
+                <div style={{ fontSize: '11px', color: '#64748b', marginTop: '2px' }}>{paidOrders.length} đơn chốt</div>
               </div>
-              <p style={{ fontSize: '24px', fontWeight: '800', color: '#6366f1', margin: '2px 0' }}>
-                {totalProfit.toLocaleString()}đ
-              </p>
-              <span style={{ fontSize: '12px', color: '#64748b' }}>Doanh thu trừ giá vốn</span>
+
+              {/* 2. COGS */}
+              <div style={{ background: 'rgba(255,255,255,0.03)', padding: '14px 16px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.06)' }}>
+                <div style={{ fontSize: '11.5px', color: '#94a3b8', fontWeight: '600' }}>2. GIÁ VỐN (COGS)</div>
+                <div style={{ fontSize: '20px', fontWeight: '800', color: '#f59e0b', marginTop: '4px' }}>
+                  -{totalCogs.toLocaleString()}đ
+                </div>
+                <div style={{ fontSize: '11px', color: '#64748b', marginTop: '2px' }}>Vốn nhập tài khoản/slot</div>
+              </div>
+
+              {/* 3. Gross Profit */}
+              <div style={{ background: 'rgba(99,102,241,0.06)', padding: '14px 16px', borderRadius: '12px', border: '1px solid rgba(99,102,241,0.2)' }}>
+                <div style={{ fontSize: '11.5px', color: '#818cf8', fontWeight: '700' }}>3. LỢI NHUẬN GỘP</div>
+                <div style={{ fontSize: '20px', fontWeight: '800', color: '#818cf8', marginTop: '4px' }}>
+                  +{grossProfit.toLocaleString()}đ
+                </div>
+                <div style={{ fontSize: '11px', color: '#818cf8', marginTop: '2px' }}>Biên gộp {grossMargin}%</div>
+              </div>
+
+              {/* 4. OPEX */}
+              <div style={{ background: 'rgba(239,68,68,0.06)', padding: '14px 16px', borderRadius: '12px', border: '1px solid rgba(239,68,68,0.2)' }}>
+                <div style={{ fontSize: '11.5px', color: '#ef4444', fontWeight: '700' }}>4. CHI PHÍ OPEX</div>
+                <div style={{ fontSize: '20px', fontWeight: '800', color: '#ef4444', marginTop: '4px' }}>
+                  -{totalOperatingCost.toLocaleString()}đ
+                </div>
+                <div style={{ fontSize: '11px', color: '#fca5a5', marginTop: '2px' }}>Ads + Lương + Mặt bằng</div>
+              </div>
+
+              {/* 5. NET PROFIT */}
+              <div style={{ background: realNetProfit >= 0 ? 'rgba(16,185,129,0.12)' : 'rgba(239,68,68,0.12)', padding: '14px 16px', borderRadius: '12px', border: realNetProfit >= 0 ? '1px solid rgba(16,185,129,0.35)' : '1px solid rgba(239,68,68,0.35)' }}>
+                <div style={{ fontSize: '11.5px', color: realNetProfit >= 0 ? '#10b981' : '#ef4444', fontWeight: '800' }}>
+                  🏆 5. LÃI RÒNG THỰC
+                </div>
+                <div style={{ fontSize: '22px', fontWeight: '900', color: realNetProfit >= 0 ? '#10b981' : '#ef4444', marginTop: '4px' }}>
+                  {realNetProfit >= 0 ? '+' : ''}{realNetProfit.toLocaleString()}đ
+                </div>
+                <div style={{ fontSize: '11px', color: '#cbd5e1', marginTop: '2px' }}>Tiền thực bỏ túi chủ shop</div>
+              </div>
+            </div>
+          </div>
+
+          {/* ==================== 2. CASH BALANCE & DEBT OVERVIEW ==================== */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '16px' }}>
+            {/* Real Cash Balance */}
+            <div className="glass-panel" style={{ padding: '20px', borderLeft: '4px solid #10b981' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontSize: '12.5px', color: '#94a3b8', fontWeight: '600' }}>TỔNG QUỸ TIỀN MẶT & BANK</span>
+                <Wallet size={20} color="#10b981" />
+              </div>
+              <div style={{ fontSize: '24px', fontWeight: '900', color: cashSummary.netBalance >= 0 ? '#10b981' : '#ef4444', marginTop: '6px' }}>
+                {cashSummary.netBalance >= 0 ? '+' : ''}{cashSummary.netBalance.toLocaleString()}đ
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11.5px', color: '#cbd5e1', marginTop: '6px', borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: '6px' }}>
+                <span>🏦 Bank: {cashSummary.bankBalance.toLocaleString()}đ</span>
+                <span>💵 Két: {cashSummary.cashBalance.toLocaleString()}đ</span>
+              </div>
             </div>
 
-            <div className="glass-panel" style={{ padding: '20px', borderLeft: '4px solid #38bdf8', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                <span style={{ color: '#94a3b8', fontSize: '13px', fontWeight: '600' }}>Tỷ Lệ Tái Ký (Repeat)</span>
-                <div style={{ background: 'rgba(56,189,248,0.15)', padding: '6px', borderRadius: '8px', display: 'flex', alignItems: 'center' }}>
-                  <RotateCcw size={18} color="#38bdf8" />
-                </div>
+            {/* Customer Debt */}
+            <div className="glass-panel" style={{ padding: '20px', borderLeft: '4px solid #f59e0b' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontSize: '12.5px', color: '#94a3b8', fontWeight: '600' }}>CÔNG NỢ PHẢI THU (Khách Nợ)</span>
+                <ArrowDownRight size={20} color="#f59e0b" />
               </div>
-              <p style={{ fontSize: '24px', fontWeight: '800', color: '#38bdf8', margin: '2px 0' }}>
-                {repeatRate}%
-              </p>
-              <span style={{ fontSize: '12px', color: '#64748b' }}>{repeatCustomersCount} khách mua từ 2 đơn</span>
-            </div>
-
-            <div className="glass-panel" style={{ padding: '20px', borderLeft: '4px solid #ef4444', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                <span style={{ color: '#94a3b8', fontSize: '13px', fontWeight: '600' }}>Công Nợ Phải Thu</span>
-                <div style={{ background: 'rgba(239,68,68,0.15)', padding: '6px', borderRadius: '8px', display: 'flex', alignItems: 'center' }}>
-                  <Wallet size={18} color="#ef4444" />
-                </div>
-              </div>
-              <p style={{ fontSize: '24px', fontWeight: '800', color: '#ef4444', margin: '2px 0' }}>
+              <div style={{ fontSize: '24px', fontWeight: '900', color: '#f59e0b', marginTop: '6px' }}>
                 {totalCustomerDebt.toLocaleString()}đ
-              </p>
-              <span style={{ fontSize: '12px', color: '#64748b' }}>Khách hàng đang nợ</span>
+              </div>
+              <div style={{ fontSize: '11px', color: '#64748b', marginTop: '6px' }}>Tiền nợ từ các khách sỉ & CTV</div>
+            </div>
+
+            {/* Supplier Debt */}
+            <div className="glass-panel" style={{ padding: '20px', borderLeft: '4px solid #ef4444' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontSize: '12.5px', color: '#94a3b8', fontWeight: '600' }}>CÔNG NỢ PHẢI TRẢ (Nợ NCC)</span>
+                <ArrowUpRight size={20} color="#ef4444" />
+              </div>
+              <div style={{ fontSize: '24px', fontWeight: '900', color: '#ef4444', marginTop: '6px' }}>
+                {totalSupplierDebt.toLocaleString()}đ
+              </div>
+              <div style={{ fontSize: '11px', color: '#64748b', marginTop: '6px' }}>Tiền mua sỉ/lô chưa thanh toán NCC</div>
+            </div>
+
+            {/* Loyalty / Repeat Rate */}
+            <div className="glass-panel" style={{ padding: '20px', borderLeft: '4px solid #38bdf8' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontSize: '12.5px', color: '#94a3b8', fontWeight: '600' }}>TỶ LỆ KHÁCH TÁI MUA / GIA HẠN</span>
+                <ShieldCheck size={20} color="#38bdf8" />
+              </div>
+              <div style={{ fontSize: '24px', fontWeight: '900', color: '#38bdf8', marginTop: '6px' }}>
+                {repeatRate}%
+              </div>
+              <div style={{ fontSize: '11px', color: '#64748b', marginTop: '6px' }}>{repeatCustomersCount} / {customers.length} khách mua từ 2 lần</div>
+            </div>
+
+            {/* Inventory Asset Value */}
+            <div className="glass-panel" style={{ padding: '20px', borderLeft: '4px solid #a855f7' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontSize: '12.5px', color: '#94a3b8', fontWeight: '600' }}>GIÁ TRỊ TỒN KHO SỐ (VỐN)</span>
+                <Boxes size={20} color="#a855f7" />
+              </div>
+              <div style={{ fontSize: '24px', fontWeight: '900', color: '#a855f7', marginTop: '6px' }}>
+                {(inventorySummary.totalInventoryValue || 0).toLocaleString()}đ
+              </div>
+              <div style={{ fontSize: '11px', color: '#cbd5e1', marginTop: '6px' }}>
+                Đang có <strong>{inventorySummary.availableCount || 0}</strong> key sẵn sàng xuất bán
+              </div>
             </div>
           </div>
 
-          {/* Channel Analytics Bars */}
-          <div className="glass-panel" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <BarChart2 size={20} color="#6366f1" />
-              <h2 style={{ fontSize: '17px', fontWeight: '700' }}>Phân Tích Doanh Thu Theo Kênh Bán Hàng 360°</h2>
-            </div>
+          {/* ==================== 3. OPEX COST STRUCTURE & CHANNELS ==================== */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '20px' }}>
+            {/* OPEX Cost Structure */}
+            <div className="glass-panel" style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+              <h3 style={{ fontSize: '16px', fontWeight: '800', color: '#fff', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <BarChart3 size={18} color="#ef4444" /> Cơ Cấu Chi Phí Hoạt Động (OPEX)
+              </h3>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              {channelAnalytics.map(chan => (
-                <div key={chan.sourceKey} style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px' }}>
-                    <span style={{ color: '#fff', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <span>{chan.icon}</span> {chan.label} ({chan.count} đơn)
-                    </span>
-                    <strong style={{ color: chan.color }}>
-                      {chan.revenue.toLocaleString()}đ ({chan.percentage}%)
-                    </strong>
-                  </div>
-                  <div style={{ width: '100%', height: '8px', background: 'rgba(255,255,255,0.06)', borderRadius: '4px', overflow: 'hidden' }}>
-                    <div style={{
-                      width: `${Math.max(2, chan.percentage)}%`,
-                      height: '100%',
-                      background: chan.color,
-                      borderRadius: '4px',
-                      transition: 'width 0.5s ease'
-                    }} />
-                  </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                {/* Fixed Cost */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '13px' }}>
+                  <span style={{ color: '#cbd5e1', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <Building size={14} color="#38bdf8" /> Chi phí Cố định (Mặt bằng, VPS, Tool):
+                  </span>
+                  <strong style={{ color: '#fff' }}>{opexSummary.totalFixed.toLocaleString()}đ</strong>
                 </div>
-              ))}
+
+                {/* Variable Cost */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '13px' }}>
+                  <span style={{ color: '#cbd5e1', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <Megaphone size={14} color="#f59e0b" /> Chi phí Biến động (Quảng cáo Ads, Bank):
+                  </span>
+                  <strong style={{ color: '#fff' }}>{opexSummary.totalVariable.toLocaleString()}đ</strong>
+                </div>
+
+                {/* Payroll */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '13px' }}>
+                  <span style={{ color: '#cbd5e1', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <Users size={14} color="#10b981" /> Quỹ Lương & Hoa hồng nhân sự:
+                  </span>
+                  <strong style={{ color: '#fff' }}>{totalPayrollPaid.toLocaleString()}đ</strong>
+                </div>
+
+                {/* Total */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '14px', borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: '10px' }}>
+                  <span style={{ color: '#ef4444', fontWeight: '700' }}>TỔNG CHI PHÍ VẬN HÀNH:</span>
+                  <strong style={{ color: '#ef4444', fontSize: '16px' }}>-{totalOperatingCost.toLocaleString()}đ</strong>
+                </div>
+              </div>
             </div>
-          </div>
 
-          {/* Recent Orders List */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-            <h2 style={{ fontSize: '17px', fontWeight: '700' }}>📦 Đơn Hàng Gần Đây</h2>
-            <div className="glass-panel" style={{ padding: 0, overflow: 'hidden' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
-                <thead>
-                  <tr style={{ background: 'rgba(255,255,255,0.04)', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-                    {['Mã Đơn', 'Khách Hàng', 'Sản Phẩm', 'Doanh Thu', 'Kênh Bán', 'Trạng Thái'].map(h => (
-                      <th key={h} style={{ padding: '12px 16px', textAlign: 'left', color: '#475569', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: '700' }}>{h}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {orders.slice(0, 5).map(o => {
-                    const custName = o.customer_name || o.customerName;
-                    const prodName = o.product_name || o.productName;
-                    const sellP = o.sell_price || o.sellPrice || 0;
-                    const srcCfg = SOURCE_CONFIG[o.source] || SOURCE_CONFIG['Facebook Page'];
+            {/* Channel Performance */}
+            <div className="glass-panel" style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+              <h3 style={{ fontSize: '16px', fontWeight: '800', color: '#fff', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <PieChart size={18} color="#38bdf8" /> Hiệu Quả Kênh Bán Hàng & Nguồn Khách
+              </h3>
 
-                    return (
-                      <tr key={o.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                        <td style={{ padding: '12px 16px' }}><strong>#{o.id}</strong></td>
-                        <td style={{ padding: '12px 16px', color: '#fff', fontWeight: '600' }}>{custName}</td>
-                        <td style={{ padding: '12px 16px', color: '#818cf8' }}>{prodName}</td>
-                        <td style={{ padding: '12px 16px', color: '#10b981', fontWeight: '700' }}>{sellP.toLocaleString()}đ</td>
-                        <td style={{ padding: '12px 16px' }}>
-                          <span className="badge" style={{ background: srcCfg.bg, color: srcCfg.color }}>
-                            {srcCfg.icon} {o.channel || o.source || 'FB Page'}
-                          </span>
-                        </td>
-                        <td style={{ padding: '12px 16px' }}>
-                          <span className={`badge ${o.status === 'Đã thanh toán' ? 'badge-success' : 'badge-warning'}`}>
-                            {o.status}
-                          </span>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                {channelAnalytics.map(chan => (
+                  <div key={chan.sourceKey} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '12.5px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span>{chan.icon}</span>
+                      <span style={{ color: '#fff', fontWeight: '600' }}>{chan.label}</span>
+                      <span style={{ color: '#64748b', fontSize: '11px' }}>({chan.count} đơn)</span>
+                    </div>
+                    <div style={{ textAlign: 'right' }}>
+                      <strong style={{ color: '#38bdf8' }}>{chan.revenue.toLocaleString()}đ</strong>
+                      <span style={{ color: '#94a3b8', fontSize: '11px', marginLeft: '6px' }}>({chan.percentage}%)</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div style={{ marginTop: '8px', borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: '16px' }}>
+                <h3 style={{ fontSize: '13px', fontWeight: '700', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '12px' }}>
+                  📊 Doanh Thu Theo Nhóm Khách
+                </h3>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px' }}>
+                  {tierAnalytics.map(t => (
+                    <div key={t.tierKey} style={{ background: t.bg, border: '1px solid ' + t.color + '40', borderRadius: '12px', padding: '14px' }}>
+                      <div style={{ fontSize: '18px', marginBottom: '4px' }}>{t.icon} <strong style={{ color: t.color }}>{t.label}</strong></div>
+                      <div style={{ fontSize: '12px', color: '#94a3b8', marginBottom: '8px' }}>{t.customers} KH &middot; {t.count} đơn</div>
+                      <div style={{ fontSize: '14px', fontWeight: '700', color: t.color }}>{t.revenue.toLocaleString()}đ</div>
+                      <div style={{ fontSize: '11px', color: '#64748b' }}>Lãi: {t.profit.toLocaleString()}đ</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
           </div>
         </>

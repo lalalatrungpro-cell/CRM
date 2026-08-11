@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { CustomerService, OrderService, CareLogService, VietQRService, WarrantyLogService } from '../utils/dataService';
+import { CustomerService, OrderService, CareLogService, VietQRService, WarrantyLogService, TeamService } from '../utils/dataService';
 import { getVietQRUrl } from '../utils/storage';
 import { useToast } from '../components/Toast';
 import ConfirmDialog from '../components/ConfirmDialog';
 import {
   ArrowLeft, Phone, Calendar, Clock, DollarSign, Award, Send,
-  Plus, Trash2, ShieldAlert, Check, Copy, FileText, Eye, EyeOff, MessageCircle, X, Printer
+  Plus, Trash2, ShieldAlert, Check, Copy, FileText, Eye, EyeOff, MessageCircle, X, Printer, ShieldCheck
 } from 'lucide-react';
 
 function numberToVietnameseWords(amount) {
@@ -25,21 +25,19 @@ function numberToVietnameseWords(amount) {
       res += defaultNumbers[hundred] + " trăm ";
     }
 
-    if (ten > 1) {
-      res += defaultNumbers[ten] + " mươi ";
-      if (unit === 1) res += "mốt ";
-      else if (unit === 5) res += "lăm ";
-      else if (unit > 0) res += defaultNumbers[unit] + " ";
+    if (ten === 0 && unit > 0) {
+      if (hundred > 0 || !isLeadingGroup) res += "lẻ ";
+      res += defaultNumbers[unit] + " ";
     } else if (ten === 1) {
       res += "mười ";
       if (unit === 1) res += "một ";
       else if (unit === 5) res += "lăm ";
       else if (unit > 0) res += defaultNumbers[unit] + " ";
-    } else {
-      if (unit > 0) {
-        if (hundred > 0 || !isLeadingGroup) res += "lẻ ";
-        res += defaultNumbers[unit] + " ";
-      }
+    } else if (ten > 1) {
+      res += defaultNumbers[ten] + " mươi ";
+      if (unit === 1) res += "mốt ";
+      else if (unit === 5) res += "lăm ";
+      else if (unit > 0) res += defaultNumbers[unit] + " ";
     }
     return res;
   }
@@ -94,6 +92,7 @@ export default function CustomerDetail() {
 
   const [customer, setCustomer] = useState(null);
   const [orders, setOrders] = useState([]);
+  const [teams, setTeams] = useState([]);
   const [careLogs, setCareLogs] = useState([]);
   const [warrantyLogs, setWarrantyLogs] = useState([]);
   const [vietqr, setVietqr] = useState(null);
@@ -113,12 +112,13 @@ export default function CustomerDetail() {
     if (!shopId || !id) return;
     setLoading(true);
     try {
-      const [custList, orderList, cLogs, vqrData, wLogs] = await Promise.all([
+      const [custList, orderList, cLogs, vqrData, wLogs, tList] = await Promise.all([
         CustomerService.list(shopId),
         OrderService.list(shopId),
         CareLogService.list(shopId, id),
         VietQRService.get(shopId),
-        WarrantyLogService.listByShop(shopId)
+        WarrantyLogService.listByShop(shopId),
+        TeamService.list(shopId)
       ]);
 
       const foundCust = (custList || []).find(c => String(c.id) === String(id));
@@ -135,6 +135,7 @@ export default function CustomerDetail() {
       setCustomer(foundCust);
       setNotes(foundCust.notes || '');
       setOrders(custOrders);
+      setTeams(tList || []);
       setCareLogs(cLogs || []);
       setWarrantyLogs(custWarrantyLogs);
       setVietqr(vqrData || { bank_id: 'MB', account_no: '0901234567', account_name: 'SHOP DROPSHIP CRM', memo_prefix: 'DON' });
@@ -304,12 +305,23 @@ export default function CustomerDetail() {
                 {orders.map(o => {
                   const isRev = revealedInfors[o.id];
                   const isCop = copiedId === `infor-${o.id}`;
+                  const linkedTeam = teams.find(t => String(t.id) === String(o.team_id || o.teamId));
+                  const rawTeamName = linkedTeam ? linkedTeam.name : (o.team_name || o.teamName || (o.team_id ? `Team #${o.team_id}` : null));
+                  let cleanName = rawTeamName ? String(rawTeamName).trim() : null;
+                  if (cleanName && cleanName.includes('|')) cleanName = cleanName.split('|')[0].trim();
+                  if (cleanName) cleanName = cleanName.replace(/^Mail\s*\|\s*Pass\s*\|\s*2FA\s*/i, '').trim();
+
                   return (
                     <div key={o.id} style={{ background: 'rgba(255,255,255,0.03)', padding: '12px 14px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.06)', display: 'flex', flexDirection: 'column', gap: '6px' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <strong style={{ color: '#818cf8', fontSize: '14px' }}>#{o.id} - {o.product_name || o.productName}</strong>
                         <span className={`badge ${o.status === 'Đã thanh toán' ? 'badge-success' : 'badge-warning'}`}>{o.status}</span>
                       </div>
+                      {cleanName && (
+                        <div title={rawTeamName} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: 'rgba(16,185,129,0.12)', border: '1px solid rgba(16,185,129,0.3)', borderRadius: '6px', padding: '3px 8px', fontSize: '11.5px', color: '#10b981', fontWeight: '700', width: 'fit-content', margin: '2px 0', maxWidth: '300px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          <ShieldCheck size={13} style={{ flexShrink: 0 }} /> <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>{cleanName}</span>
+                        </div>
+                      )}
                       <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12.5px', color: '#94a3b8' }}>
                         <span>Hạn: {o.expire_date || o.expireDate || '---'}</span>
                         <strong style={{ color: '#10b981' }}>{(o.sell_price || o.sellPrice || 0).toLocaleString()}đ</strong>
