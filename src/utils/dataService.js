@@ -1,4 +1,4 @@
-import { supabase } from './supabaseClient';
+﻿import { supabase } from './supabaseClient';
 
 // Helper for safe localStorage fallback
 export const getLocal = (key, defaultVal = []) => {
@@ -82,6 +82,27 @@ const mergeData = (supaList, localKey) => {
   return Array.from(map.values()).sort((a, b) => (b.id - a.id));
 };
 
+
+export function generateDailyCustomerId(currentCustomers = []) {
+  const now = new Date();
+  const yy = String(now.getFullYear()).slice(-2);
+  const mm = String(now.getMonth() + 1).padStart(2, '0');
+  const dd = String(now.getDate()).padStart(2, '0');
+  const datePrefix = $(yy);
+
+  let maxSeq = 0;
+  (currentCustomers || []).forEach(c => {
+    const idStr = String(c.id || '');
+    if (idStr.startsWith('KH' + datePrefix)) {
+      const seqStr = idStr.slice(('KH' + datePrefix).length);
+      const seqNum = parseInt(seqStr, 10);
+      if (!isNaN(seqNum) && seqNum > maxSeq) maxSeq = seqNum;
+    }
+  });
+
+  const seq = String(maxSeq + 1).padStart(3, '0');
+  return KH;
+}
 // ==================== CUSTOMERS ====================
 export const CustomerService = {
   async list(shopId) {
