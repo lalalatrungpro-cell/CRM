@@ -331,11 +331,11 @@ export default function Dashboard() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '22px' }} className="animate-fade-in">
 
-      {/* ══════════ HEADER ══════════ */}
+      {/* ══════════ HEADER SECTION ══════════ */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '12px' }}>
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '4px' }}>
-            <h1 style={{ fontSize: '22px', fontWeight: '900', letterSpacing: '-0.03em', margin: 0, background: 'linear-gradient(135deg,#fff 30%,#94a3b8)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+            <h1 style={{ fontSize: '24px', fontWeight: '900', letterSpacing: '-0.03em', margin: 0, background: 'linear-gradient(135deg,#ffffff 30%,#94a3b8)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
               📊 Command Center 360°
             </h1>
             {hasAlerts && (
@@ -345,23 +345,23 @@ export default function Dashboard() {
               </span>
             )}
           </div>
-          <p style={{ color: '#64748b', fontSize: '12px', margin: 0 }}>
-            Toàn cảnh doanh nghiệp · Cập nhật: {new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}
+          <p style={{ color: '#64748b', fontSize: '13px', margin: 0 }}>
+            Toàn cảnh doanh nghiệp P&L · Cập nhật: {new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}
           </p>
         </div>
         <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-          <button className="glass-button" onClick={loadData} title="Làm mới dữ liệu" style={{ padding: '8px 12px', border: '1px solid rgba(255,255,255,0.1)' }}>
-            <RefreshCw size={15} />
+          <button className="glass-button" onClick={loadData} title="Làm mới dữ liệu" style={{ padding: '9px 13px', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: '10px' }}>
+            <RefreshCw size={16} />
           </button>
-          <button className="glass-button" onClick={handleExportPnL} style={{ background: 'rgba(16,185,129,0.15)', border: '1px solid rgba(16,185,129,0.3)', color: '#10b981', fontWeight: '700', fontSize: '13px', gap: '6px' }}>
-            <Download size={15} /> Xuất P&L .csv
+          <button className="glass-button" onClick={handleExportPnL} style={{ background: 'rgba(16,185,129,0.18)', border: '1px solid rgba(16,185,129,0.35)', color: '#10b981', fontWeight: '700', fontSize: '13px', borderRadius: '10px', padding: '9px 16px', gap: '8px' }}>
+            <Download size={16} /> Xuất P&L .csv
           </button>
         </div>
       </div>
 
-      {/* ══════════ DATE FILTER BAR ══════════ */}
-      <div style={{ background: 'rgba(15,23,42,0.7)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '14px', padding: '10px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px', backdropFilter: 'blur(12px)' }}>
-        <div style={{ display: 'flex', gap: '4px', background: 'rgba(0,0,0,0.3)', padding: '4px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.05)' }}>
+      {/* ══════════ DATE FILTER TOOLBAR BAR ══════════ */}
+      <div style={{ background: 'rgba(15,23,42,0.8)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '16px', padding: '12px 18px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px', backdropFilter: 'blur(16px)', boxShadow: '0 8px 32px rgba(0,0,0,0.2)' }}>
+        <div style={{ display: 'flex', gap: '5px', background: 'rgba(0,0,0,0.35)', padding: '4px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.06)' }}>
           {[
             { key: 'ALL', label: '🗓 Tất Cả', color: '#6366f1' },
             { key: 'THIS_MONTH', label: '📅 Tháng Này', color: '#10b981' },
@@ -370,112 +370,120 @@ export default function Dashboard() {
             { key: 'THIS_YEAR', label: '📆 Năm Nay', color: '#a855f7' },
           ].map(({ key, label, color }) => (
             <button key={key} onClick={() => handleApplyDatePreset(key)} style={{
-              padding: '5px 12px', borderRadius: '7px', fontSize: '12px', fontWeight: '700', cursor: 'pointer', border: 'none', transition: 'all .2s',
+              padding: '6px 14px', borderRadius: '8px', fontSize: '12px', fontWeight: '700', cursor: 'pointer', border: 'none', transition: 'all .2s ease',
               background: datePreset === key ? color : 'transparent',
-              color: datePreset === key ? '#fff' : '#64748b',
-              boxShadow: datePreset === key ? `0 0 12px ${color}55` : 'none',
+              color: datePreset === key ? '#ffffff' : '#64748b',
+              boxShadow: datePreset === key ? `0 0 14px ${color}66` : 'none',
             }}>{label}</button>
           ))}
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <span style={{ fontSize: '11px', color: '#475569' }}>Từ:</span>
+          <span style={{ fontSize: '12px', color: '#64748b', fontWeight: '600' }}>Từ:</span>
           <input type="date" value={startDate} onChange={e => { setStartDate(e.target.value); setDatePreset('CUSTOM'); }}
-            style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '7px', padding: '5px 8px', color: '#94a3b8', fontSize: '12px', outline: 'none' }} />
-          <span style={{ fontSize: '11px', color: '#475569' }}>→</span>
+            style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: '8px', padding: '6px 10px', color: '#94a3b8', fontSize: '12px', outline: 'none' }} />
+          <span style={{ fontSize: '12px', color: '#64748b' }}>→</span>
           <input type="date" value={endDate} onChange={e => { setEndDate(e.target.value); setDatePreset('CUSTOM'); }}
-            style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '7px', padding: '5px 8px', color: '#94a3b8', fontSize: '12px', outline: 'none' }} />
+            style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: '8px', padding: '6px 10px', color: '#94a3b8', fontSize: '12px', outline: 'none' }} />
         </div>
       </div>
 
       {loading ? (
-        <div style={{ textAlign: 'center', padding: '80px 0', color: '#475569', fontSize: '15px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' }}>
-          <RefreshCw size={20} style={{ animation: 'spin 1s linear infinite' }} />
-          Đang tải dữ liệu...
+        <div style={{ textAlign: 'center', padding: '80px 0', color: '#64748b', fontSize: '15px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' }}>
+          <RefreshCw size={22} style={{ animation: 'spin 1s linear infinite' }} />
+          Đang tải toàn cảnh dữ liệu CRM...
         </div>
       ) : (
         <>
 
           {/* ══════════ TẦNG 1: 4 HERO KPI CARDS ══════════ */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '14px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px' }}>
 
             {/* Card 1: Doanh Thu Thuần */}
             <div style={{
-              background: 'linear-gradient(135deg, rgba(16,185,129,0.12) 0%, rgba(15,23,42,0.8) 100%)',
-              border: '1px solid rgba(16,185,129,0.25)', borderRadius: '16px', padding: '20px',
-              borderLeft: '3px solid #10b981', boxShadow: '0 4px 24px rgba(16,185,129,0.08)', position: 'relative', overflow: 'hidden'
+              background: 'linear-gradient(135deg, rgba(16,185,129,0.15) 0%, rgba(15,23,42,0.85) 100%)',
+              border: '1px solid rgba(16,185,129,0.3)', borderRadius: '18px', padding: '22px',
+              borderLeft: '4px solid #10b981', boxShadow: '0 8px 32px rgba(16,185,129,0.12)', position: 'relative', overflow: 'hidden'
             }}>
-              <div style={{ position: 'absolute', top: '-20px', right: '-20px', width: '80px', height: '80px', background: 'radial-gradient(circle, rgba(16,185,129,0.15), transparent 70%)', borderRadius: '50%' }} />
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '10px' }}>
-                <span style={{ fontSize: '11px', fontWeight: '700', color: '#10b981', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Doanh Thu Thuần</span>
-                <div style={{ background: 'rgba(16,185,129,0.15)', borderRadius: '8px', padding: '6px' }}><TrendingUp size={16} color="#10b981" /></div>
+              <div style={{ position: 'absolute', top: '-20px', right: '-20px', width: '90px', height: '90px', background: 'radial-gradient(circle, rgba(16,185,129,0.2), transparent 70%)', borderRadius: '50%' }} />
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
+                <span style={{ fontSize: '12px', fontWeight: '800', color: '#10b981', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Doanh Thu Thuần</span>
+                <div style={{ background: 'rgba(16,185,129,0.2)', borderRadius: '10px', padding: '7px' }}><TrendingUp size={18} color="#10b981" /></div>
               </div>
-              <div style={{ fontSize: '28px', fontWeight: '900', color: '#fff', letterSpacing: '-0.03em' }}>{fmtShort(totalRevenue)}<span style={{ fontSize: '14px', color: '#94a3b8', marginLeft: '2px' }}>đ</span></div>
-              <div style={{ fontSize: '11px', color: '#64748b', marginTop: '4px' }}>{paidOrders.length} đơn hàng trong kỳ</div>
+              <div style={{ fontSize: '28px', fontWeight: '900', color: '#ffffff', letterSpacing: '-0.03em' }}>
+                {fmt(totalRevenue)}<span style={{ fontSize: '15px', color: '#94a3b8', marginLeft: '3px' }}>đ</span>
+              </div>
+              <div style={{ fontSize: '12px', color: '#64748b', marginTop: '6px' }}>{paidOrders.length} đơn hàng trong kỳ chọn</div>
             </div>
 
             {/* Card 2: Lợi Nhuận Ròng */}
             <div style={{
-              background: `linear-gradient(135deg, rgba(${realNetProfit >= 0 ? '99,102,241' : '239,68,68'},0.12) 0%, rgba(15,23,42,0.8) 100%)`,
-              border: `1px solid rgba(${realNetProfit >= 0 ? '99,102,241' : '239,68,68'},0.25)`, borderRadius: '16px', padding: '20px',
-              borderLeft: `3px solid ${realNetProfit >= 0 ? '#6366f1' : '#ef4444'}`, boxShadow: `0 4px 24px rgba(${realNetProfit >= 0 ? '99,102,241' : '239,68,68'},0.08)`, position: 'relative', overflow: 'hidden'
+              background: `linear-gradient(135deg, rgba(${realNetProfit >= 0 ? '99,102,241' : '239,68,68'},0.15) 0%, rgba(15,23,42,0.85) 100%)`,
+              border: `1px solid rgba(${realNetProfit >= 0 ? '99,102,241' : '239,68,68'},0.3)`, borderRadius: '18px', padding: '22px',
+              borderLeft: `4px solid ${realNetProfit >= 0 ? '#6366f1' : '#ef4444'}`, boxShadow: `0 8px 32px rgba(${realNetProfit >= 0 ? '99,102,241' : '239,68,68'},0.12)`, position: 'relative', overflow: 'hidden'
             }}>
-              <div style={{ position: 'absolute', top: '-20px', right: '-20px', width: '80px', height: '80px', background: `radial-gradient(circle, rgba(${realNetProfit >= 0 ? '99,102,241' : '239,68,68'},0.15), transparent 70%)`, borderRadius: '50%' }} />
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '10px' }}>
-                <span style={{ fontSize: '11px', fontWeight: '700', color: realNetProfit >= 0 ? '#6366f1' : '#ef4444', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Lợi Nhuận Ròng</span>
-                <div style={{ background: `rgba(${realNetProfit >= 0 ? '99,102,241' : '239,68,68'},0.15)`, borderRadius: '8px', padding: '6px' }}>
-                  {realNetProfit >= 0 ? <ArrowUpRight size={16} color="#6366f1" /> : <ArrowDownRight size={16} color="#ef4444" />}
+              <div style={{ position: 'absolute', top: '-20px', right: '-20px', width: '90px', height: '90px', background: `radial-gradient(circle, rgba(${realNetProfit >= 0 ? '99,102,241' : '239,68,68'},0.2), transparent 70%)`, borderRadius: '50%' }} />
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
+                <span style={{ fontSize: '12px', fontWeight: '800', color: realNetProfit >= 0 ? '#6366f1' : '#ef4444', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Lợi Nhuận Ròng</span>
+                <div style={{ background: `rgba(${realNetProfit >= 0 ? '99,102,241' : '239,68,68'},0.2)`, borderRadius: '10px', padding: '7px' }}>
+                  {realNetProfit >= 0 ? <ArrowUpRight size={18} color="#6366f1" /> : <ArrowDownRight size={18} color="#ef4444" />}
                 </div>
               </div>
               <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
-                <div style={{ fontSize: '28px', fontWeight: '900', color: realNetProfit >= 0 ? '#818cf8' : '#ef4444', letterSpacing: '-0.03em' }}>{realNetProfit >= 0 ? '+' : ''}{fmtShort(realNetProfit)}<span style={{ fontSize: '14px', marginLeft: '2px' }}>đ</span></div>
-                <span style={{ fontSize: '11px', fontWeight: '800', padding: '2px 6px', borderRadius: '6px', background: realNetProfit >= 0 ? 'rgba(99,102,241,0.2)' : 'rgba(239,68,68,0.2)', color: realNetProfit >= 0 ? '#818cf8' : '#ef4444' }}>{netMargin}%</span>
+                <div style={{ fontSize: '28px', fontWeight: '900', color: realNetProfit >= 0 ? '#818cf8' : '#ef4444', letterSpacing: '-0.03em' }}>
+                  {realNetProfit >= 0 ? '+' : ''}{fmt(realNetProfit)}<span style={{ fontSize: '15px', marginLeft: '3px' }}>đ</span>
+                </div>
+                <span style={{ fontSize: '11px', fontWeight: '800', padding: '3px 8px', borderRadius: '6px', background: realNetProfit >= 0 ? 'rgba(99,102,241,0.25)' : 'rgba(239,68,68,0.25)', color: realNetProfit >= 0 ? '#818cf8' : '#ef4444' }}>{netMargin}%</span>
               </div>
-              <div style={{ fontSize: '11px', color: '#64748b', marginTop: '4px' }}>Biên lãi gộp: {grossMargin}%</div>
+              <div style={{ fontSize: '12px', color: '#64748b', marginTop: '6px' }}>Biên lãi gộp: {grossMargin}%</div>
             </div>
 
             {/* Card 3: Quỹ Tiền Mặt & Bank */}
             <div style={{
-              background: 'linear-gradient(135deg, rgba(56,189,248,0.12) 0%, rgba(15,23,42,0.8) 100%)',
-              border: '1px solid rgba(56,189,248,0.25)', borderRadius: '16px', padding: '20px',
-              borderLeft: '3px solid #38bdf8', boxShadow: '0 4px 24px rgba(56,189,248,0.08)', position: 'relative', overflow: 'hidden'
+              background: 'linear-gradient(135deg, rgba(56,189,248,0.15) 0%, rgba(15,23,42,0.85) 100%)',
+              border: '1px solid rgba(56,189,248,0.3)', borderRadius: '18px', padding: '22px',
+              borderLeft: '4px solid #38bdf8', boxShadow: '0 8px 32px rgba(56,189,248,0.12)', position: 'relative', overflow: 'hidden'
             }}>
-              <div style={{ position: 'absolute', top: '-20px', right: '-20px', width: '80px', height: '80px', background: 'radial-gradient(circle, rgba(56,189,248,0.15), transparent 70%)', borderRadius: '50%' }} />
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '10px' }}>
-                <span style={{ fontSize: '11px', fontWeight: '700', color: '#38bdf8', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Quỹ Tiền Mặt & Bank</span>
-                <div style={{ background: 'rgba(56,189,248,0.15)', borderRadius: '8px', padding: '6px' }}><Wallet size={16} color="#38bdf8" /></div>
+              <div style={{ position: 'absolute', top: '-20px', right: '-20px', width: '90px', height: '90px', background: 'radial-gradient(circle, rgba(56,189,248,0.2), transparent 70%)', borderRadius: '50%' }} />
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
+                <span style={{ fontSize: '12px', fontWeight: '800', color: '#38bdf8', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Quỹ Tiền Mặt & Bank</span>
+                <div style={{ background: 'rgba(56,189,248,0.2)', borderRadius: '10px', padding: '7px' }}><Wallet size={18} color="#38bdf8" /></div>
               </div>
-              <div style={{ fontSize: '28px', fontWeight: '900', color: '#fff', letterSpacing: '-0.03em' }}>{fmtShort(cashSummary.netBalance)}<span style={{ fontSize: '14px', color: '#94a3b8', marginLeft: '2px' }}>đ</span></div>
-              <div style={{ fontSize: '11px', color: '#64748b', marginTop: '4px' }}>🏦 {fmtShort(cashSummary.bankBalance)}đ · 💵 {fmtShort(cashSummary.cashBalance)}đ</div>
+              <div style={{ fontSize: '28px', fontWeight: '900', color: '#ffffff', letterSpacing: '-0.03em' }}>
+                {fmt(cashSummary.netBalance)}<span style={{ fontSize: '15px', color: '#94a3b8', marginLeft: '3px' }}>đ</span>
+              </div>
+              <div style={{ fontSize: '12px', color: '#64748b', marginTop: '6px' }}>🏦 Bank: {fmtShort(cashSummary.bankBalance)}đ · 💵 Két: {fmtShort(cashSummary.cashBalance)}đ</div>
             </div>
 
             {/* Card 4: Giá Trị Tồn Kho */}
             <div style={{
-              background: 'linear-gradient(135deg, rgba(168,85,247,0.12) 0%, rgba(15,23,42,0.8) 100%)',
-              border: '1px solid rgba(168,85,247,0.25)', borderRadius: '16px', padding: '20px',
-              borderLeft: '3px solid #a855f7', boxShadow: '0 4px 24px rgba(168,85,247,0.08)', position: 'relative', overflow: 'hidden'
+              background: 'linear-gradient(135deg, rgba(168,85,247,0.15) 0%, rgba(15,23,42,0.85) 100%)',
+              border: '1px solid rgba(168,85,247,0.3)', borderRadius: '18px', padding: '22px',
+              borderLeft: '4px solid #a855f7', boxShadow: '0 8px 32px rgba(168,85,247,0.12)', position: 'relative', overflow: 'hidden'
             }}>
-              <div style={{ position: 'absolute', top: '-20px', right: '-20px', width: '80px', height: '80px', background: 'radial-gradient(circle, rgba(168,85,247,0.15), transparent 70%)', borderRadius: '50%' }} />
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '10px' }}>
-                <span style={{ fontSize: '11px', fontWeight: '700', color: '#a855f7', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Giá Trị Tồn Kho</span>
-                <div style={{ background: 'rgba(168,85,247,0.15)', borderRadius: '8px', padding: '6px' }}><Boxes size={16} color="#a855f7" /></div>
+              <div style={{ position: 'absolute', top: '-20px', right: '-20px', width: '90px', height: '90px', background: 'radial-gradient(circle, rgba(168,85,247,0.2), transparent 70%)', borderRadius: '50%' }} />
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
+                <span style={{ fontSize: '12px', fontWeight: '800', color: '#a855f7', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Giá Trị Tồn Kho</span>
+                <div style={{ background: 'rgba(168,85,247,0.2)', borderRadius: '10px', padding: '7px' }}><Boxes size={18} color="#a855f7" /></div>
               </div>
-              <div style={{ fontSize: '28px', fontWeight: '900', color: '#fff', letterSpacing: '-0.03em' }}>{fmtShort(inventorySummary.totalInventoryValue || 0)}<span style={{ fontSize: '14px', color: '#94a3b8', marginLeft: '2px' }}>đ</span></div>
-              <div style={{ fontSize: '11px', color: '#64748b', marginTop: '4px' }}>{inventorySummary.availableCount || 0} key/slot sẵn sàng xuất bán</div>
+              <div style={{ fontSize: '28px', fontWeight: '900', color: '#ffffff', letterSpacing: '-0.03em' }}>
+                {fmt(inventorySummary.totalInventoryValue || 0)}<span style={{ fontSize: '15px', color: '#94a3b8', marginLeft: '3px' }}>đ</span>
+              </div>
+              <div style={{ fontSize: '12px', color: '#64748b', marginTop: '6px' }}>{inventorySummary.availableCount || 0} key/slot sẵn sàng xuất bán</div>
             </div>
 
           </div>
 
           {/* ══════════ TẦNG 2: P&L + OPEX + DEBT/LOYALTY ══════════ */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
 
-            {/* P&L Income Statement */}
-            <div style={{ background: 'rgba(15,23,42,0.75)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '16px', padding: '20px', backdropFilter: 'blur(12px)' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                <h3 style={{ margin: 0, fontSize: '14px', fontWeight: '800', color: '#fff', display: 'flex', alignItems: 'center', gap: '7px' }}>
-                  <DollarSign size={16} color="#10b981" /> Báo Cáo P&L (Kết Quả Kinh Doanh)
+            {/* P&L Income Statement Panel */}
+            <div style={{ background: 'rgba(15,23,42,0.8)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '18px', padding: '22px', backdropFilter: 'blur(16px)', boxShadow: '0 8px 32px rgba(0,0,0,0.2)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '18px' }}>
+                <h3 style={{ margin: 0, fontSize: '15px', fontWeight: '800', color: '#ffffff', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <DollarSign size={18} color="#10b981" /> Báo Cáo P&L (Kết Quả Kinh Doanh)
                 </h3>
               </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                 {[
                   { label: '① Doanh Thu Thuần', value: totalRevenue, color: '#10b981', sign: '' },
                   { label: '② Giá Vốn COGS', value: -totalCogs, color: '#ef4444', sign: '-' },
@@ -485,10 +493,10 @@ export default function Dashboard() {
                   { label: '⑥ LÃI RÒNG NET PROFIT', value: realNetProfit, color: realNetProfit >= 0 ? '#818cf8' : '#ef4444', sign: realNetProfit >= 0 ? '+' : '', bold: true, separator: true, big: true },
                 ].map((row, i) => (
                   <div key={i}>
-                    {row.separator && <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)', marginTop: '4px', marginBottom: '8px' }} />}
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 10px', borderRadius: '8px', background: row.big ? `rgba(${realNetProfit >= 0 ? '99,102,241' : '239,68,68'},0.08)` : 'transparent' }}>
-                      <span style={{ fontSize: row.big ? '13px' : '12px', color: row.big ? '#fff' : '#94a3b8', fontWeight: row.bold ? '800' : '500' }}>{row.label}</span>
-                      <span style={{ fontSize: row.big ? '15px' : '13px', fontWeight: row.bold ? '900' : '700', color: row.color, fontVariantNumeric: 'tabular-nums' }}>{row.sign}{fmt(Math.abs(row.value))}đ</span>
+                    {row.separator && <div style={{ borderTop: '1px solid rgba(255,255,255,0.08)', marginTop: '6px', marginBottom: '10px' }} />}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 12px', borderRadius: '10px', background: row.big ? `rgba(${realNetProfit >= 0 ? '99,102,241' : '239,68,68'},0.12)` : 'rgba(255,255,255,0.02)', border: row.big ? `1px solid rgba(${realNetProfit >= 0 ? '99,102,241' : '239,68,68'},0.3)` : 'none' }}>
+                      <span style={{ fontSize: row.big ? '14px' : '13px', color: row.big ? '#ffffff' : '#94a3b8', fontWeight: row.bold ? '800' : '500' }}>{row.label}</span>
+                      <span style={{ fontSize: row.big ? '16px' : '13.5px', fontWeight: row.bold ? '900' : '700', color: row.color, fontVariantNumeric: 'tabular-nums' }}>{row.sign}{fmt(Math.abs(row.value))}đ</span>
                     </div>
                   </div>
                 ))}
@@ -496,41 +504,41 @@ export default function Dashboard() {
             </div>
 
             {/* OPEX Cost Structure + Debt + Loyalty */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
 
               {/* OPEX */}
-              <div style={{ background: 'rgba(15,23,42,0.75)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '16px', padding: '18px', backdropFilter: 'blur(12px)', flex: 1 }}>
-                <h3 style={{ margin: '0 0 12px', fontSize: '13px', fontWeight: '800', color: '#fff', display: 'flex', alignItems: 'center', gap: '7px' }}>
-                  <BarChart3 size={15} color="#ef4444" /> Cơ Cấu Chi Phí Vận Hành (OPEX)
+              <div style={{ background: 'rgba(15,23,42,0.8)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '18px', padding: '20px', backdropFilter: 'blur(16px)', flex: 1, boxShadow: '0 8px 32px rgba(0,0,0,0.2)' }}>
+                <h3 style={{ margin: '0 0 14px', fontSize: '14px', fontWeight: '800', color: '#ffffff', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <BarChart3 size={16} color="#ef4444" /> Cơ Cấu Chi Phí Vận Hành (OPEX)
                 </h3>
                 {[
-                  { label: 'Chi phí Cố định (Mặt bằng, VPS)', value: opexSummary.totalFixed, color: '#38bdf8', icon: <Building size={13} color="#38bdf8" /> },
-                  { label: 'Chi phí Biến động (Ads, Marketing)', value: opexSummary.totalVariable, color: '#f59e0b', icon: <Megaphone size={13} color="#f59e0b" /> },
-                  { label: 'Quỹ Lương & Hoa Hồng', value: totalPayrollPaid, color: '#10b981', icon: <Users size={13} color="#10b981" /> },
+                  { label: 'Chi phí Cố định (Mặt bằng, VPS)', value: opexSummary.totalFixed, color: '#38bdf8', icon: <Building size={14} color="#38bdf8" /> },
+                  { label: 'Chi phí Biến động (Ads, Marketing)', value: opexSummary.totalVariable, color: '#f59e0b', icon: <Megaphone size={14} color="#f59e0b" /> },
+                  { label: 'Quỹ Lương & Hoa Hồng', value: totalPayrollPaid, color: '#10b981', icon: <Users size={14} color="#10b981" /> },
                 ].map((item, i) => (
-                  <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '12px', marginBottom: '8px' }}>
-                    <span style={{ color: '#94a3b8', display: 'flex', alignItems: 'center', gap: '5px' }}>{item.icon}{item.label}</span>
-                    <strong style={{ color: '#fff' }}>{fmt(item.value)}đ</strong>
+                  <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '13px', marginBottom: '10px' }}>
+                    <span style={{ color: '#94a3b8', display: 'flex', alignItems: 'center', gap: '6px' }}>{item.icon}{item.label}</span>
+                    <strong style={{ color: '#ffffff' }}>{fmt(item.value)}đ</strong>
                   </div>
                 ))}
-                <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: '8px', display: 'flex', justifyContent: 'space-between', fontSize: '13px', fontWeight: '800' }}>
+                <div style={{ borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: '10px', display: 'flex', justifyContent: 'space-between', fontSize: '14px', fontWeight: '800' }}>
                   <span style={{ color: '#ef4444' }}>TỔNG OPEX:</span>
                   <span style={{ color: '#ef4444' }}>-{fmt(totalOperatingCost)}đ</span>
                 </div>
               </div>
 
-              {/* Debt + Loyalty mini stats */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px' }}>
+              {/* Debt + Loyalty Mini Stats */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px' }}>
                 {[
-                  { label: 'Khách Nợ', value: fmt(totalCustomerDebt) + 'đ', color: '#f59e0b', icon: <ArrowDownRight size={14} />, sub: 'Phải Thu' },
-                  { label: 'Nợ NCC', value: fmt(totalSupplierDebt) + 'đ', color: '#ef4444', icon: <ArrowUpRight size={14} />, sub: 'Phải Trả' },
-                  { label: 'Tái Mua', value: repeatRate + '%', color: '#38bdf8', icon: <ShieldCheck size={14} />, sub: `${repeatCustomersCount}/${customers.length} KH` },
+                  { label: 'Khách Nợ', value: fmt(totalCustomerDebt) + 'đ', color: '#f59e0b', icon: <ArrowDownRight size={16} />, sub: 'Phải Thu' },
+                  { label: 'Nợ NCC', value: fmt(totalSupplierDebt) + 'đ', color: '#ef4444', icon: <ArrowUpRight size={16} />, sub: 'Phải Trả' },
+                  { label: 'Tái Mua', value: repeatRate + '%', color: '#38bdf8', icon: <ShieldCheck size={16} />, sub: `${repeatCustomersCount}/${customers.length} KH` },
                 ].map((s, i) => (
-                  <div key={i} style={{ background: 'rgba(15,23,42,0.75)', border: `1px solid rgba(255,255,255,0.06)`, borderRadius: '12px', padding: '12px', textAlign: 'center', borderTop: `2px solid ${s.color}` }}>
-                    <div style={{ color: s.color, display: 'flex', justifyContent: 'center', marginBottom: '4px' }}>{s.icon}</div>
-                    <div style={{ fontSize: '13px', fontWeight: '900', color: s.color }}>{s.value}</div>
-                    <div style={{ fontSize: '10px', color: '#64748b', marginTop: '2px' }}>{s.label}</div>
-                    <div style={{ fontSize: '10px', color: '#475569' }}>{s.sub}</div>
+                  <div key={i} style={{ background: 'rgba(15,23,42,0.8)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '14px', padding: '14px', textAlign: 'center', borderTop: `3px solid ${s.color}`, backdropFilter: 'blur(16px)' }}>
+                    <div style={{ color: s.color, display: 'flex', justifyContent: 'center', marginBottom: '6px' }}>{s.icon}</div>
+                    <div style={{ fontSize: '14px', fontWeight: '900', color: s.color }}>{s.value}</div>
+                    <div style={{ fontSize: '11px', color: '#94a3b8', marginTop: '2px', fontWeight: '700' }}>{s.label}</div>
+                    <div style={{ fontSize: '10.5px', color: '#64748b' }}>{s.sub}</div>
                   </div>
                 ))}
               </div>
@@ -538,40 +546,40 @@ export default function Dashboard() {
           </div>
 
           {/* ══════════ TẦNG 3: TOP 5 PRODUCTS + TOP 5 VIP CUSTOMERS ══════════ */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(420px, 1fr))', gap: '14px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(420px, 1fr))', gap: '16px' }}>
 
-            {/* Top 5 Products */}
-            <div style={{ background: 'rgba(15,23,42,0.75)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '16px', overflow: 'hidden', backdropFilter: 'blur(12px)' }}>
-              <div style={{ padding: '16px 18px', background: 'linear-gradient(90deg, rgba(245,158,11,0.12), transparent)', borderBottom: '1px solid rgba(255,255,255,0.06)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
-                <h3 style={{ margin: 0, fontSize: '14px', fontWeight: '800', color: '#fff', display: 'flex', alignItems: 'center', gap: '7px' }}>
-                  🔥 Top 5 Sản Phẩm Bán Chạy
+            {/* Top 5 Products Leaderboard */}
+            <div style={{ background: 'rgba(15,23,42,0.8)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '18px', overflow: 'hidden', backdropFilter: 'blur(16px)', boxShadow: '0 8px 32px rgba(0,0,0,0.2)' }}>
+              <div style={{ padding: '18px 20px', background: 'linear-gradient(90deg, rgba(245,158,11,0.15), transparent)', borderBottom: '1px solid rgba(255,255,255,0.08)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
+                <h3 style={{ margin: 0, fontSize: '15px', fontWeight: '800', color: '#ffffff', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  🔥 Top 5 Sản Phẩm Bán Chạy & Tồn Kho
                 </h3>
-                <div style={{ display: 'flex', gap: '3px', background: 'rgba(0,0,0,0.3)', padding: '3px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                <div style={{ display: 'flex', gap: '4px', background: 'rgba(0,0,0,0.35)', padding: '3px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.06)' }}>
                   {[
                     { key: 'REVENUE', label: '💰 Doanh Thu' },
                     { key: 'QTY', label: '📦 Số Bán' },
                     { key: 'PROFIT', label: '📈 Lãi Gộp' },
                   ].map(({ key, label }) => (
                     <button key={key} onClick={() => setProductSortMode(key)} style={{
-                      padding: '4px 9px', fontSize: '11px', fontWeight: '700', borderRadius: '6px', cursor: 'pointer', border: 'none', transition: 'all .15s',
+                      padding: '5px 10px', fontSize: '11px', fontWeight: '700', borderRadius: '7px', cursor: 'pointer', border: 'none', transition: 'all .15s',
                       background: productSortMode === key ? '#6366f1' : 'transparent',
-                      color: productSortMode === key ? '#fff' : '#64748b',
+                      color: productSortMode === key ? '#ffffff' : '#64748b',
                     }}>{label}</button>
                   ))}
                 </div>
               </div>
               {top5Products.length === 0 ? (
-                <div style={{ padding: '30px', textAlign: 'center', color: '#475569', fontSize: '13px' }}>Chưa có dữ liệu bán hàng trong kỳ này.</div>
+                <div style={{ padding: '36px', textAlign: 'center', color: '#64748b', fontSize: '13px' }}>Chưa có dữ liệu bán hàng trong kỳ này.</div>
               ) : (
-                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12.5px' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
                   <thead>
                     <tr style={{ background: 'rgba(255,255,255,0.03)' }}>
-                      <th style={{ padding: '8px 10px', textAlign: 'center', color: '#475569', fontWeight: '600', width: '36px' }}>#</th>
-                      <th style={{ padding: '8px 10px', textAlign: 'left', color: '#475569', fontWeight: '600' }}>Sản Phẩm</th>
-                      <th style={{ padding: '8px 10px', textAlign: 'center', color: '#475569', fontWeight: '600' }}>Đã Bán</th>
-                      <th style={{ padding: '8px 10px', textAlign: 'right', color: '#475569', fontWeight: '600' }}>Doanh Thu</th>
-                      <th style={{ padding: '8px 10px', textAlign: 'right', color: '#475569', fontWeight: '600' }}>Lãi Gộp</th>
-                      <th style={{ padding: '8px 10px', textAlign: 'center', color: '#475569', fontWeight: '600' }}>Kho</th>
+                      <th style={{ padding: '10px 12px', textAlign: 'center', color: '#64748b', fontWeight: '600', width: '40px' }}>#</th>
+                      <th style={{ padding: '10px 12px', textAlign: 'left', color: '#64748b', fontWeight: '600' }}>Sản Phẩm</th>
+                      <th style={{ padding: '10px 12px', textAlign: 'center', color: '#64748b', fontWeight: '600' }}>Đã Bán</th>
+                      <th style={{ padding: '10px 12px', textAlign: 'right', color: '#64748b', fontWeight: '600' }}>Doanh Thu</th>
+                      <th style={{ padding: '10px 12px', textAlign: 'right', color: '#64748b', fontWeight: '600' }}>Lãi Gộp</th>
+                      <th style={{ padding: '10px 12px', textAlign: 'center', color: '#64748b', fontWeight: '600' }}>Tồn Kho</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -581,19 +589,19 @@ export default function Dashboard() {
                       const isOut = p.stock === 0;
                       const isLow = p.stock > 0 && p.stock <= 3;
                       return (
-                        <tr key={p.name} style={{ borderTop: '1px solid rgba(255,255,255,0.04)', transition: 'background .15s' }}
-                          onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.03)'}
+                        <tr key={p.name} style={{ borderTop: '1px solid rgba(255,255,255,0.05)', transition: 'background .15s' }}
+                          onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.04)'}
                           onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
-                          <td style={{ padding: '10px 10px', textAlign: 'center', fontSize: idx === 0 ? '16px' : '13px', borderLeft: idx === 0 ? '3px solid #f59e0b' : '3px solid transparent' }}>{rank}</td>
-                          <td style={{ padding: '10px 10px', fontWeight: '700', color: '#e2e8f0', maxWidth: '160px' }}>
+                          <td style={{ padding: '12px 12px', textAlign: 'center', fontSize: idx === 0 ? '16px' : '13px', borderLeft: idx === 0 ? '4px solid #f59e0b' : '4px solid transparent' }}>{rank}</td>
+                          <td style={{ padding: '12px 12px', fontWeight: '700', color: '#ffffff', maxWidth: '170px' }}>
                             <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.name}</div>
                           </td>
-                          <td style={{ padding: '10px 10px', textAlign: 'center', fontWeight: '800', color: '#38bdf8' }}>{p.count}</td>
-                          <td style={{ padding: '10px 10px', textAlign: 'right', fontWeight: '700', color: '#10b981', fontVariantNumeric: 'tabular-nums' }}>{fmtShort(p.revenue)}đ</td>
-                          <td style={{ padding: '10px 10px', textAlign: 'right', fontWeight: '700', color: '#a855f7', fontVariantNumeric: 'tabular-nums' }}>{fmtShort(p.profit)}đ</td>
-                          <td style={{ padding: '10px 10px', textAlign: 'center' }}>
-                            <span style={{ padding: '2px 7px', borderRadius: '20px', fontSize: '10px', fontWeight: '800', background: isOut ? 'rgba(239,68,68,0.15)' : isLow ? 'rgba(245,158,11,0.15)' : 'rgba(16,185,129,0.12)', color: isOut ? '#ef4444' : isLow ? '#f59e0b' : '#10b981', border: `1px solid ${isOut ? 'rgba(239,68,68,0.3)' : isLow ? 'rgba(245,158,11,0.3)' : 'rgba(16,185,129,0.25)'}` }}>
-                              {isOut ? '🔴 Hết' : isLow ? `🟡 Còn ${p.stock}` : `🟢 ${p.stock}`}
+                          <td style={{ padding: '12px 12px', textAlign: 'center', fontWeight: '800', color: '#38bdf8' }}>{p.count} đơn</td>
+                          <td style={{ padding: '12px 12px', textAlign: 'right', fontWeight: '700', color: '#10b981', fontVariantNumeric: 'tabular-nums' }}>{fmt(p.revenue)}đ</td>
+                          <td style={{ padding: '12px 12px', textAlign: 'right', fontWeight: '700', color: '#a855f7', fontVariantNumeric: 'tabular-nums' }}>{fmt(p.profit)}đ</td>
+                          <td style={{ padding: '12px 12px', textAlign: 'center' }}>
+                            <span style={{ padding: '3px 9px', borderRadius: '20px', fontSize: '11px', fontWeight: '800', background: isOut ? 'rgba(239,68,68,0.18)' : isLow ? 'rgba(245,158,11,0.18)' : 'rgba(16,185,129,0.15)', color: isOut ? '#ef4444' : isLow ? '#f59e0b' : '#10b981', border: `1px solid ${isOut ? 'rgba(239,68,68,0.35)' : isLow ? 'rgba(245,158,11,0.35)' : 'rgba(16,185,129,0.3)'}` }}>
+                              {isOut ? '🔴 Hết hàng' : isLow ? `🟡 Còn ${p.stock}` : `🟢 Còn ${p.stock}`}
                             </span>
                           </td>
                         </tr>
@@ -605,23 +613,23 @@ export default function Dashboard() {
             </div>
 
             {/* Top 5 VIP Customers */}
-            <div style={{ background: 'rgba(15,23,42,0.75)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '16px', overflow: 'hidden', backdropFilter: 'blur(12px)' }}>
-              <div style={{ padding: '16px 18px', background: 'linear-gradient(90deg, rgba(245,158,11,0.12), transparent)', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-                <h3 style={{ margin: 0, fontSize: '14px', fontWeight: '800', color: '#fff', display: 'flex', alignItems: 'center', gap: '7px' }}>
-                  👑 Top 5 Khách Hàng VIP (LTV Cao Nhất)
+            <div style={{ background: 'rgba(15,23,42,0.8)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '18px', overflow: 'hidden', backdropFilter: 'blur(16px)', boxShadow: '0 8px 32px rgba(0,0,0,0.2)' }}>
+              <div style={{ padding: '18px 20px', background: 'linear-gradient(90deg, rgba(245,158,11,0.15), transparent)', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
+                <h3 style={{ margin: 0, fontSize: '15px', fontWeight: '800', color: '#ffffff', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  👑 Top 5 Khách Hàng VIP (LTV High Spenders)
                 </h3>
               </div>
               {top5VIPCustomers.length === 0 ? (
-                <div style={{ padding: '30px', textAlign: 'center', color: '#475569', fontSize: '13px' }}>Chưa có dữ liệu mua hàng.</div>
+                <div style={{ padding: '36px', textAlign: 'center', color: '#64748b', fontSize: '13px' }}>Chưa có dữ liệu mua hàng.</div>
               ) : (
-                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12.5px' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
                   <thead>
                     <tr style={{ background: 'rgba(255,255,255,0.03)' }}>
-                      <th style={{ padding: '8px 10px', textAlign: 'center', color: '#475569', fontWeight: '600', width: '36px' }}>#</th>
-                      <th style={{ padding: '8px 10px', textAlign: 'left', color: '#475569', fontWeight: '600' }}>Khách Hàng</th>
-                      <th style={{ padding: '8px 10px', textAlign: 'center', color: '#475569', fontWeight: '600' }}>Đơn</th>
-                      <th style={{ padding: '8px 10px', textAlign: 'right', color: '#475569', fontWeight: '600' }}>LTV</th>
-                      <th style={{ padding: '8px 10px', textAlign: 'right', color: '#475569', fontWeight: '600' }}>Nợ</th>
+                      <th style={{ padding: '10px 12px', textAlign: 'center', color: '#64748b', fontWeight: '600', width: '40px' }}>#</th>
+                      <th style={{ padding: '10px 12px', textAlign: 'left', color: '#64748b', fontWeight: '600' }}>Khách Hàng</th>
+                      <th style={{ padding: '10px 12px', textAlign: 'center', color: '#64748b', fontWeight: '600' }}>Đơn</th>
+                      <th style={{ padding: '10px 12px', textAlign: 'right', color: '#64748b', fontWeight: '600' }}>LTV</th>
+                      <th style={{ padding: '10px 12px', textAlign: 'right', color: '#64748b', fontWeight: '600' }}>Công Nợ</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -632,28 +640,28 @@ export default function Dashboard() {
                       const typeColor = c.type === 'Si' ? '#a855f7' : c.type === 'CTV' ? '#f59e0b' : '#10b981';
                       const avatarColor = getAvatarColor(c.name);
                       return (
-                        <tr key={c.id || c.name} style={{ borderTop: '1px solid rgba(255,255,255,0.04)', transition: 'background .15s' }}
-                          onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.03)'}
+                        <tr key={c.id || c.name} style={{ borderTop: '1px solid rgba(255,255,255,0.05)', transition: 'background .15s' }}
+                          onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.04)'}
                           onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
-                          <td style={{ padding: '10px 10px', textAlign: 'center', fontSize: idx === 0 ? '16px' : '13px', borderLeft: idx === 0 ? '3px solid #f59e0b' : '3px solid transparent' }}>{rank}</td>
-                          <td style={{ padding: '10px 10px' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                              <div style={{ width: '30px', height: '30px', borderRadius: '50%', background: `${avatarColor}33`, border: `1.5px solid ${avatarColor}66`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', fontWeight: '900', color: avatarColor, flexShrink: 0 }}>
+                          <td style={{ padding: '12px 12px', textAlign: 'center', fontSize: idx === 0 ? '16px' : '13px', borderLeft: idx === 0 ? '4px solid #f59e0b' : '4px solid transparent' }}>{rank}</td>
+                          <td style={{ padding: '12px 12px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                              <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: `${avatarColor}33`, border: `1.5px solid ${avatarColor}66`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: '900', color: avatarColor, flexShrink: 0 }}>
                                 {getInitials(c.name)}
                               </div>
                               <div>
-                                <div style={{ fontWeight: '700', color: '#e2e8f0', display: 'flex', alignItems: 'center', gap: '5px', fontSize: '12.5px' }}>
+                                <div style={{ fontWeight: '700', color: '#ffffff', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px' }}>
                                   {c.name}
-                                  <span style={{ fontSize: '9px', padding: '1px 5px', borderRadius: '4px', background: `${typeColor}22`, color: typeColor, fontWeight: '800', border: `1px solid ${typeColor}44` }}>{typeLabel}</span>
+                                  <span style={{ fontSize: '9.5px', padding: '1px 6px', borderRadius: '4px', background: `${typeColor}22`, color: typeColor, fontWeight: '800', border: `1px solid ${typeColor}44` }}>{typeLabel}</span>
                                 </div>
-                                <div style={{ fontSize: '10.5px', color: '#475569' }}>{c.phone || '—'}</div>
+                                <div style={{ fontSize: '11px', color: '#64748b' }}>{c.phone || '—'}</div>
                               </div>
                             </div>
                           </td>
-                          <td style={{ padding: '10px 10px', textAlign: 'center', fontWeight: '800', color: '#38bdf8' }}>{c.orderCount}</td>
-                          <td style={{ padding: '10px 10px', textAlign: 'right', fontWeight: '800', color: '#10b981', fontVariantNumeric: 'tabular-nums' }}>{fmtShort(c.totalSpent)}đ</td>
-                          <td style={{ padding: '10px 10px', textAlign: 'right', fontWeight: '700', color: c.debt > 0 ? '#ef4444' : '#334155', fontVariantNumeric: 'tabular-nums' }}>
-                            {c.debt > 0 ? fmtShort(c.debt) + 'đ' : '—'}
+                          <td style={{ padding: '12px 12px', textAlign: 'center', fontWeight: '800', color: '#38bdf8' }}>{c.orderCount} đơn</td>
+                          <td style={{ padding: '12px 12px', textAlign: 'right', fontWeight: '800', color: '#10b981', fontVariantNumeric: 'tabular-nums' }}>{fmt(c.totalSpent)}đ</td>
+                          <td style={{ padding: '12px 12px', textAlign: 'right', fontWeight: '700', color: c.debt > 0 ? '#ef4444' : '#64748b', fontVariantNumeric: 'tabular-nums' }}>
+                            {c.debt > 0 ? fmt(c.debt) + 'đ' : '0đ'}
                           </td>
                         </tr>
                       );
@@ -665,51 +673,50 @@ export default function Dashboard() {
           </div>
 
           {/* ══════════ TẦNG 4: CHANNELS + TIER ══════════ */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '14px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '16px' }}>
 
             {/* Channel Performance */}
-            <div style={{ background: 'rgba(15,23,42,0.75)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '16px', padding: '18px', backdropFilter: 'blur(12px)' }}>
-              <h3 style={{ margin: '0 0 14px', fontSize: '14px', fontWeight: '800', color: '#fff', display: 'flex', alignItems: 'center', gap: '7px' }}>
-                <PieChart size={15} color="#38bdf8" /> Hiệu Quả Kênh Bán Hàng
+            <div style={{ background: 'rgba(15,23,42,0.8)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '18px', padding: '20px', backdropFilter: 'blur(16px)', boxShadow: '0 8px 32px rgba(0,0,0,0.2)' }}>
+              <h3 style={{ margin: '0 0 16px', fontSize: '15px', fontWeight: '800', color: '#ffffff', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <PieChart size={18} color="#38bdf8" /> Hiệu Quả Kênh Bán Hàng & Nguồn Khách
               </h3>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 {channelAnalytics.filter(c => c.count > 0).map(chan => (
                   <div key={chan.sourceKey}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '7px' }}>
-                        <span style={{ fontSize: '14px' }}>{chan.icon}</span>
-                        <span style={{ color: '#cbd5e1', fontWeight: '600', fontSize: '12.5px' }}>{chan.label}</span>
-                        <span style={{ color: '#475569', fontSize: '11px' }}>({chan.count} đơn)</span>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '5px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span style={{ fontSize: '15px' }}>{chan.icon}</span>
+                        <span style={{ color: '#ffffff', fontWeight: '600', fontSize: '13px' }}>{chan.label}</span>
+                        <span style={{ color: '#64748b', fontSize: '11.5px' }}>({chan.count} đơn)</span>
                       </div>
                       <div style={{ textAlign: 'right' }}>
-                        <span style={{ fontWeight: '800', color: chan.color, fontSize: '13px' }}>{fmtShort(chan.revenue)}đ</span>
-                        <span style={{ color: '#475569', fontSize: '11px', marginLeft: '5px' }}>{chan.percentage}%</span>
+                        <span style={{ fontWeight: '800', color: chan.color, fontSize: '13.5px' }}>{fmt(chan.revenue)}đ</span>
+                        <span style={{ color: '#94a3b8', fontSize: '11.5px', marginLeft: '6px' }}>({chan.percentage}%)</span>
                       </div>
                     </div>
-                    <div style={{ height: '4px', background: 'rgba(255,255,255,0.05)', borderRadius: '4px', overflow: 'hidden' }}>
-                      <div style={{ height: '100%', width: `${chan.percentage}%`, background: chan.color, borderRadius: '4px', transition: 'width .6s ease' }} />
+                    <div style={{ height: '6px', background: 'rgba(255,255,255,0.06)', borderRadius: '6px', overflow: 'hidden' }}>
+                      <div style={{ height: '100%', width: `${chan.percentage}%`, background: chan.color, borderRadius: '6px', transition: 'width .6s ease' }} />
                     </div>
                   </div>
                 ))}
                 {channelAnalytics.filter(c => c.count > 0).length === 0 && (
-                  <div style={{ color: '#475569', fontSize: '13px', textAlign: 'center', padding: '20px' }}>Chưa có dữ liệu kênh bán hàng.</div>
+                  <div style={{ color: '#64748b', fontSize: '13px', textAlign: 'center', padding: '20px' }}>Chưa có dữ liệu kênh bán hàng.</div>
                 )}
               </div>
             </div>
 
             {/* Tier Analytics */}
-            <div style={{ background: 'rgba(15,23,42,0.75)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '16px', padding: '18px', backdropFilter: 'blur(12px)' }}>
-              <h3 style={{ margin: '0 0 14px', fontSize: '14px', fontWeight: '800', color: '#fff', display: 'flex', alignItems: 'center', gap: '7px' }}>
-                <Users size={15} color="#a855f7" /> Doanh Thu Theo Nhóm Khách
+            <div style={{ background: 'rgba(15,23,42,0.8)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '18px', padding: '20px', backdropFilter: 'blur(16px)', boxShadow: '0 8px 32px rgba(0,0,0,0.2)' }}>
+              <h3 style={{ margin: '0 0 16px', fontSize: '15px', fontWeight: '800', color: '#ffffff', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Users size={18} color="#a855f7" /> Doanh Thu Theo Nhóm Khách
               </h3>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: '10px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px' }}>
                 {tierAnalytics.map(t => (
-                  <div key={t.tierKey} style={{ background: t.bg, border: `1px solid ${t.color}33`, borderRadius: '12px', padding: '14px', borderTop: `3px solid ${t.color}` }}>
-                    <div style={{ fontSize: '20px', marginBottom: '6px' }}>{t.icon}</div>
-                    <div style={{ fontWeight: '800', color: t.color, fontSize: '13px', marginBottom: '4px' }}>{t.label}</div>
-                    <div style={{ fontSize: '10.5px', color: '#64748b', marginBottom: '6px' }}>{t.customers} KH · {t.count} đơn</div>
-                    <div style={{ fontSize: '14px', fontWeight: '900', color: '#fff' }}>{fmtShort(t.revenue)}đ</div>
-                    <div style={{ fontSize: '10px', color: '#64748b', marginTop: '2px' }}>Lãi: {fmtShort(t.profit)}đ</div>
+                  <div key={t.tierKey} style={{ background: t.bg, border: `1px solid ${t.color}40`, borderRadius: '14px', padding: '16px', borderTop: `4px solid ${t.color}` }}>
+                    <div style={{ fontSize: '20px', marginBottom: '6px' }}>{t.icon} <strong style={{ color: t.color, fontSize: '14px' }}>{t.label}</strong></div>
+                    <div style={{ fontSize: '11.5px', color: '#94a3b8', marginBottom: '8px' }}>{t.customers} KH · {t.count} đơn</div>
+                    <div style={{ fontSize: '15px', fontWeight: '900', color: t.color }}>{fmt(t.revenue)}đ</div>
+                    <div style={{ fontSize: '11px', color: '#64748b', marginTop: '3px' }}>Lãi: {fmt(t.profit)}đ</div>
                   </div>
                 ))}
               </div>
@@ -717,43 +724,45 @@ export default function Dashboard() {
           </div>
 
           {/* ══════════ TẦNG 5: ALERT CENTER 360° ══════════ */}
-          <div style={{ background: 'rgba(15,23,42,0.75)', border: `1px solid ${hasAlerts ? 'rgba(239,68,68,0.3)' : 'rgba(255,255,255,0.06)'}`, borderRadius: '16px', overflow: 'hidden', backdropFilter: 'blur(12px)', boxShadow: hasAlerts ? '0 0 30px rgba(239,68,68,0.07)' : 'none' }}>
-            <div style={{ padding: '14px 18px', background: hasAlerts ? 'linear-gradient(90deg, rgba(239,68,68,0.1), transparent)' : 'rgba(255,255,255,0.02)', borderBottom: '1px solid rgba(255,255,255,0.06)', display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <div style={{ background: 'rgba(15,23,42,0.8)', border: `1px solid ${hasAlerts ? 'rgba(239,68,68,0.35)' : 'rgba(255,255,255,0.08)'}`, borderRadius: '18px', overflow: 'hidden', backdropFilter: 'blur(16px)', boxShadow: hasAlerts ? '0 0 32px rgba(239,68,68,0.1)' : '0 8px 32px rgba(0,0,0,0.2)' }}>
+            <div style={{ padding: '16px 20px', background: hasAlerts ? 'linear-gradient(90deg, rgba(239,68,68,0.15), transparent)' : 'rgba(255,255,255,0.02)', borderBottom: '1px solid rgba(255,255,255,0.08)', display: 'flex', alignItems: 'center', gap: '10px' }}>
               <div style={{ position: 'relative' }}>
-                {hasAlerts && <span style={{ position: 'absolute', inset: '-3px', borderRadius: '50%', background: 'rgba(239,68,68,0.4)', animation: 'ping 1.5s cubic-bezier(0,0,.2,1) infinite' }} />}
-                <AlertTriangle size={18} color={hasAlerts ? '#ef4444' : '#475569'} />
+                {hasAlerts && <span style={{ position: 'absolute', inset: '-4px', borderRadius: '50%', background: 'rgba(239,68,68,0.4)', animation: 'ping 1.5s cubic-bezier(0,0,.2,1) infinite' }} />}
+                <ShieldAlert size={20} color={hasAlerts ? '#ef4444' : '#64748b'} />
               </div>
-              <h3 style={{ margin: 0, fontSize: '14px', fontWeight: '800', color: hasAlerts ? '#fff' : '#64748b' }}>
-                Trung Tâm Cảnh Báo Nóng 360° — Cần Xử Lý Ngay
+              <h3 style={{ margin: 0, fontSize: '15px', fontWeight: '800', color: hasAlerts ? '#ffffff' : '#64748b' }}>
+                Trung Tâm Cảnh Báo Nóng 360° (Cần Xử Lý Ngay)
               </h3>
-              {!hasAlerts && <span style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '20px', background: 'rgba(16,185,129,0.15)', color: '#10b981', fontWeight: '800', border: '1px solid rgba(16,185,129,0.25)' }}>✅ Tất cả ổn định</span>}
+              {!hasAlerts && <span style={{ fontSize: '11px', padding: '3px 10px', borderRadius: '20px', background: 'rgba(16,185,129,0.18)', color: '#10b981', fontWeight: '800', border: '1px solid rgba(16,185,129,0.3)' }}>✅ Tất cả ổn định</span>}
             </div>
 
-            <div style={{ padding: '16px', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px' }}>
+            <div style={{ padding: '18px', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '14px' }}>
               {[
-                { count: deadTeamsAlert.length, label: '🔴 Kho Team Bị DIE', sub: 'Chưa tạo team thay thế', btnLabel: 'Xử Lý Ngay', color: '#ef4444', route: '/inventory' },
-                { count: expiringOrdersAlert.length, label: '🟡 Đơn Sắp Hết Hạn', sub: 'Cần báo khách gia hạn (7 ngày)', btnLabel: 'Báo Gia Hạn', color: '#f59e0b', route: '/expiring' },
+                { count: deadTeamsAlert.length, label: '🔴 Kho Team Bị DIE', sub: 'Chưa tạo team thay thế NCC', btnLabel: 'Xử Lý Ngay', color: '#ef4444', route: '/inventory' },
+                { count: expiringOrdersAlert.length, label: '🟡 Đơn Sắp Hết Hạn', sub: 'Cần báo khách gia hạn (7 ngày tới)', btnLabel: 'Báo Gia Hạn', color: '#f59e0b', route: '/expiring' },
                 { count: outOfStockProducts.length, label: '📦 Sản Phẩm Cháy Hàng', sub: 'Tồn kho = 0 hoặc dưới ngưỡng', btnLabel: 'Nhập Kho Ngay', color: '#6366f1', route: '/inventory' },
-                { count: debtorCustomersAlert.length, label: '💸 Khách Đang Nợ', sub: `Tổng nợ: ${fmt(totalCustomerDebt)}đ`, btnLabel: 'Thu Nợ Ngay', color: '#10b981', route: '/customers' },
+                { count: debtorCustomersAlert.length, label: '💸 Khách Hàng Đang Nợ', sub: `Tổng nợ: ${fmt(totalCustomerDebt)}đ`, btnLabel: 'Thu Nợ Ngay', color: '#10b981', route: '/customers' },
               ].map((alert, i) => {
                 const active = alert.count > 0;
                 return (
                   <div key={i} style={{
-                    background: active ? `rgba(${alert.color === '#ef4444' ? '239,68,68' : alert.color === '#f59e0b' ? '245,158,11' : alert.color === '#6366f1' ? '99,102,241' : '16,185,129'},0.08)` : 'rgba(255,255,255,0.02)',
-                    border: `1px solid ${active ? alert.color + '40' : 'rgba(255,255,255,0.05)'}`,
-                    borderRadius: '14px', padding: '16px', display: 'flex', flexDirection: 'column', gap: '8px',
-                    boxShadow: active ? `0 0 20px ${alert.color}15` : 'none',
+                    background: active ? `rgba(${alert.color === '#ef4444' ? '239,68,68' : alert.color === '#f59e0b' ? '245,158,11' : alert.color === '#6366f1' ? '99,102,241' : '16,185,129'},0.12)` : 'rgba(255,255,255,0.03)',
+                    border: `1px solid ${active ? alert.color + '50' : 'rgba(255,255,255,0.06)'}`,
+                    borderRadius: '16px', padding: '18px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '12px',
+                    boxShadow: active ? `0 0 24px ${alert.color}20` : 'none',
                   }}>
-                    <div style={{ fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.06em', color: active ? alert.color : '#334155' }}>{alert.label}</div>
-                    <div style={{ fontSize: '30px', fontWeight: '900', color: active ? alert.color : '#475569', lineHeight: 1 }}>
-                      {alert.count}
+                    <div>
+                      <div style={{ fontSize: '12px', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.06em', color: active ? alert.color : '#64748b' }}>{alert.label}</div>
+                      <div style={{ fontSize: '26px', fontWeight: '900', color: active ? alert.color : '#ffffff', marginTop: '4px' }}>
+                        {alert.count} {i === 0 ? 'Team' : i === 1 ? 'Đơn' : i === 2 ? 'Sản Phẩm' : 'Khách'}
+                      </div>
+                      <div style={{ fontSize: '11.5px', color: '#94a3b8', marginTop: '3px' }}>{alert.sub}</div>
                     </div>
-                    <div style={{ fontSize: '11px', color: '#475569' }}>{alert.sub}</div>
                     <button onClick={() => navigate(alert.route)} style={{
-                      padding: '6px 12px', borderRadius: '8px', border: 'none', cursor: 'pointer', fontWeight: '800', fontSize: '11.5px',
-                      background: active ? alert.color : 'rgba(255,255,255,0.06)', color: '#fff',
-                      display: 'flex', alignItems: 'center', gap: '5px', alignSelf: 'flex-start', transition: 'opacity .15s',
-                    }}>{alert.btnLabel} <ArrowRight size={12} /></button>
+                      padding: '7px 14px', borderRadius: '10px', border: 'none', cursor: 'pointer', fontWeight: '800', fontSize: '12px',
+                      background: active ? alert.color : 'rgba(255,255,255,0.08)', color: '#ffffff',
+                      display: 'flex', alignItems: 'center', gap: '6px', alignSelf: 'flex-start', transition: 'all .2s ease',
+                    }}>{alert.btnLabel} <ArrowRight size={13} /></button>
                   </div>
                 );
               })}
