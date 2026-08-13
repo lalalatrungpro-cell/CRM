@@ -1,13 +1,15 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import {
   OrderService, CustomerService, SupplierService,
-  CashTransactionService, ExpenseService, PayrollService, PurchaseService, InventoryService
+  CashTransactionService, ExpenseService, PayrollService, PurchaseService, InventoryService, TeamService
 } from '../utils/dataService';
 import {
   DollarSign, TrendingUp, Download, Wallet, Landmark,
   Building, Megaphone, Users, ArrowDownRight, ArrowUpRight,
-  ShieldCheck, AlertTriangle, CheckCircle2, PieChart, BarChart3, RefreshCw, Boxes
+  ShieldCheck, AlertTriangle, CheckCircle2, PieChart, BarChart3, RefreshCw, Boxes,
+  Crown, ShoppingBag, Flame, ArrowRight, ExternalLink, ShieldAlert, Clock
 } from 'lucide-react';
 
 const SOURCE_CONFIG = {
@@ -22,6 +24,7 @@ const SOURCE_CONFIG = {
 
 export default function Dashboard() {
   const { shopId } = useAuth();
+  const navigate = useNavigate();
 
   const [orders, setOrders] = useState([]);
   const [customers, setCustomers] = useState([]);
@@ -31,6 +34,9 @@ export default function Dashboard() {
   const [payrolls, setPayrolls] = useState([]);
   const [purchases, setPurchases] = useState([]);
   const [inventorySummary, setInventorySummary] = useState({ availableCount: 0, totalInventoryValue: 0 });
+  const [teams, setTeams] = useState([]);
+  const [inventoryItems, setInventoryItems] = useState([]);
+  const [productSortMode, setProductSortMode] = useState('REVENUE'); // 'REVENUE' | 'QTY' | 'PROFIT'
   const [loading, setLoading] = useState(true);
 
   // ── Date Range Filter State ──
@@ -70,7 +76,7 @@ export default function Dashboard() {
     if (!shopId) return;
     setLoading(true);
     try {
-      const [oList, cList, sList, cSum, oSum, pList, purList, invSum] = await Promise.all([
+      const [oList, cList, sList, cSum, oSum, pList, purList, invSum, tList, itemsList] = await Promise.all([
         OrderService.list(shopId),
         CustomerService.list(shopId),
         SupplierService.list(shopId),
@@ -78,7 +84,9 @@ export default function Dashboard() {
         ExpenseService.getOpexSummary(shopId),
         PayrollService.list(shopId),
         PurchaseService.list(shopId),
-        InventoryService.getSummary(shopId)
+        InventoryService.getSummary(shopId),
+        TeamService.list(shopId),
+        InventoryService.list(shopId)
       ]);
       setOrders(oList || []);
       setCustomers(cList || []);
@@ -88,6 +96,8 @@ export default function Dashboard() {
       setPayrolls(pList || []);
       setPurchases(purList || []);
       setInventorySummary(invSum || { availableCount: 0, totalInventoryValue: 0 });
+      setTeams(tList || []);
+      setInventoryItems(itemsList || []);
     } catch (err) {
       console.error('Error loading dashboard data:', err);
     } finally {
@@ -178,6 +188,98 @@ export default function Dashboard() {
     const profit = tierOrders.reduce((s, o) => s + Math.max(0, Number(o.sell_price || o.sellPrice || 0) - Number(o.refund_amount || 0) - Number(o.cost_price || o.costPrice || 0)), 0);
     return { tierKey, ...cfg, count: tierOrders.length, customers: tierCustomers.length, revenue, profit };
   });
+
+  // ── Top Products & Real-time Inventory Health Aggregation ──
+  const productMap = {};
+  paidOrders.forEach(o => {
+    const rawName = o.product_name || o.productName || 'Sản phẩm khác';
+    const name = rawName.trim();
+    if (!productMap[name]) {
+      productMap[name] = { name, count: 0, revenue: 0, cogs: 0, profit: 0 };
+    }
+    const rev = Math.max(0, Number(o.sell_price || o.sellPrice || 0) - Number(o.refund_amount || 0));
+    const cost = Number(o.cost_price || o.costPrice || 0);
+    productMap[name].count += 1;
+    productMap[name].revenue += rev;
+    productMap[name].cogs += cost;
+    productMap[name].profit += (rev - cost);
+  });
+
+  const productList = Object.values(productMap).map(p => {
+    // Single keys stock
+    const singleAvail = (inventoryItems || []).filter(i =>
+      i.status === 'AVAILABLE' &&
+      (i.product_name || i.productName || '').toLowerCase().includes(p.name.toLowerCase())
+    ).length;
+
+    // Team slots stock
+    let teamAvailSlots = 0;
+    (teams || []).forEach(t => {
+      if (t.status !== 'FAULTY_DIE' && !t.replaced_by_team_name && !t.replaced_by_team_id) {
+        const cat = t.category || '';
+        if (p.name.toLowerCase().includes(cat.toLowerCase()) || cat.toLowerCase().includes(p.name.toLowerCase())) {
+          const maxS = t.max_slots || t.maxSlots || 49;
+          const usedS = (orders || []).filter(o => String(o.team_id || o.teamId) === String(t.id)).length;
+          teamAvailSlots += Math.max(0, maxS - usedS);
+        }
+      }
+    });
+
+    const totalStock = singleAvail + teamAvailSlots;
+    return { ...p, stock: totalStock };
+  });
+
+  if (productSortMode === 'QTY') {
+    productList.sort((a, b) => b.count - a.count);
+  } else if (productSortMode === 'PROFIT') {
+    productList.sort((a, b) => b.profit - a.profit);
+  } else {
+    productList.sort((a, b) => b.revenue - a.revenue);
+  }
+  const top5Products = productList.slice(0, 5);
+
+  // ── Top 5 VIP Customers (LTV Leaderboard) ──
+  const customerLTVMap = {};
+  paidOrders.forEach(o => {
+    const custId = String(o.customer_id || o.customerId || '');
+    const custName = o.customer_name || o.customerName || 'Khách Vãng Lai';
+    const key = custId || custName;
+    if (!customerLTVMap[key]) {
+      customerLTVMap[key] = {
+        id: custId,
+        name: custName,
+        phone: o.phone || '',
+        totalSpent: 0,
+        orderCount: 0,
+        type: 'Le'
+      };
+    }
+    const rev = Math.max(0, Number(o.sell_price || o.sellPrice || 0) - Number(o.refund_amount || 0));
+    customerLTVMap[key].totalSpent += rev;
+    customerLTVMap[key].orderCount += 1;
+  });
+
+  const top5VIPCustomers = Object.values(customerLTVMap).map(c => {
+    const found = customers.find(cust => String(cust.id) === String(c.id) || cust.name === c.name);
+    return {
+      ...c,
+      phone: found ? (found.phone || c.phone) : c.phone,
+      type: found ? (found.type || 'Le') : 'Le',
+      debt: found ? Number(found.debt || 0) : 0
+    };
+  }).sort((a, b) => b.totalSpent - a.totalSpent).slice(0, 5);
+
+  // ── Realtime 360° Actionable Alert Center ──
+  const todayStr = new Date().toISOString().split('T')[0];
+  const in7DaysStr = new Date(Date.now() + 7 * 86400000).toISOString().split('T')[0];
+
+  const deadTeamsAlert = (teams || []).filter(t => (t.status === 'FAULTY_DIE' || t.status === 'DIE') && !t.replaced_by_team_name && !t.replaced_by_team_id);
+  const expiringOrdersAlert = (orders || []).filter(o => {
+    const exp = o.expire_date || o.expireDate;
+    return exp && exp >= todayStr && exp <= in7DaysStr;
+  });
+  const debtorCustomersAlert = (customers || []).filter(c => Number(c.debt || 0) > 0);
+  const outOfStockProducts = productList.filter(p => p.stock === 0 || p.stock <= 3);
 
   const handleExportPnL = () => {
     const lines = [
@@ -548,6 +650,232 @@ export default function Dashboard() {
                     </div>
                   ))}
                 </div>
+              </div>
+            </div>
+          </div>
+
+          {/* ==================== 4. TOP 5 PRODUCTS & TOP 5 VIP CUSTOMERS ==================== */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '20px' }}>
+            {/* Top 5 Products Leaderboard */}
+            <div className="glass-panel" style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
+                <h3 style={{ fontSize: '16px', fontWeight: '800', color: '#fff', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <Flame size={18} color="#f59e0b" /> Top 5 Sản Phẩm Bán Chạy & Tồn Kho
+                </h3>
+                <div style={{ display: 'flex', gap: '4px', background: 'rgba(0,0,0,0.3)', padding: '3px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.06)' }}>
+                  <button
+                    onClick={() => setProductSortMode('REVENUE')}
+                    style={{
+                      padding: '4px 8px', fontSize: '11px', fontWeight: '700', borderRadius: '6px', cursor: 'pointer', border: 'none',
+                      background: productSortMode === 'REVENUE' ? '#6366f1' : 'transparent',
+                      color: productSortMode === 'REVENUE' ? '#fff' : '#94a3b8'
+                    }}
+                  >
+                    💰 Doanh Thu
+                  </button>
+                  <button
+                    onClick={() => setProductSortMode('QTY')}
+                    style={{
+                      padding: '4px 8px', fontSize: '11px', fontWeight: '700', borderRadius: '6px', cursor: 'pointer', border: 'none',
+                      background: productSortMode === 'QTY' ? '#6366f1' : 'transparent',
+                      color: productSortMode === 'QTY' ? '#fff' : '#94a3b8'
+                    }}
+                  >
+                    📦 Số Bán
+                  </button>
+                  <button
+                    onClick={() => setProductSortMode('PROFIT')}
+                    style={{
+                      padding: '4px 8px', fontSize: '11px', fontWeight: '700', borderRadius: '6px', cursor: 'pointer', border: 'none',
+                      background: productSortMode === 'PROFIT' ? '#6366f1' : 'transparent',
+                      color: productSortMode === 'PROFIT' ? '#fff' : '#94a3b8'
+                    }}
+                  >
+                    📈 Lợi Nhuận
+                  </button>
+                </div>
+              </div>
+
+              {top5Products.length === 0 ? (
+                <div style={{ color: '#64748b', fontSize: '13px', textAlign: 'center', padding: '20px' }}>Chưa có dữ liệu bán hàng trong kỳ chọn.</div>
+              ) : (
+                <div style={{ overflowX: 'auto' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12.5px' }}>
+                    <thead>
+                      <tr style={{ background: 'rgba(255,255,255,0.04)', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+                        <th style={{ padding: '8px 10px', textAlign: 'center', color: '#64748b' }}>#</th>
+                        <th style={{ padding: '8px 10px', textAlign: 'left', color: '#64748b' }}>Sản Phẩm</th>
+                        <th style={{ padding: '8px 10px', textAlign: 'center', color: '#64748b' }}>Đã Bán</th>
+                        <th style={{ padding: '8px 10px', textAlign: 'right', color: '#64748b' }}>Doanh Thu</th>
+                        <th style={{ padding: '8px 10px', textAlign: 'right', color: '#64748b' }}>Lãi Gộp</th>
+                        <th style={{ padding: '8px 10px', textAlign: 'center', color: '#64748b' }}>Tồn Kho</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {top5Products.map((p, idx) => {
+                        const rankBadge = idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : `#${idx + 1}`;
+                        const isOut = p.stock === 0;
+                        const isLow = p.stock > 0 && p.stock <= 3;
+                        return (
+                          <tr key={p.name} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                            <td style={{ padding: '8px 10px', textAlign: 'center', fontWeight: '800', fontSize: '13px' }}>{rankBadge}</td>
+                            <td style={{ padding: '8px 10px', fontWeight: '700', color: '#fff' }}>{p.name}</td>
+                            <td style={{ padding: '8px 10px', textAlign: 'center', fontWeight: '800', color: '#38bdf8' }}>{p.count} đơn</td>
+                            <td style={{ padding: '8px 10px', textAlign: 'right', fontWeight: '700', color: '#10b981' }}>{p.revenue.toLocaleString()}đ</td>
+                            <td style={{ padding: '8px 10px', textAlign: 'right', fontWeight: '700', color: '#a855f7' }}>{p.profit.toLocaleString()}đ</td>
+                            <td style={{ padding: '8px 10px', textAlign: 'center' }}>
+                              <span style={{
+                                padding: '2px 8px', borderRadius: '10px', fontSize: '10.5px', fontWeight: '800',
+                                background: isOut ? 'rgba(239,68,68,0.18)' : isLow ? 'rgba(245,158,11,0.18)' : 'rgba(16,185,129,0.15)',
+                                color: isOut ? '#ef4444' : isLow ? '#f59e0b' : '#10b981',
+                                border: isOut ? '1px solid rgba(239,68,68,0.3)' : isLow ? '1px solid rgba(245,158,11,0.3)' : '1px solid rgba(16,185,129,0.3)'
+                              }}>
+                                {isOut ? '🔴 Hết hàng (0)' : isLow ? `🟡 Sắp hết (${p.stock})` : `🟢 Còn ${p.stock}`}
+                              </span>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+
+            {/* Top 5 VIP Customers */}
+            <div className="glass-panel" style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <h3 style={{ fontSize: '16px', fontWeight: '800', color: '#fff', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <Crown size={18} color="#f59e0b" /> Top 5 Khách Hàng VIP (LTV High Spenders)
+                </h3>
+              </div>
+
+              {top5VIPCustomers.length === 0 ? (
+                <div style={{ color: '#64748b', fontSize: '13px', textAlign: 'center', padding: '20px' }}>Chưa có dữ liệu mua hàng.</div>
+              ) : (
+                <div style={{ overflowX: 'auto' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12.5px' }}>
+                    <thead>
+                      <tr style={{ background: 'rgba(255,255,255,0.04)', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+                        <th style={{ padding: '8px 10px', textAlign: 'center', color: '#64748b' }}>#</th>
+                        <th style={{ padding: '8px 10px', textAlign: 'left', color: '#64748b' }}>Khách Hàng</th>
+                        <th style={{ padding: '8px 10px', textAlign: 'center', color: '#64748b' }}>Số Đơn</th>
+                        <th style={{ padding: '8px 10px', textAlign: 'right', color: '#64748b' }}>Tổng Chi Tiêu (LTV)</th>
+                        <th style={{ padding: '8px 10px', textAlign: 'right', color: '#64748b' }}>Công Nợ</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {top5VIPCustomers.map((c, idx) => {
+                        const rankBadge = idx === 0 ? '👑' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : `#${idx + 1}`;
+                        const typeLabel = c.type === 'Si' ? 'Sỉ' : c.type === 'CTV' ? 'CTV' : 'Lẻ';
+                        const typeBg = c.type === 'Si' ? 'rgba(168,85,247,0.15)' : c.type === 'CTV' ? 'rgba(245,158,11,0.15)' : 'rgba(16,185,129,0.15)';
+                        const typeColor = c.type === 'Si' ? '#a855f7' : c.type === 'CTV' ? '#f59e0b' : '#10b981';
+                        return (
+                          <tr key={c.id || c.name} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                            <td style={{ padding: '8px 10px', textAlign: 'center', fontWeight: '800', fontSize: '13px' }}>{rankBadge}</td>
+                            <td style={{ padding: '8px 10px' }}>
+                              <div style={{ fontWeight: '700', color: '#fff', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                {c.name}
+                                <span style={{ fontSize: '9.5px', padding: '1px 5px', borderRadius: '4px', background: typeBg, color: typeColor, fontWeight: '800' }}>
+                                  {typeLabel}
+                                </span>
+                              </div>
+                              <div style={{ fontSize: '11px', color: '#64748b' }}>{c.phone || '—'}</div>
+                            </td>
+                            <td style={{ padding: '8px 10px', textAlign: 'center', fontWeight: '800', color: '#38bdf8' }}>{c.orderCount} đơn</td>
+                            <td style={{ padding: '8px 10px', textAlign: 'right', fontWeight: '800', color: '#10b981' }}>{c.totalSpent.toLocaleString()}đ</td>
+                            <td style={{ padding: '8px 10px', textAlign: 'right', fontWeight: '700', color: c.debt > 0 ? '#ef4444' : '#64748b' }}>
+                              {c.debt > 0 ? `${c.debt.toLocaleString()}đ` : '0đ'}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* ==================== 5. REALTIME 360° ACTIONABLE ALERT CENTER ==================== */}
+          <div className="glass-panel" style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '14px', border: '1px solid rgba(239,68,68,0.25)', background: 'rgba(239,68,68,0.03)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <h3 style={{ fontSize: '16px', fontWeight: '800', color: '#fff', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <ShieldAlert size={20} color="#ef4444" /> Trung Tâm Cảnh Báo Nóng 360° (Cần Xử Lý Ngay)
+              </h3>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '14px' }}>
+              {/* Alert 1: Kho Team DIE chưa đòi bảo hành */}
+              <div style={{ background: deadTeamsAlert.length > 0 ? 'rgba(239,68,68,0.12)' : 'rgba(255,255,255,0.03)', border: deadTeamsAlert.length > 0 ? '1px solid rgba(239,68,68,0.3)' : '1px solid rgba(255,255,255,0.06)', borderRadius: '12px', padding: '14px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '10px' }}>
+                <div>
+                  <div style={{ fontSize: '12px', color: deadTeamsAlert.length > 0 ? '#ef4444' : '#64748b', fontWeight: '700', textTransform: 'uppercase' }}>🔴 Kho Team Bị DIE</div>
+                  <div style={{ fontSize: '22px', fontWeight: '900', color: deadTeamsAlert.length > 0 ? '#ef4444' : '#fff', marginTop: '4px' }}>
+                    {deadTeamsAlert.length} Team
+                  </div>
+                  <div style={{ fontSize: '11px', color: '#94a3b8', marginTop: '2px' }}>Chưa tạo team thay thế NCC</div>
+                </div>
+                <button
+                  className="glass-button"
+                  onClick={() => navigate('/inventory')}
+                  style={{ fontSize: '11px', padding: '4px 10px', background: deadTeamsAlert.length > 0 ? '#ef4444' : 'rgba(255,255,255,0.08)', color: '#fff', fontWeight: '700', alignSelf: 'flex-start', border: 'none' }}
+                >
+                  Xử Lý Ngay <ArrowRight size={11} />
+                </button>
+              </div>
+
+              {/* Alert 2: Đơn hàng sắp hết hạn */}
+              <div style={{ background: expiringOrdersAlert.length > 0 ? 'rgba(245,158,11,0.12)' : 'rgba(255,255,255,0.03)', border: expiringOrdersAlert.length > 0 ? '1px solid rgba(245,158,11,0.3)' : '1px solid rgba(255,255,255,0.06)', borderRadius: '12px', padding: '14px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '10px' }}>
+                <div>
+                  <div style={{ fontSize: '12px', color: expiringOrdersAlert.length > 0 ? '#f59e0b' : '#64748b', fontWeight: '700', textTransform: 'uppercase' }}>🟡 Đơn Hàng Sắp Hết Hạn</div>
+                  <div style={{ fontSize: '22px', fontWeight: '900', color: expiringOrdersAlert.length > 0 ? '#f59e0b' : '#fff', marginTop: '4px' }}>
+                    {expiringOrdersAlert.length} Đơn
+                  </div>
+                  <div style={{ fontSize: '11px', color: '#94a3b8', marginTop: '2px' }}>Cần báo khách gia hạn (7 ngày tới)</div>
+                </div>
+                <button
+                  className="glass-button"
+                  onClick={() => navigate('/expiring')}
+                  style={{ fontSize: '11px', padding: '4px 10px', background: expiringOrdersAlert.length > 0 ? '#f59e0b' : 'rgba(255,255,255,0.08)', color: '#fff', fontWeight: '700', alignSelf: 'flex-start', border: 'none' }}
+                >
+                  Báo Gia Hạn <ArrowRight size={11} />
+                </button>
+              </div>
+
+              {/* Alert 3: Sản phẩm hết hàng / sắp hết */}
+              <div style={{ background: outOfStockProducts.length > 0 ? 'rgba(239,68,68,0.12)' : 'rgba(255,255,255,0.03)', border: outOfStockProducts.length > 0 ? '1px solid rgba(239,68,68,0.3)' : '1px solid rgba(255,255,255,0.06)', borderRadius: '12px', padding: '14px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '10px' }}>
+                <div>
+                  <div style={{ fontSize: '12px', color: outOfStockProducts.length > 0 ? '#ef4444' : '#64748b', fontWeight: '700', textTransform: 'uppercase' }}>📦 Sản Phẩm Cháy Hàng</div>
+                  <div style={{ fontSize: '22px', fontWeight: '900', color: outOfStockProducts.length > 0 ? '#ef4444' : '#fff', marginTop: '4px' }}>
+                    {outOfStockProducts.length} Sản Phẩm
+                  </div>
+                  <div style={{ fontSize: '11px', color: '#94a3b8', marginTop: '2px' }}>Tồn kho = 0 hoặc dưới ngưỡng</div>
+                </div>
+                <button
+                  className="glass-button"
+                  onClick={() => navigate('/inventory')}
+                  style={{ fontSize: '11px', padding: '4px 10px', background: outOfStockProducts.length > 0 ? '#6366f1' : 'rgba(255,255,255,0.08)', color: '#fff', fontWeight: '700', alignSelf: 'flex-start', border: 'none' }}
+                >
+                  Nhập Kho Ngay <ArrowRight size={11} />
+                </button>
+              </div>
+
+              {/* Alert 4: Khách hàng còn nợ tiền */}
+              <div style={{ background: debtorCustomersAlert.length > 0 ? 'rgba(245,158,11,0.12)' : 'rgba(255,255,255,0.03)', border: debtorCustomersAlert.length > 0 ? '1px solid rgba(245,158,11,0.3)' : '1px solid rgba(255,255,255,0.06)', borderRadius: '12px', padding: '14px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '10px' }}>
+                <div>
+                  <div style={{ fontSize: '12px', color: debtorCustomersAlert.length > 0 ? '#f59e0b' : '#64748b', fontWeight: '700', textTransform: 'uppercase' }}>💸 Khách Hàng Đang Nợ</div>
+                  <div style={{ fontSize: '22px', fontWeight: '900', color: debtorCustomersAlert.length > 0 ? '#f59e0b' : '#fff', marginTop: '4px' }}>
+                    {debtorCustomersAlert.length} Khách
+                  </div>
+                  <div style={{ fontSize: '11px', color: '#94a3b8', marginTop: '2px' }}>Tổng nợ: {totalCustomerDebt.toLocaleString()}đ</div>
+                </div>
+                <button
+                  className="glass-button"
+                  onClick={() => navigate('/customers')}
+                  style={{ fontSize: '11px', padding: '4px 10px', background: debtorCustomersAlert.length > 0 ? '#10b981' : 'rgba(255,255,255,0.08)', color: '#fff', fontWeight: '700', alignSelf: 'flex-start', border: 'none' }}
+                >
+                  Thu Nợ Ngay <ArrowRight size={11} />
+                </button>
               </div>
             </div>
           </div>
