@@ -1212,62 +1212,93 @@ export default function Orders() {
                       </td>
 
                       {/* 3. SẢN PHẨM & ACC */}
-                      <td style={{ padding: '12px 10px', maxWidth: '220px' }}>
-                        <strong style={{ color: '#818cf8', display: 'block', marginBottom: '2px', fontSize: '13px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{prodName}</strong>
-                        {(() => {
-                          const linkedSupp = suppliers.find(s => String(s.id) === String(order.supplier_id || order.supplierId));
-                          const suppDisplayName = linkedSupp ? linkedSupp.name : (order.supplier_name || order.supplierName || null);
-                          if (!suppDisplayName) return null;
-                          return (
-                            <div style={{ fontSize: '10px', color: '#38bdf8', fontWeight: '600', marginBottom: '2px', display: 'inline-flex', alignItems: 'center', gap: '3px', background: 'rgba(56,189,248,0.1)', padding: '1px 6px', borderRadius: '4px', border: '1px solid rgba(56,189,248,0.2)', whiteSpace: 'nowrap', maxWidth: '180px', overflow: 'hidden', textOverflow: 'ellipsis' }} title={`Nhà Cung Cấp: ${suppDisplayName}`}>
-                              <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>🏬 ${suppDisplayName}</span>
-                            </div>
-                          );
-                        })()}
-                        {(() => {
-                          const linkedTeam = teams.find(t => String(t.id) === String(order.team_id || order.teamId));
-                          const rawTeamName = linkedTeam ? linkedTeam.name : (order.team_name || order.teamName || (order.team_id ? `Team #${order.team_id}` : null));
-                          if (!rawTeamName) return null;
-                          
-                          let cleanName = String(rawTeamName).trim();
-                          if (cleanName.includes('|')) cleanName = cleanName.split('|')[0].trim();
-                          cleanName = cleanName.replace(/^Mail\s*\|\s*Pass\s*\|\s*2FA\s*/i, '').trim();
+                      <td style={{ padding: '12px 10px', maxWidth: '230px' }}>
+                        <strong style={{ color: '#818cf8', display: 'block', marginBottom: '4px', fontSize: '13px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                          {prodName}
+                        </strong>
 
-                          return (
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                        {/* Badges container for Supplier & Team */}
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                          {/* Supplier (NCC) Badge */}
+                          {(() => {
+                            const linkedSupp = suppliers.find(s => String(s.id) === String(order.supplier_id || order.supplierId));
+                            const suppDisplayName = linkedSupp ? linkedSupp.name : (order.supplier_name || order.supplierName || null);
+                            if (!suppDisplayName) return null;
+                            return (
                               <div
-                                title={rawTeamName}
+                                title={`Nhà cung cấp: ${suppDisplayName}`}
                                 style={{
-                                  fontSize: '11px',
-                                  color: '#10b981',
-                                  fontWeight: '700',
-                                  marginTop: '3px',
+                                  fontSize: '10.5px',
+                                  color: '#38bdf8',
+                                  fontWeight: '600',
                                   display: 'inline-flex',
                                   alignItems: 'center',
                                   gap: '4px',
-                                  background: 'rgba(16,185,129,0.12)',
-                                  padding: '2px 8px',
+                                  background: 'rgba(56,189,248,0.12)',
+                                  padding: '2px 7px',
                                   borderRadius: '4px',
-                                  border: '1px solid rgba(16,185,129,0.25)',
-                                  maxWidth: '180px',
+                                  border: '1px solid rgba(56,189,248,0.25)',
+                                  maxWidth: '190px',
+                                  whiteSpace: 'nowrap',
                                   overflow: 'hidden',
-                                  textOverflow: 'ellipsis',
-                                  whiteSpace: 'nowrap'
+                                  textOverflow: 'ellipsis'
                                 }}
                               >
-                                <ShieldCheck size={12} style={{ flexShrink: 0 }} />
+                                <span style={{ flexShrink: 0 }}>🏬</span>
                                 <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                  {cleanName}
+                                  NCC: {suppDisplayName}
                                 </span>
                               </div>
-                              {order.migrated_from_team_name && (
-                                <div style={{ fontSize: '10px', color: '#f59e0b', fontWeight: '700', marginTop: '2px', whiteSpace: 'nowrap' }} title={`Đã tự động chuyển từ Team ${order.migrated_from_team_name} do bảo hành`}>
-                                  🔄 Chuyển từ BH: {order.migrated_from_team_name}
+                            );
+                          })()}
+
+                          {/* Team Slot Badge */}
+                          {(() => {
+                            const linkedTeam = teams.find(t => String(t.id) === String(order.team_id || order.teamId));
+                            const rawTeamName = linkedTeam ? linkedTeam.name : (order.team_name || order.teamName || (order.team_id ? `Team #${order.team_id}` : null));
+                            if (!rawTeamName) return null;
+                            
+                            let cleanName = String(rawTeamName).trim();
+                            if (cleanName.includes('|')) cleanName = cleanName.split('|')[0].trim();
+                            cleanName = cleanName.replace(/^Mail\s*\|\s*Pass\s*\|\s*2FA\s*/i, '').trim();
+
+                            return (
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                                <div
+                                  title={rawTeamName}
+                                  style={{
+                                    fontSize: '10.5px',
+                                    color: '#10b981',
+                                    fontWeight: '700',
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: '4px',
+                                    background: 'rgba(16,185,129,0.12)',
+                                    padding: '2px 7px',
+                                    borderRadius: '4px',
+                                    border: '1px solid rgba(16,185,129,0.25)',
+                                    maxWidth: '190px',
+                                    overflow: 'hidden',
+                                    textOverflow: 'ellipsis',
+                                    whiteSpace: 'nowrap'
+                                  }}
+                                >
+                                  <ShieldCheck size={12} style={{ flexShrink: 0 }} />
+                                  <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                    {cleanName}
+                                  </span>
                                 </div>
-                              )}
-                            </div>
-                          );
-                        })()}
+                                {order.migrated_from_team_name && (
+                                  <div style={{ fontSize: '10px', color: '#f59e0b', fontWeight: '700', marginTop: '1px', whiteSpace: 'nowrap' }} title={`Đã tự động chuyển từ Team ${order.migrated_from_team_name} do bảo hành`}>
+                                    🔄 Chuyển từ BH: {order.migrated_from_team_name}
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })()}
+                        </div>
+
+                        {/* Account / Invite Link Credentials */}
                         {order.infor && (
                           <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '4px' }}>
                             <code style={{ fontSize: '11px', color: isRevealed ? '#fff' : '#64748b', background: 'rgba(0,0,0,0.2)', padding: '2px 6px', borderRadius: '4px', whiteSpace: 'nowrap' }}>
@@ -1282,7 +1313,6 @@ export default function Orders() {
                           </div>
                         )}
                       </td>
-
                       {/* 4. NGUỒN / KÊNH (BRAND LOGO ICON) */}
                       <td style={{ padding: '12px 10px', whiteSpace: 'nowrap', textAlign: 'center' }}>
                         {renderChannelBrandIcon(order.source, order.channel || order.source || 'Facebook Page')}
