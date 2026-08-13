@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { SupplierService, OrderService, ProductService, SupplierPriceService } from '../utils/dataService';
+import { SupplierService, OrderService, ProductService, SupplierPriceService, TeamService, PurchaseService } from '../utils/dataService';
 import { useToast } from '../components/Toast';
 import ConfirmDialog from '../components/ConfirmDialog';
 import { Truck, Plus, Eye, Edit2, ShieldCheck, AlertTriangle, CheckCircle, X, Trash2, Search, BarChart2, Award, MessageCircle, Send, Bot, Phone } from 'lucide-react';
@@ -13,6 +13,8 @@ export default function Suppliers() {
 
   const [suppliers, setSuppliers] = useState([]);
   const [orders, setOrders] = useState([]);
+  const [teams, setTeams] = useState([]);
+  const [purchases, setPurchases] = useState([]);
   const [products, setProducts] = useState([]);
   const [todayPrices, setTodayPrices] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -32,14 +34,18 @@ export default function Suppliers() {
     if (!shopId) return;
     setLoading(true);
     try {
-      const [suppList, orderList, prodList, priceList] = await Promise.all([
+      const [suppList, orderList, teamList, purchaseList, prodList, priceList] = await Promise.all([
         SupplierService.list(shopId),
         OrderService.list(shopId),
+        TeamService.list(shopId),
+        PurchaseService.list(shopId),
         ProductService.list(shopId),
         SupplierPriceService.listTodayPrices(shopId)
       ]);
       setSuppliers(suppList || []);
       setOrders(orderList || []);
+      setTeams(teamList || []);
+      setPurchases(purchaseList || []);
       setProducts(prodList || []);
       setTodayPrices(priceList || []);
       if ((prodList || []).length > 0) setSelectedCompareProduct(prodList[0].name);
@@ -126,15 +132,26 @@ export default function Suppliers() {
 
   const getReliabilityMetric = (supplierId) => {
     const suppOrders = orders.filter(o => String(o.supplier_id || o.supplierId) === String(supplierId));
+    const suppTeams = teams.filter(t => String(t.supplier_id || t.supplierId) === String(supplierId));
+    const suppPurchases = purchases.filter(p => String(p.supplier_id || p.supplierId) === String(supplierId));
+
     const totalOrders = suppOrders.length;
-    if (totalOrders === 0) return { label: 'CHƯA CÓ ĐƠN', color: '#64748b', bg: 'rgba(100,116,139,0.15)', icon: ShieldCheck };
+    const totalCount = totalOrders + suppTeams.length + suppPurchases.length;
+
+    if (totalCount === 0) {
+      return { label: 'CHƯA CÓ KHO / ĐƠN', color: '#64748b', bg: 'rgba(100,116,139,0.15)', icon: ShieldCheck, totalCount, suppOrdersCount: totalOrders, suppTeamsCount: suppTeams.length, suppPurchasesCount: suppPurchases.length };
+    }
+
+    if (totalOrders === 0) {
+      return { label: `ĐÃ NHẬP KHO (${suppTeams.length + suppPurchases.length} KHO/PHIẾU)`, color: '#38bdf8', bg: 'rgba(56,189,248,0.15)', icon: CheckCircle, totalCount, suppOrdersCount: totalOrders, suppTeamsCount: suppTeams.length, suppPurchasesCount: suppPurchases.length };
+    }
 
     const warrantyOrders = suppOrders.filter(o => o.status === 'Bảo hành' || o.status?.includes('Hoàn tiền') || o.status?.includes('Từ chối'));
     const errRate = (warrantyOrders.length / totalOrders) * 100;
 
-    if (errRate === 0) return { label: 'UY TÍN CAO (0% LỖI)', color: '#10b981', bg: 'rgba(16,185,129,0.15)', icon: CheckCircle };
-    if (errRate <= 15) return { label: `TRUNG BÌNH (${errRate.toFixed(0)}% LỖI)`, color: '#f59e0b', bg: 'rgba(245,158,11,0.15)', icon: AlertTriangle };
-    return { label: `RỦI RO CAO (${errRate.toFixed(0)}% LỖI)`, color: '#ef4444', bg: 'rgba(239,68,68,0.15)', icon: AlertTriangle };
+    if (errRate === 0) return { label: 'UY TÍN CAO (0% LỖI)', color: '#10b981', bg: 'rgba(16,185,129,0.15)', icon: CheckCircle, totalCount, suppOrdersCount: totalOrders, suppTeamsCount: suppTeams.length, suppPurchasesCount: suppPurchases.length };
+    if (errRate <= 15) return { label: `TRUNG BÌNH (${errRate.toFixed(0)}% LỖI)`, color: '#f59e0b', bg: 'rgba(245,158,11,0.15)', icon: AlertTriangle, totalCount, suppOrdersCount: totalOrders, suppTeamsCount: suppTeams.length, suppPurchasesCount: suppPurchases.length };
+    return { label: `RỦI RO CAO (${errRate.toFixed(0)}% LỖI)`, color: '#ef4444', bg: 'rgba(239,68,68,0.15)', icon: AlertTriangle, totalCount, suppOrdersCount: totalOrders, suppTeamsCount: suppTeams.length, suppPurchasesCount: suppPurchases.length };
   };
 
   const filteredSuppliers = suppliers.filter(s => {
@@ -218,7 +235,6 @@ export default function Suppliers() {
               {filteredSuppliers.map(s => {
                 const rel = getReliabilityMetric(s.id);
                 const RelIcon = rel.icon;
-                const suppOrdersCount = orders.filter(o => String(o.supplier_id || o.supplierId) === String(s.id)).length;
 
                 return (
                   <div key={s.id} className="glass-panel" style={{ display: 'flex', flexDirection: 'column', gap: '12px', position: 'relative', padding: '18px' }}>
@@ -237,11 +253,11 @@ export default function Suppliers() {
                       </div>
                     </div>
 
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
                       <span className="badge" style={{ background: rel.bg, color: rel.color, padding: '4px 10px', fontSize: '11px' }}>
                         <RelIcon size={12} /> {rel.label}
                       </span>
-                      <span style={{ fontSize: '12px', color: '#64748b' }}>({suppOrdersCount} đơn nhập)</span>
+                      <span style={{ fontSize: '12px', color: '#94a3b8' }}>({rel.suppTeamsCount} Kho Team / {rel.suppOrdersCount} Đơn POS)</span>
                     </div>
 
                     {/* Multi-Channel Interactive Contact Badges */}
