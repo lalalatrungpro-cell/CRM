@@ -100,7 +100,7 @@ export default function Inventory() {
     name: '', category: 'Canva Pro', infor: '', maxSlots: 49,
     importCost: 0, purchaseDate: todayStr, expireDate: nextYearStr,
     supplierId: '', notes: '', warrantyPolicy: '', status: 'ACTIVE',
-    paymentStatus: 'PAID'
+    paymentStatus: ''
   };
   const [showTeamModal, setShowTeamModal] = useState(false);
   const [showWarrantyModal, setShowWarrantyModal] = useState(null);
@@ -123,7 +123,7 @@ export default function Inventory() {
   // ── Purchases State (GĐ2) ──
   const emptyPurchaseForm = {
     supplierId: '', productName: 'Canva Pro (1 năm)', teamId: '',
-    importCost: 2000000, quantity: 49, paymentStatus: 'PAID',
+    importCost: 2000000, quantity: 49, paymentStatus: '',
     purchaseDate: todayStr, notes: ''
   };
   const [purchases, setPurchases] = useState([]);
@@ -194,9 +194,12 @@ export default function Inventory() {
   const handleSaveTeam = async (e) => {
     e.preventDefault();
     if (!teamFormData.name.trim()) return toast.error('Vui lòng nhập tên team!');
+    const cost = Number(teamFormData.importCost || 0);
+    if (!editingTeam && cost > 0 && !teamFormData.paymentStatus) {
+      return toast.error('Vui lòng chọn trạng thái thanh toán cho NCC (Đã trả đủ hoặc Còn nợ)!');
+    }
     const supp = suppliers.find(s => String(s.id) === String(teamFormData.supplierId));
     const suppName = supp ? supp.name : '';
-    const cost = Number(teamFormData.importCost || 0);
     const slots = parseInt(teamFormData.maxSlots) || 1;
     const payload = {
       name: teamFormData.name.trim(), category: teamFormData.category,
@@ -1263,9 +1266,19 @@ export default function Inventory() {
                       </select>
                     </div>
                     <div>
-                      <label style={{ fontSize: '12px', color: '#94a3b8', display: 'block', marginBottom: '6px', fontWeight: '600' }}>💳 Thanh Toán Cho NCC *</label>
-                      <select value={teamFormData.paymentStatus} onChange={e => setTeamFormData(f => ({ ...f, paymentStatus: e.target.value }))}
-                        style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: '10px', padding: '10px 14px', color: '#fff', fontSize: '14px', boxSizing: 'border-box' }}>
+                      <label style={{ fontSize: '12px', color: teamFormData.importCost > 0 && !teamFormData.paymentStatus ? '#ef4444' : '#94a3b8', display: 'block', marginBottom: '6px', fontWeight: '600' }}>💳 Thanh Toán Cho NCC *</label>
+                      <select required value={teamFormData.paymentStatus} onChange={e => setTeamFormData(f => ({ ...f, paymentStatus: e.target.value }))}
+                        style={{
+                          width: '100%',
+                          background: 'rgba(255,255,255,0.05)',
+                          border: teamFormData.importCost > 0 && !teamFormData.paymentStatus ? '1.5px solid #ef4444' : '1px solid rgba(255,255,255,0.12)',
+                          borderRadius: '10px',
+                          padding: '10px 14px',
+                          color: teamFormData.paymentStatus ? '#fff' : '#f87171',
+                          fontSize: '13.5px',
+                          boxSizing: 'border-box'
+                        }}>
+                        <option value="" disabled>-- Chọn Trạng Thái Thanh Toán NCC * --</option>
                         <option value="PAID">🟢 Đã trả đủ tiền mua team</option>
                         <option value="DEBT">🔴 Còn Nợ NCC (Ghi công nợ)</option>
                       </select>
