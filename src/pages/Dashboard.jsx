@@ -33,6 +33,39 @@ export default function Dashboard() {
   const [inventorySummary, setInventorySummary] = useState({ availableCount: 0, totalInventoryValue: 0 });
   const [loading, setLoading] = useState(true);
 
+  // ── Date Range Filter State ──
+  const [datePreset, setDatePreset] = useState('ALL');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+
+  const handleApplyDatePreset = (preset) => {
+    setDatePreset(preset);
+    const now = new Date();
+    if (preset === 'ALL') {
+      setStartDate('');
+      setEndDate('');
+    } else if (preset === 'THIS_MONTH') {
+      const firstDay = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
+      const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0];
+      setStartDate(firstDay);
+      setEndDate(lastDay);
+    } else if (preset === 'LAST_MONTH') {
+      const firstDay = new Date(now.getFullYear(), now.getMonth() - 1, 1).toISOString().split('T')[0];
+      const lastDay = new Date(now.getFullYear(), now.getMonth(), 0).toISOString().split('T')[0];
+      setStartDate(firstDay);
+      setEndDate(lastDay);
+    } else if (preset === 'THIS_QUARTER') {
+      const qMonth = Math.floor(now.getMonth() / 3) * 3;
+      const firstDay = new Date(now.getFullYear(), qMonth, 1).toISOString().split('T')[0];
+      const lastDay = new Date(now.getFullYear(), qMonth + 3, 0).toISOString().split('T')[0];
+      setStartDate(firstDay);
+      setEndDate(lastDay);
+    } else if (preset === 'THIS_YEAR') {
+      setStartDate(`${now.getFullYear()}-01-01`);
+      setEndDate(`${now.getFullYear()}-12-31`);
+    }
+  };
+
   const loadData = async () => {
     if (!shopId) return;
     setLoading(true);
@@ -66,8 +99,18 @@ export default function Dashboard() {
     loadData();
   }, [shopId]);
 
-  // Financial Calculations
-  const paidOrders = orders.filter(o => o.status !== 'Từ chối bảo hành' && !String(o.status || '').includes('100%'));
+  // Financial Calculations & Date Range Filter
+  const isDateInRange = (dateStr) => {
+    if (!startDate && !endDate) return true;
+    if (!dateStr) return true;
+    const d = String(dateStr).split('T')[0];
+    if (startDate && d < startDate) return false;
+    if (endDate && d > endDate) return false;
+    return true;
+  };
+
+  const filteredOrders = orders.filter(o => isDateInRange(o.purchase_date || o.purchaseDate));
+  const paidOrders = filteredOrders.filter(o => o.status !== 'Từ chối bảo hành' && !String(o.status || '').includes('100%'));
 
   const totalRevenue = paidOrders.reduce((sum, o) => {
     const sellP = Number(o.sell_price || o.sellPrice || 0);
@@ -80,7 +123,8 @@ export default function Dashboard() {
   const grossMargin = totalRevenue > 0 ? Math.round((grossProfit / totalRevenue) * 100) : 0;
 
   // OPEX components
-  const totalPayrollPaid = payrolls.filter(p => p.status === 'PAID').reduce((sum, p) => sum + Number(p.net_salary || 0), 0);
+  const filteredPayrolls = payrolls.filter(p => isDateInRange(p.payment_date || p.created_at));
+  const totalPayrollPaid = filteredPayrolls.filter(p => p.status === 'PAID').reduce((sum, p) => sum + Number(p.net_salary || 0), 0);
   const totalOpexExpenses = opexSummary.totalOpex;
   const totalOperatingCost = totalOpexExpenses + totalPayrollPaid;
 
@@ -178,7 +222,7 @@ export default function Dashboard() {
             📊 Báo Cáo Tài Chính & Kế Toán Quản Trị P&L
           </h1>
           <p style={{ color: '#64748b', marginTop: '4px', fontSize: '13px', margin: 0 }}>
-            Tổng quan toàn diện: Doanh thu $\rightarrow$ Giá vốn COGS $\rightarrow$ Lợi nhuận gộp $\rightarrow$ OPEX $\rightarrow$ <strong style={{ color: '#10b981' }}>Lãi ròng thực tế Net Profit</strong>.
+            Tổng quan toàn diện: Doanh thu ➔ Giá vốn COGS ➔ Lợi nhuận gộp ➔ Chi phí OPEX ➔ <strong style={{ color: '#10b981' }}>Lãi ròng thực tế Net Profit</strong>.
           </p>
         </div>
 
@@ -189,6 +233,101 @@ export default function Dashboard() {
           <button className="glass-button" onClick={handleExportPnL} style={{ background: 'rgba(16,185,129,0.18)', border: '1px solid rgba(16,185,129,0.25)', color: '#10b981', fontWeight: '700' }}>
             <Download size={17} /> Xuất Báo Cáo P&L (.csv)
           </button>
+        </div>
+      </div>
+
+      {/* Date Filter Toolbar Bar */}
+      <div className="glass-panel" style={{ padding: '14px 18px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px', background: 'rgba(17,21,40,0.6)', border: '1px solid rgba(255,255,255,0.08)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+          <span style={{ fontSize: '12px', color: '#94a3b8', fontWeight: '700', textTransform: 'uppercase', marginRight: '4px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <BarChart3 size={15} color="#818cf8" /> Khoảng Thời Gian:
+          </span>
+
+          <button
+            onClick={() => handleApplyDatePreset('ALL')}
+            style={{
+              padding: '6px 12px', borderRadius: '8px', fontSize: '12px', fontWeight: '700', cursor: 'pointer',
+              background: datePreset === 'ALL' ? '#6366f1' : 'rgba(255,255,255,0.05)',
+              color: datePreset === 'ALL' ? '#fff' : '#94a3b8',
+              border: datePreset === 'ALL' ? '1px solid #818cf8' : '1px solid rgba(255,255,255,0.08)'
+            }}
+          >
+            🗓️ Tất Cả
+          </button>
+
+          <button
+            onClick={() => handleApplyDatePreset('THIS_MONTH')}
+            style={{
+              padding: '6px 12px', borderRadius: '8px', fontSize: '12px', fontWeight: '700', cursor: 'pointer',
+              background: datePreset === 'THIS_MONTH' ? '#10b981' : 'rgba(255,255,255,0.05)',
+              color: datePreset === 'THIS_MONTH' ? '#fff' : '#94a3b8',
+              border: datePreset === 'THIS_MONTH' ? '1px solid #10b981' : '1px solid rgba(255,255,255,0.08)'
+            }}
+          >
+            📅 Tháng Này
+          </button>
+
+          <button
+            onClick={() => handleApplyDatePreset('LAST_MONTH')}
+            style={{
+              padding: '6px 12px', borderRadius: '8px', fontSize: '12px', fontWeight: '700', cursor: 'pointer',
+              background: datePreset === 'LAST_MONTH' ? '#38bdf8' : 'rgba(255,255,255,0.05)',
+              color: datePreset === 'LAST_MONTH' ? '#fff' : '#94a3b8',
+              border: datePreset === 'LAST_MONTH' ? '1px solid #38bdf8' : '1px solid rgba(255,255,255,0.08)'
+            }}
+          >
+            ⏪ Tháng Trước
+          </button>
+
+          <button
+            onClick={() => handleApplyDatePreset('THIS_QUARTER')}
+            style={{
+              padding: '6px 12px', borderRadius: '8px', fontSize: '12px', fontWeight: '700', cursor: 'pointer',
+              background: datePreset === 'THIS_QUARTER' ? '#f59e0b' : 'rgba(255,255,255,0.05)',
+              color: datePreset === 'THIS_QUARTER' ? '#fff' : '#94a3b8',
+              border: datePreset === 'THIS_QUARTER' ? '1px solid #f59e0b' : '1px solid rgba(255,255,255,0.08)'
+            }}
+          >
+            📊 Quý Này
+          </button>
+
+          <button
+            onClick={() => handleApplyDatePreset('THIS_YEAR')}
+            style={{
+              padding: '6px 12px', borderRadius: '8px', fontSize: '12px', fontWeight: '700', cursor: 'pointer',
+              background: datePreset === 'THIS_YEAR' ? '#a855f7' : 'rgba(255,255,255,0.05)',
+              color: datePreset === 'THIS_YEAR' ? '#fff' : '#94a3b8',
+              border: datePreset === 'THIS_YEAR' ? '1px solid #a855f7' : '1px solid rgba(255,255,255,0.08)'
+            }}
+          >
+            📆 Năm Nay
+          </button>
+        </div>
+
+        {/* Date Inputs */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <span style={{ fontSize: '12px', color: '#64748b' }}>Từ:</span>
+          <input
+            type="date"
+            value={startDate}
+            onChange={e => { setStartDate(e.target.value); setDatePreset('CUSTOM'); }}
+            style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: '6px', padding: '5px 8px', color: '#fff', fontSize: '12px' }}
+          />
+          <span style={{ fontSize: '12px', color: '#64748b' }}>Đến:</span>
+          <input
+            type="date"
+            value={endDate}
+            onChange={e => { setEndDate(e.target.value); setDatePreset('CUSTOM'); }}
+            style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: '6px', padding: '5px 8px', color: '#fff', fontSize: '12px' }}
+          />
+          {(startDate || endDate) && (
+            <button
+              onClick={() => handleApplyDatePreset('ALL')}
+              style={{ background: 'rgba(239,68,68,0.15)', border: '1px solid rgba(239,68,68,0.3)', color: '#f87171', borderRadius: '6px', padding: '4px 8px', fontSize: '11px', fontWeight: '700', cursor: 'pointer' }}
+            >
+              Xóa Lọc
+            </button>
+          )}
         </div>
       </div>
 
