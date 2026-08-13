@@ -99,7 +99,8 @@ export default function Inventory() {
   const emptyTeamForm = {
     name: '', category: 'Canva Pro', infor: '', maxSlots: 49,
     importCost: 0, purchaseDate: todayStr, expireDate: nextYearStr,
-    supplierId: '', notes: '', warrantyPolicy: '', status: 'ACTIVE'
+    supplierId: '', notes: '', warrantyPolicy: '', status: 'ACTIVE',
+    paymentStatus: 'PAID'
   };
   const [showTeamModal, setShowTeamModal] = useState(false);
   const [showWarrantyModal, setShowWarrantyModal] = useState(null);
@@ -219,7 +220,8 @@ export default function Inventory() {
           await PurchaseService.create(shopId, {
             supplier_id: payload.supplier_id, supplier_name: payload.supplier_name,
             team_id: created.id, product_name: created.name,
-            import_cost: cost, quantity: slots, payment_status: 'PAID',
+            import_cost: cost, quantity: slots,
+            payment_status: teamFormData.paymentStatus || 'PAID',
             purchase_date: payload.purchase_date,
             notes: 'Mua kho team "' + created.name + '" (' + slots + ' slots)'
           });
@@ -1251,13 +1253,23 @@ export default function Inventory() {
                       placeholder="VD: Không kick thành viên quá nhiều, Không set quyền Admin quá 2 người, Không tự ý đổi email..." style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: '10px', padding: '10px 14px', color: '#fff', fontSize: '13px', resize: 'vertical', boxSizing: 'border-box' }} />
                   </div>
 
-                  <div>
-                    <label style={{ fontSize: '12px', color: '#94a3b8', display: 'block', marginBottom: '6px', fontWeight: '600' }}>Nhà Cung Cấp</label>
-                    <select value={teamFormData.supplierId} onChange={e => setTeamFormData(f => ({ ...f, supplierId: e.target.value }))}
-                      style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: '10px', padding: '10px 14px', color: '#fff', fontSize: '14px', boxSizing: 'border-box' }}>
-                      <option value="">— Chọn NCC —</option>
-                      {suppliers.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-                    </select>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                    <div>
+                      <label style={{ fontSize: '12px', color: '#94a3b8', display: 'block', marginBottom: '6px', fontWeight: '600' }}>🏭 Nhà Cung Cấp</label>
+                      <select value={teamFormData.supplierId} onChange={e => setTeamFormData(f => ({ ...f, supplierId: e.target.value }))}
+                        style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: '10px', padding: '10px 14px', color: '#fff', fontSize: '14px', boxSizing: 'border-box' }}>
+                        <option value="">— Chọn NCC —</option>
+                        {suppliers.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <label style={{ fontSize: '12px', color: '#94a3b8', display: 'block', marginBottom: '6px', fontWeight: '600' }}>💳 Thanh Toán Cho NCC *</label>
+                      <select value={teamFormData.paymentStatus} onChange={e => setTeamFormData(f => ({ ...f, paymentStatus: e.target.value }))}
+                        style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: '10px', padding: '10px 14px', color: '#fff', fontSize: '14px', boxSizing: 'border-box' }}>
+                        <option value="PAID">🟢 Đã trả đủ tiền mua team</option>
+                        <option value="DEBT">🔴 Còn Nợ NCC (Ghi công nợ)</option>
+                      </select>
+                    </div>
                   </div>
 
                   <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', marginTop: '6px' }}>
