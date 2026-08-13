@@ -22,7 +22,7 @@ const PAGE_SIZE = 15;
 
 // Helper for Brand Channel Logo Icons (Facebook 'f', Zalo 'Z', Telegram, etc.)
 const renderChannelBrandIcon = (source, fullChannelName) => {
-  const src = String(source || '').toLowerCase();
+  const src = String(fullChannelName || source || '').toLowerCase();
   const title = fullChannelName || source || 'Kênh Bán Hàng';
 
   if (src.includes('facebook') || src.includes('fb')) {
