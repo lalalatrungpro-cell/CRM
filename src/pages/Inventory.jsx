@@ -988,10 +988,13 @@ export default function Inventory() {
                 const purchaseDate = team.purchase_date || team.purchaseDate || '';
                 const expireDate = team.expire_date || team.expireDate || '';
                 const daysLeft = expireDate ? Math.ceil((new Date(expireDate) - new Date()) / 86400000) : null;
-                const isDie = team.status === 'FAULTY_DIE';
+                const isReplaced = team.status === 'REPLACED' || Boolean(team.replaced_by_team_name || team.replaced_by_team_id);
+                const isDie = (team.status === 'FAULTY_DIE' || team.status === 'DIE') && !isReplaced;
 
                 let statusBadge = { label: '🟢 ĐANG HOẠT ĐỘNG', color: '#10b981', bg: 'rgba(16,185,129,0.15)' };
-                if (isDie) {
+                if (isReplaced) {
+                  statusBadge = { label: '🔒 ĐÃ BẢO HÀNH (ĐÃ ĐỔI)', color: '#a855f7', bg: 'rgba(168,85,247,0.2)' };
+                } else if (isDie) {
                   statusBadge = { label: '🔴 TEAM BỊ DIE (LỖI)', color: '#ef4444', bg: 'rgba(239,68,68,0.2)' };
                 } else if (daysLeft !== null && daysLeft <= 0) {
                   statusBadge = { label: '⚪ ĐÃ HẾT HẠN', color: '#64748b', bg: 'rgba(100,116,139,0.2)' };
@@ -1595,14 +1598,14 @@ export default function Inventory() {
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                 <AlertTriangle size={20} color="#ef4444" />
                 <h3 style={{ fontSize: '16px', fontWeight: '800', margin: 0, color: '#fff' }}>
-                  🔴 Kho Team Bị DIE Cần Đòi Bảo Hành NCC ({teams.filter(t => t.status === 'FAULTY_DIE').length} Team)
+                  🔴 Kho Team Bị DIE Cần Đòi Bảo Hành NCC ({teams.filter(t => (t.status === 'FAULTY_DIE' || t.status === 'DIE') && !t.replaced_by_team_id && !t.replaced_by_team_name).length} Team)
                 </h3>
               </div>
             </div>
 
-            {teams.filter(t => t.status === 'FAULTY_DIE').length === 0 ? (
+            {teams.filter(t => (t.status === 'FAULTY_DIE' || t.status === 'DIE') && !t.replaced_by_team_id && !t.replaced_by_team_name).length === 0 ? (
               <div style={{ color: '#10b981', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13.5px' }}>
-                <CheckCircle2 size={16} /> 100% Kho Team đang hoạt động tốt. Không có Team nào bị DIE!
+                <CheckCircle2 size={16} /> 100% Kho Team đang hoạt động tốt. Không có Team nào bị DIE cần bảo hành!
               </div>
             ) : (
               <div style={{ overflowX: 'auto' }}>
@@ -1617,7 +1620,7 @@ export default function Inventory() {
                     </tr>
                   </thead>
                   <tbody>
-                    {teams.filter(t => t.status === 'FAULTY_DIE').map(t => (
+                    {teams.filter(t => (t.status === 'FAULTY_DIE' || t.status === 'DIE') && !t.replaced_by_team_id && !t.replaced_by_team_name).map(t => (
                       <tr key={t.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
                         <td style={{ padding: '10px 14px', fontWeight: '700', color: '#fff' }}>
                           {t.name}

@@ -509,11 +509,11 @@ export const TeamService = {
       status: 'ACTIVE'
     });
 
-    // 2. Freeze old team (mark replaced_by_team_id)
+    // 2. Freeze old team (mark replaced_by_team_id & status REPLACED)
     await this.update(oldTeam.id, {
       replaced_by_team_id: newTeamObj.id,
       replaced_by_team_name: newTeamObj.name,
-      status: 'FAULTY_DIE',
+      status: 'REPLACED',
       frozen: true
     });
 
@@ -1662,9 +1662,9 @@ export const InventoryService = {
       totalItems += maxSlots;
       soldCount += usedSlots;
 
-      if (t.status === 'FAULTY_DIE') {
+      if (t.status === 'FAULTY_DIE' && !t.replaced_by_team_id && !t.replaced_by_team_name) {
         faultyCount += 1;
-      } else {
+      } else if (t.status === 'ACTIVE') {
         const availSlots = Math.max(0, maxSlots - usedSlots);
         availableCount += availSlots;
         totalInventoryValue += availSlots * unitCost;
