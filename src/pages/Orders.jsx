@@ -966,11 +966,12 @@ export default function Orders() {
           </div>
         ) : (
           <>
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13.5px' }}>
+            <div style={{ overflowX: 'auto', borderRadius: '8px' }}>
+            <table style={{ width: '100%', minWidth: '1080px', borderCollapse: 'collapse', fontSize: '13px' }}>
               <thead>
                 <tr style={{ background: 'rgba(255,255,255,0.04)', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
                   {['Mã Đơn', 'Khách Hàng', 'Sản Phẩm & Acc', 'Nguồn / Kênh', 'Thời Hạn', 'Tài Chính', 'Bảo Hành', 'Trạng Thái', 'Thao Tác 360°'].map(h => (
-                    <th key={h} style={{ padding: '14px 14px', textAlign: 'left', color: '#475569', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: '700' }}>{h}</th>
+                    <th key={h} style={{ padding: '12px 10px', textAlign: 'left', color: '#475569', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: '700', whiteSpace: 'nowrap' }}>{h}</th>
                   ))}
                 </tr>
               </thead>
@@ -1019,25 +1020,25 @@ export default function Orders() {
                   return (
                     <tr key={order.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
                       {/* 1. MÃ ĐƠN */}
-                      <td style={{ padding: '14px 14px' }}>
+                      <td style={{ padding: '12px 10px', whiteSpace: 'nowrap' }}>
                         <strong style={{ color: '#fff', fontSize: '13px' }}>#{order.id}</strong>
                         <div style={{ fontSize: '10.5px', color: '#64748b', marginTop: '2px' }}>{createdStr}</div>
                       </td>
 
                       {/* 2. KHÁCH HÀNG */}
-                      <td style={{ padding: '14px 14px' }}>
-                        <strong style={{ fontSize: '13.5px', color: '#fff', display: 'block' }}>{custName}</strong>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '2px' }}>
-                          <span style={{ fontSize: '11px', color: '#94a3b8' }}>{order.phone || 'N/A'}</span>
-                          <span style={{ fontSize: '9.5px', padding: '1px 5px', borderRadius: '4px', background: tierCfg.bg, color: tierCfg.color, border: tierCfg.border, fontWeight: '600' }}>
+                      <td style={{ padding: '12px 10px', minWidth: '150px' }}>
+                        <strong style={{ fontSize: '13.5px', color: '#fff', display: 'block', whiteSpace: 'nowrap' }}>{custName}</strong>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '3px', flexWrap: 'nowrap' }}>
+                          <span style={{ fontSize: '11px', color: '#94a3b8', whiteSpace: 'nowrap' }}>{order.phone || 'N/A'}</span>
+                          <span style={{ fontSize: '9.5px', padding: '1px 6px', borderRadius: '4px', background: tierCfg.bg, color: tierCfg.color, border: tierCfg.border, fontWeight: '600', whiteSpace: 'nowrap', display: 'inline-block' }}>
                             {tierCfg.label}
                           </span>
                         </div>
                       </td>
 
                       {/* 3. SẢN PHẨM & ACC */}
-                      <td style={{ padding: '14px 14px', maxWidth: '230px' }}>
-                        <strong style={{ color: '#818cf8', display: 'block', marginBottom: '2px', fontSize: '13px' }}>{prodName}</strong>
+                      <td style={{ padding: '12px 10px', maxWidth: '220px' }}>
+                        <strong style={{ color: '#818cf8', display: 'block', marginBottom: '2px', fontSize: '13px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{prodName}</strong>
                         {(() => {
                           const linkedTeam = teams.find(t => String(t.id) === String(order.team_id || order.teamId));
                           const rawTeamName = linkedTeam ? linkedTeam.name : (order.team_name || order.teamName || (order.team_id ? `Team #${order.team_id}` : null));
@@ -1063,7 +1064,7 @@ export default function Orders() {
                                   padding: '2px 8px',
                                   borderRadius: '4px',
                                   border: '1px solid rgba(16,185,129,0.25)',
-                                  maxWidth: '190px',
+                                  maxWidth: '180px',
                                   overflow: 'hidden',
                                   textOverflow: 'ellipsis',
                                   whiteSpace: 'nowrap'
@@ -1075,7 +1076,7 @@ export default function Orders() {
                                 </span>
                               </div>
                               {order.migrated_from_team_name && (
-                                <div style={{ fontSize: '10px', color: '#f59e0b', fontWeight: '700', marginTop: '2px' }} title={`Đã tự động chuyển từ Team ${order.migrated_from_team_name} do bảo hành`}>
+                                <div style={{ fontSize: '10px', color: '#f59e0b', fontWeight: '700', marginTop: '2px', whiteSpace: 'nowrap' }} title={`Đã tự động chuyển từ Team ${order.migrated_from_team_name} do bảo hành`}>
                                   🔄 Chuyển từ BH: {order.migrated_from_team_name}
                                 </div>
                               )}
@@ -1084,7 +1085,7 @@ export default function Orders() {
                         })()}
                         {order.infor && (
                           <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '4px' }}>
-                            <code style={{ fontSize: '11px', color: isRevealed ? '#fff' : '#64748b', background: 'rgba(0,0,0,0.2)', padding: '2px 6px', borderRadius: '4px' }}>
+                            <code style={{ fontSize: '11px', color: isRevealed ? '#fff' : '#64748b', background: 'rgba(0,0,0,0.2)', padding: '2px 6px', borderRadius: '4px', whiteSpace: 'nowrap' }}>
                               {isRevealed ? order.infor : '••••••••••••••••'}
                             </code>
                             <button onClick={() => toggleRevealInfor(order.id)} style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer' }}>
@@ -1098,39 +1099,39 @@ export default function Orders() {
                       </td>
 
                       {/* 4. NGUỒN / KÊNH */}
-                      <td style={{ padding: '14px 14px' }}>
-                        <span className="badge" style={{ background: srcCfg.bg, color: srcCfg.color }}>
+                      <td style={{ padding: '12px 10px', whiteSpace: 'nowrap' }}>
+                        <span className="badge" style={{ background: srcCfg.bg, color: srcCfg.color, whiteSpace: 'nowrap', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
                           {srcCfg.icon} {order.channel || order.source || 'FB Page'}
                         </span>
                       </td>
 
                       {/* 5. THỜI HẠN (MỚI) */}
-                      <td style={{ padding: '14px 14px' }}>
+                      <td style={{ padding: '12px 10px', whiteSpace: 'nowrap' }}>
                         {isEvergreen ? (
-                          <span style={{ fontSize: '12px', color: '#a855f7', fontWeight: '600', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                          <span style={{ fontSize: '12px', color: '#a855f7', fontWeight: '600', display: 'inline-flex', alignItems: 'center', gap: '4px', whiteSpace: 'nowrap' }}>
                             ♾️ Vĩnh viễn
                           </span>
                         ) : (
                           <div>
-                            <div style={{ fontSize: '12px', color: '#cbd5e1', fontWeight: '500' }}>
+                            <div style={{ fontSize: '12px', color: '#cbd5e1', fontWeight: '500', whiteSpace: 'nowrap' }}>
                               {expDate !== '---' ? new Date(expDate).toLocaleDateString('vi-VN') : '---'}
                             </div>
                             {daysLeft !== null && (
                               <div style={{ marginTop: '3px' }}>
                                 {daysLeft <= 0 ? (
-                                  <span style={{ fontSize: '10px', padding: '1px 6px', borderRadius: '10px', background: 'rgba(239,68,68,0.2)', color: '#ef4444', border: '1px solid #ef4444', fontWeight: '700' }}>
+                                  <span style={{ fontSize: '10px', padding: '2px 8px', borderRadius: '10px', background: 'rgba(239,68,68,0.2)', color: '#ef4444', border: '1px solid #ef4444', fontWeight: '700', whiteSpace: 'nowrap', display: 'inline-block' }}>
                                     ⚫ Hết hạn
                                   </span>
                                 ) : daysLeft <= 7 ? (
-                                  <span style={{ fontSize: '10px', padding: '1px 6px', borderRadius: '10px', background: 'rgba(239,68,68,0.18)', color: '#f87171', border: '1px solid rgba(239,68,68,0.4)', fontWeight: '700', boxShadow: '0 0 6px rgba(239,68,68,0.3)' }}>
+                                  <span style={{ fontSize: '10px', padding: '2px 8px', borderRadius: '10px', background: 'rgba(239,68,68,0.18)', color: '#f87171', border: '1px solid rgba(239,68,68,0.4)', fontWeight: '700', boxShadow: '0 0 6px rgba(239,68,68,0.3)', whiteSpace: 'nowrap', display: 'inline-block' }}>
                                     🔴 {daysLeft} ngày
                                   </span>
                                 ) : daysLeft <= 30 ? (
-                                  <span style={{ fontSize: '10px', padding: '1px 6px', borderRadius: '10px', background: 'rgba(245,158,11,0.18)', color: '#f59e0b', border: '1px solid rgba(245,158,11,0.4)', fontWeight: '700' }}>
+                                  <span style={{ fontSize: '10px', padding: '2px 8px', borderRadius: '10px', background: 'rgba(245,158,11,0.18)', color: '#f59e0b', border: '1px solid rgba(245,158,11,0.4)', fontWeight: '700', whiteSpace: 'nowrap', display: 'inline-block' }}>
                                     🟡 {daysLeft} ngày
                                   </span>
                                 ) : (
-                                  <span style={{ fontSize: '10px', padding: '1px 6px', borderRadius: '10px', background: 'rgba(16,185,129,0.12)', color: '#10b981', border: '1px solid rgba(16,185,129,0.25)', fontWeight: '600' }}>
+                                  <span style={{ fontSize: '10px', padding: '2px 8px', borderRadius: '10px', background: 'rgba(16,185,129,0.12)', color: '#10b981', border: '1px solid rgba(16,185,129,0.25)', fontWeight: '600', whiteSpace: 'nowrap', display: 'inline-block' }}>
                                     🟢 {daysLeft} ngày
                                   </span>
                                 )}
@@ -1141,37 +1142,37 @@ export default function Orders() {
                       </td>
 
                       {/* 6. TÀI CHÍNH (NÂNG CẤP) */}
-                      <td style={{ padding: '14px 14px' }}>
-                        <strong style={{ color: '#10b981', fontSize: '13.5px', display: 'block' }}>{sellP.toLocaleString()}đ</strong>
+                      <td style={{ padding: '12px 10px', whiteSpace: 'nowrap' }}>
+                        <strong style={{ color: '#10b981', fontSize: '13.5px', display: 'block', whiteSpace: 'nowrap' }}>{sellP.toLocaleString()}đ</strong>
                         {costP > 0 && (
-                          <div style={{ fontSize: '10.5px', marginTop: '2px', color: profit > 0 ? '#34d399' : '#f87171', fontWeight: '600' }}>
+                          <div style={{ fontSize: '10.5px', marginTop: '2px', color: profit > 0 ? '#34d399' : '#f87171', fontWeight: '600', whiteSpace: 'nowrap' }}>
                             {profit > 0 ? `+${profit.toLocaleString()}đ (${profitMargin}%)` : `⚠️ ${profit.toLocaleString()}đ` }
                           </div>
                         )}
                       </td>
 
                       {/* 7. BẢO HÀNH (NÂNG CẤP) */}
-                      <td style={{ padding: '14px 14px' }}>
+                      <td style={{ padding: '12px 10px', whiteSpace: 'nowrap' }}>
                         {wCount > 0 ? (
-                          <span className="badge badge-warning" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '11px' }}>
+                          <span className="badge badge-warning" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '11px', whiteSpace: 'nowrap' }}>
                             <AlertTriangle size={11} /> {wCount} lần đổi
                           </span>
                         ) : (
-                          <span style={{ fontSize: '11px', color: '#10b981', background: 'rgba(16,185,129,0.08)', padding: '2px 8px', borderRadius: '4px', border: '1px solid rgba(16,185,129,0.2)', fontWeight: '500' }}>
+                          <span style={{ fontSize: '11px', color: '#10b981', background: 'rgba(16,185,129,0.08)', padding: '2px 8px', borderRadius: '4px', border: '1px solid rgba(16,185,129,0.2)', fontWeight: '500', whiteSpace: 'nowrap', display: 'inline-block' }}>
                             ✅ Chưa BH
                           </span>
                         )}
                       </td>
 
                       {/* 8. TRẠNG THÁI (NÂNG CẤP) */}
-                      <td style={{ padding: '14px 14px' }}>
-                        <span className={`badge ${order.status === 'Đã thanh toán' ? 'badge-success' : 'badge-warning'}`}>
+                      <td style={{ padding: '12px 10px', whiteSpace: 'nowrap' }}>
+                        <span className={`badge ${order.status === 'Đã thanh toán' ? 'badge-success' : 'badge-warning'}`} style={{ whiteSpace: 'nowrap', display: 'inline-block' }}>
                           {order.status === 'Đã thanh toán' ? '✅ Đã thanh toán' : `💸 ${order.status || 'Nợ'}`}
                         </span>
                       </td>
 
                       {/* 9. THAO TÁC 360° */}
-                      <td style={{ padding: '14px 14px' }}>
+                      <td style={{ padding: '12px 10px', whiteSpace: 'nowrap' }}>
                         <div style={{ display: 'flex', gap: '5px', alignItems: 'center' }}>
                           <button
                             className="glass-button"
@@ -1219,6 +1220,7 @@ export default function Orders() {
                 })}
               </tbody>
             </table>
+          </div>
 
             {/* Pagination Controls */}
             {totalPages > 1 && (
