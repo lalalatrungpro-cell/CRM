@@ -969,8 +969,8 @@ export default function Orders() {
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13.5px' }}>
               <thead>
                 <tr style={{ background: 'rgba(255,255,255,0.04)', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-                  {['Mã Đơn', 'Khách Hàng', 'Sản Phẩm & Acc', 'Nguồn / Kênh', 'Giá Bán', 'Bảo Hành', 'Trạng Thái', 'Thao Tác 360°'].map(h => (
-                    <th key={h} style={{ padding: '14px 16px', textAlign: 'left', color: '#475569', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: '700' }}>{h}</th>
+                  {['Mã Đơn', 'Khách Hàng', 'Sản Phẩm & Acc', 'Nguồn / Kênh', 'Thời Hạn', 'Tài Chính', 'Bảo Hành', 'Trạng Thái', 'Thao Tác 360°'].map(h => (
+                    <th key={h} style={{ padding: '14px 14px', textAlign: 'left', color: '#475569', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: '700' }}>{h}</th>
                   ))}
                 </tr>
               </thead>
@@ -978,26 +978,66 @@ export default function Orders() {
                 {paginatedOrders.map(order => {
                   const custName = order.customer_name || order.customerName;
                   const prodName = order.product_name || order.productName;
-                  const sellP = order.sell_price || order.sellPrice || 0;
+                  const sellP = Number(order.sell_price || order.sellPrice || 0);
+                  const costP = Number(order.cost_price || order.costPrice || 0);
+                  const profit = sellP - costP;
+                  const profitMargin = sellP > 0 ? Math.round((profit / sellP) * 100) : 0;
                   const expDate = order.expire_date || order.expireDate || '---';
                   const isRevealed = revealedInfors[order.id];
                   const isCopied = copiedId === `infor-${order.id}`;
                   const wCount = order.warranty_count || order.warrantyCount || 0;
-
                   const srcCfg = SOURCE_CONFIG[order.source] || SOURCE_CONFIG['Facebook Page'];
                   const vqr = vietqr || { bank_id: 'MB', account_no: '0901234567', account_name: 'SHOP DROPSHIP CRM', memo_prefix: 'DON' };
                   const memo = `${vqr.memo_prefix || vqr.memoPrefix || 'DON'} ${order.id}`;
                   const qrUrl = getVietQRUrl ? getVietQRUrl(vqr.bank_id || vqr.bankId, vqr.account_no || vqr.accountNo, vqr.account_name || vqr.accountName, sellP, memo, vqr.template) : '';
 
+                  // Customer Tier look up
+                  const custObj = customers.find(c => String(c.id) === String(order.customer_id || order.customerId));
+                  const custType = custObj?.type || 'Le';
+                  const tierCfg = custType === 'Si'
+                    ? { label: 'Khách Sỉ', bg: 'rgba(168,85,247,0.12)', color: '#a855f7', border: '1px solid rgba(168,85,247,0.25)' }
+                    : custType === 'CTV'
+                    ? { label: 'CTV', bg: 'rgba(245,158,11,0.12)', color: '#f59e0b', border: '1px solid rgba(245,158,11,0.25)' }
+                    : { label: 'Khách Lẻ', bg: 'rgba(6,182,212,0.12)', color: '#06b6d4', border: '1px solid rgba(6,182,212,0.25)' };
+
+                  // Expiry Countdown Calculation
+                  const linkedProd = products.find(p => p.name === prodName);
+                  const isEvergreen = (linkedProd?.product_type || linkedProd?.productType) === 'EVERGREEN';
+
+                  let daysLeft = null;
+                  if (!isEvergreen && expDate && expDate !== '---') {
+                    const expMs = new Date(expDate).getTime();
+                    const nowMs = new Date().getTime();
+                    daysLeft = Math.ceil((expMs - nowMs) / (1000 * 60 * 60 * 24));
+                  }
+
+                  // Date Created Formatting
+                  const createdStr = order.created_at
+                    ? new Date(order.created_at).toLocaleDateString('vi-VN')
+                    : '---';
+
                   return (
                     <tr key={order.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                      <td style={{ padding: '14px 16px' }}><strong>#{order.id}</strong></td>
-                      <td style={{ padding: '14px 16px' }}>
-                        <strong style={{ fontSize: '14px', color: '#fff' }}>{custName}</strong>
-                        <div style={{ fontSize: '11px', color: '#94a3b8' }}>{order.phone || 'N/A'}</div>
+                      {/* 1. MÃ ĐƠN */}
+                      <td style={{ padding: '14px 14px' }}>
+                        <strong style={{ color: '#fff', fontSize: '13px' }}>#{order.id}</strong>
+                        <div style={{ fontSize: '10.5px', color: '#64748b', marginTop: '2px' }}>{createdStr}</div>
                       </td>
-                      <td style={{ padding: '14px 16px', maxWidth: '240px' }}>
-                        <strong style={{ color: '#818cf8', display: 'block', marginBottom: '2px' }}>{prodName}</strong>
+
+                      {/* 2. KHÁCH HÀNG */}
+                      <td style={{ padding: '14px 14px' }}>
+                        <strong style={{ fontSize: '13.5px', color: '#fff', display: 'block' }}>{custName}</strong>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '2px' }}>
+                          <span style={{ fontSize: '11px', color: '#94a3b8' }}>{order.phone || 'N/A'}</span>
+                          <span style={{ fontSize: '9.5px', padding: '1px 5px', borderRadius: '4px', background: tierCfg.bg, color: tierCfg.color, border: tierCfg.border, fontWeight: '600' }}>
+                            {tierCfg.label}
+                          </span>
+                        </div>
+                      </td>
+
+                      {/* 3. SẢN PHẨM & ACC */}
+                      <td style={{ padding: '14px 14px', maxWidth: '230px' }}>
+                        <strong style={{ color: '#818cf8', display: 'block', marginBottom: '2px', fontSize: '13px' }}>{prodName}</strong>
                         {(() => {
                           const linkedTeam = teams.find(t => String(t.id) === String(order.team_id || order.teamId));
                           const rawTeamName = linkedTeam ? linkedTeam.name : (order.team_name || order.teamName || (order.team_id ? `Team #${order.team_id}` : null));
@@ -1023,7 +1063,7 @@ export default function Orders() {
                                   padding: '2px 8px',
                                   borderRadius: '4px',
                                   border: '1px solid rgba(16,185,129,0.25)',
-                                  maxWidth: '200px',
+                                  maxWidth: '190px',
                                   overflow: 'hidden',
                                   textOverflow: 'ellipsis',
                                   whiteSpace: 'nowrap'
@@ -1056,30 +1096,83 @@ export default function Orders() {
                           </div>
                         )}
                       </td>
-                      <td style={{ padding: '14px 16px' }}>
+
+                      {/* 4. NGUỒN / KÊNH */}
+                      <td style={{ padding: '14px 14px' }}>
                         <span className="badge" style={{ background: srcCfg.bg, color: srcCfg.color }}>
                           {srcCfg.icon} {order.channel || order.source || 'FB Page'}
                         </span>
                       </td>
-                      <td style={{ padding: '14px 16px' }}>
-                        <strong style={{ color: '#10b981' }}>{sellP.toLocaleString()}đ</strong>
+
+                      {/* 5. THỜI HẠN (MỚI) */}
+                      <td style={{ padding: '14px 14px' }}>
+                        {isEvergreen ? (
+                          <span style={{ fontSize: '12px', color: '#a855f7', fontWeight: '600', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                            ♾️ Vĩnh viễn
+                          </span>
+                        ) : (
+                          <div>
+                            <div style={{ fontSize: '12px', color: '#cbd5e1', fontWeight: '500' }}>
+                              {expDate !== '---' ? new Date(expDate).toLocaleDateString('vi-VN') : '---'}
+                            </div>
+                            {daysLeft !== null && (
+                              <div style={{ marginTop: '3px' }}>
+                                {daysLeft <= 0 ? (
+                                  <span style={{ fontSize: '10px', padding: '1px 6px', borderRadius: '10px', background: 'rgba(239,68,68,0.2)', color: '#ef4444', border: '1px solid #ef4444', fontWeight: '700' }}>
+                                    ⚫ Hết hạn
+                                  </span>
+                                ) : daysLeft <= 7 ? (
+                                  <span style={{ fontSize: '10px', padding: '1px 6px', borderRadius: '10px', background: 'rgba(239,68,68,0.18)', color: '#f87171', border: '1px solid rgba(239,68,68,0.4)', fontWeight: '700', boxShadow: '0 0 6px rgba(239,68,68,0.3)' }}>
+                                    🔴 {daysLeft} ngày
+                                  </span>
+                                ) : daysLeft <= 30 ? (
+                                  <span style={{ fontSize: '10px', padding: '1px 6px', borderRadius: '10px', background: 'rgba(245,158,11,0.18)', color: '#f59e0b', border: '1px solid rgba(245,158,11,0.4)', fontWeight: '700' }}>
+                                    🟡 {daysLeft} ngày
+                                  </span>
+                                ) : (
+                                  <span style={{ fontSize: '10px', padding: '1px 6px', borderRadius: '10px', background: 'rgba(16,185,129,0.12)', color: '#10b981', border: '1px solid rgba(16,185,129,0.25)', fontWeight: '600' }}>
+                                    🟢 {daysLeft} ngày
+                                  </span>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        )}
                       </td>
-                      <td style={{ padding: '14px 16px' }}>
+
+                      {/* 6. TÀI CHÍNH (NÂNG CẤP) */}
+                      <td style={{ padding: '14px 14px' }}>
+                        <strong style={{ color: '#10b981', fontSize: '13.5px', display: 'block' }}>{sellP.toLocaleString()}đ</strong>
+                        {costP > 0 && (
+                          <div style={{ fontSize: '10.5px', marginTop: '2px', color: profit > 0 ? '#34d399' : '#f87171', fontWeight: '600' }}>
+                            {profit > 0 ? `+${profit.toLocaleString()}đ (${profitMargin}%)` : `⚠️ ${profit.toLocaleString()}đ` }
+                          </div>
+                        )}
+                      </td>
+
+                      {/* 7. BẢO HÀNH (NÂNG CẤP) */}
+                      <td style={{ padding: '14px 14px' }}>
                         {wCount > 0 ? (
-                          <span className="badge badge-warning" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                          <span className="badge badge-warning" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '11px' }}>
                             <AlertTriangle size={11} /> {wCount} lần đổi
                           </span>
                         ) : (
-                          <span style={{ color: '#475569', fontSize: '12px' }}>Chưa bảo hành</span>
+                          <span style={{ fontSize: '11px', color: '#10b981', background: 'rgba(16,185,129,0.08)', padding: '2px 8px', borderRadius: '4px', border: '1px solid rgba(16,185,129,0.2)', fontWeight: '500' }}>
+                            ✅ Chưa BH
+                          </span>
                         )}
                       </td>
-                      <td style={{ padding: '14px 16px' }}>
+
+                      {/* 8. TRẠNG THÁI (NÂNG CẤP) */}
+                      <td style={{ padding: '14px 14px' }}>
                         <span className={`badge ${order.status === 'Đã thanh toán' ? 'badge-success' : 'badge-warning'}`}>
-                          {order.status}
+                          {order.status === 'Đã thanh toán' ? '✅ Đã thanh toán' : `💸 ${order.status || 'Nợ'}`}
                         </span>
                       </td>
-                      <td style={{ padding: '14px 16px' }}>
-                        <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+
+                      {/* 9. THAO TÁC 360° */}
+                      <td style={{ padding: '14px 14px' }}>
+                        <div style={{ display: 'flex', gap: '5px', alignItems: 'center' }}>
                           <button
                             className="glass-button"
                             onClick={() => setShowDetailModal({ order, qrUrl })}
@@ -1103,7 +1196,8 @@ export default function Orders() {
                             style={{ padding: '5px 8px', fontSize: '11px', background: 'rgba(59,130,246,0.18)', color: '#3b82f6' }}
                           >
                             <Edit3 size={13} />
-                          </button>                          <button
+                          </button>
+                          <button
                             className="glass-button"
                             onClick={() => handleOpenWarrantyModal(order)}
                             title="Bảo Hành / Đổi Tài Khoản"
