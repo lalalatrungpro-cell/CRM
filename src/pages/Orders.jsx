@@ -996,30 +996,37 @@ export default function Orders() {
                           cleanName = cleanName.replace(/^Mail\s*\|\s*Pass\s*\|\s*2FA\s*/i, '').trim();
 
                           return (
-                            <div
-                              title={rawTeamName}
-                              style={{
-                                fontSize: '11px',
-                                color: '#10b981',
-                                fontWeight: '700',
-                                marginTop: '3px',
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                                gap: '4px',
-                                background: 'rgba(16,185,129,0.12)',
-                                padding: '2px 8px',
-                                borderRadius: '4px',
-                                border: '1px solid rgba(16,185,129,0.25)',
-                                maxWidth: '200px',
-                                overflow: 'hidden',
-                                textOverflow: 'ellipsis',
-                                whiteSpace: 'nowrap'
-                              }}
-                            >
-                              <ShieldCheck size={12} style={{ flexShrink: 0 }} />
-                              <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                {cleanName}
-                              </span>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                              <div
+                                title={rawTeamName}
+                                style={{
+                                  fontSize: '11px',
+                                  color: '#10b981',
+                                  fontWeight: '700',
+                                  marginTop: '3px',
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: '4px',
+                                  background: 'rgba(16,185,129,0.12)',
+                                  padding: '2px 8px',
+                                  borderRadius: '4px',
+                                  border: '1px solid rgba(16,185,129,0.25)',
+                                  maxWidth: '200px',
+                                  overflow: 'hidden',
+                                  textOverflow: 'ellipsis',
+                                  whiteSpace: 'nowrap'
+                                }}
+                              >
+                                <ShieldCheck size={12} style={{ flexShrink: 0 }} />
+                                <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                  {cleanName}
+                                </span>
+                              </div>
+                              {order.migrated_from_team_name && (
+                                <div style={{ fontSize: '10px', color: '#f59e0b', fontWeight: '700', marginTop: '2px' }} title={`Đã tự động chuyển từ Team ${order.migrated_from_team_name} do bảo hành`}>
+                                  🔄 Chuyển từ BH: {order.migrated_from_team_name}
+                                </div>
+                              )}
                             </div>
                           );
                         })()}

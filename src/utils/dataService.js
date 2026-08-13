@@ -492,6 +492,64 @@ export const TeamService = {
     try {
       await supabase.from('teams').delete().eq('id', id);
     } catch (err) {}
+  },
+
+  async replaceTeam(shopId, oldTeamId, newTeamPayload, reason = '') {
+    const teams = getLocal('teams');
+    const oldTeam = teams.find(t => String(t.id) === String(oldTeamId));
+    if (!oldTeam) throw new Error('Không tìm thấy kho team cũ');
+
+    // 1. Create new replacement team
+    const newTeamObj = await this.create(shopId, {
+      ...newTeamPayload,
+      replaces_team_id: oldTeam.id,
+      replaces_team_name: oldTeam.name,
+      supplier_id: oldTeam.supplier_id || oldTeam.supplierId,
+      supplier_name: oldTeam.supplier_name || oldTeam.supplierName,
+      status: 'ACTIVE'
+    });
+
+    // 2. Freeze old team (mark replaced_by_team_id)
+    await this.update(oldTeam.id, {
+      replaced_by_team_id: newTeamObj.id,
+      replaced_by_team_name: newTeamObj.name,
+      status: 'FAULTY_DIE',
+      frozen: true
+    });
+
+    // 3. Migrate active orders from old team to new team
+    const orders = getLocal('orders');
+    const today = new Date().toISOString().split('T')[0];
+    const activeOrders = orders.filter(o => {
+      const matchTeam = String(o.team_id || o.teamId) === String(oldTeam.id);
+      const isNotExpired = !o.expire_date || o.expire_date >= today;
+      return matchTeam && isNotExpired;
+    });
+
+    for (const order of activeOrders) {
+      await OrderService.update(order.id, {
+        team_id: newTeamObj.id,
+        team_name: newTeamObj.name,
+        migrated_from_team_id: oldTeam.id,
+        migrated_from_team_name: oldTeam.name,
+        migrated_at: new Date().toISOString()
+      });
+    }
+
+    // 4. Record warranty log trace
+    await WarrantyLogService.create(shopId, {
+      type: 'REPLACE_TEAM',
+      old_team_id: oldTeam.id,
+      old_team_name: oldTeam.name,
+      new_team_id: newTeamObj.id,
+      new_team_name: newTeamObj.name,
+      supplier_id: oldTeam.supplier_id || oldTeam.supplierId,
+      supplier_name: oldTeam.supplier_name || oldTeam.supplierName,
+      migrated_orders_count: activeOrders.length,
+      reason: reason || 'Thay thế team bị DIE từ NCC'
+    });
+
+    return { newTeam: newTeamObj, migratedCount: activeOrders.length };
   }
 };
 
@@ -1605,7 +1663,7 @@ export const InventoryService = {
       soldCount += usedSlots;
 
       if (t.status === 'FAULTY_DIE') {
-        faultyCount += Math.max(0, maxSlots - usedSlots);
+        faultyCount += 1;
       } else {
         const availSlots = Math.max(0, maxSlots - usedSlots);
         availableCount += availSlots;

@@ -357,11 +357,16 @@ export default function CustomerDetail() {
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                 {warrantyLogs.map((w, idx) => (
-                  <div key={w.id || idx} style={{ background: 'rgba(245,158,11,0.08)', padding: '12px', borderRadius: '8px', border: '1px solid rgba(245,158,11,0.2)' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', color: '#f59e0b', fontWeight: '700' }}>
-                      <span>Đơn #{w.order_id} - Lý do: {w.reason}</span>
-                      <span>{new Date(w.created_at).toLocaleDateString('vi-VN')}</span>
+                  <div key={w.id || idx} style={{ background: w.type === 'REPLACE_TEAM' ? 'rgba(16,185,129,0.1)' : 'rgba(245,158,11,0.08)', padding: '12px', borderRadius: '8px', border: w.type === 'REPLACE_TEAM' ? '1px solid rgba(16,185,129,0.3)' : '1px solid rgba(245,158,11,0.2)' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', color: w.type === 'REPLACE_TEAM' ? '#10b981' : '#f59e0b', fontWeight: '700' }}>
+                      <span>{w.type === 'REPLACE_TEAM' ? `🔄 Chuyển Team Bảo Hành: ${w.old_team_name || 'Team cũ'} ➔ ${w.new_team_name || 'Team mới'}` : `Đơn #${w.order_id} - Lý do: ${w.reason}`}</span>
+                      <span>{w.created_at ? new Date(w.created_at).toLocaleDateString('vi-VN') : ''}</span>
                     </div>
+                    {w.reason && w.type === 'REPLACE_TEAM' && (
+                      <div style={{ fontSize: '11.5px', color: '#94a3b8', marginTop: '4px' }}>
+                        Lý do: {w.reason} (Migrate {w.migrated_orders_count || 0} đơn hàng)
+                      </div>
+                    )}
                     {w.new_infor && (
                       <div style={{ fontSize: '11.5px', color: '#fff', marginTop: '4px', fontFamily: 'monospace' }}>
                         Acc mới: {w.new_infor}

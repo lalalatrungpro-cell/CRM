@@ -112,6 +112,13 @@ export default function Inventory() {
   const [teamFilterCategory, setTeamFilterCategory] = useState('ALL');
   const [teamFormData, setTeamFormData] = useState(emptyTeamForm);
 
+  // ── Replace Team State ──
+  const [showReplaceTeamModal, setShowReplaceTeamModal] = useState(null);
+  const [replaceFormData, setReplaceFormData] = useState({
+    name: '', category: 'Canva Pro', infor: '', maxSlots: 49,
+    importCost: 0, expireDate: '', notes: '', reason: 'Team bị DIE, yêu cầu NCC đổi kho team mới'
+  });
+
   // ── Purchases State (GĐ2) ──
   const emptyPurchaseForm = {
     supplierId: '', productName: 'Canva Pro (1 năm)', teamId: '',
@@ -322,6 +329,45 @@ export default function Inventory() {
       setPurchases(prev => prev.filter(p => String(p.id) !== String(id)));
       setConfirmDeletePurchaseId(null); toast.success('Đã xóa phiếu nhập hàng!'); loadData();
     } catch (err) { console.error(err); toast.error('Lỗi khi xóa phiếu nhập hàng.'); }
+  };
+
+  const handleOpenReplaceTeamModal = (team) => {
+    const nextYearStr = new Date(Date.now() + 365 * 86400000).toISOString().split('T')[0];
+    setShowReplaceTeamModal(team);
+    setReplaceFormData({
+      name: `${team.name || 'Team'} (Bảo Hành)`,
+      category: team.category || 'Canva Pro',
+      infor: '',
+      maxSlots: team.max_slots || team.maxSlots || 49,
+      importCost: 0,
+      expireDate: team.expire_date || team.expireDate || nextYearStr,
+      notes: `Thay thế cho team cũ ${team.name} (ID #${team.id})`,
+      reason: 'Team bị DIE, yêu cầu NCC đổi kho team mới'
+    });
+  };
+
+  const handleConfirmReplaceTeam = async (e) => {
+    e.preventDefault();
+    if (!showReplaceTeamModal) return;
+    try {
+      const res = await TeamService.replaceTeam(shopId, showReplaceTeamModal.id, {
+        name: replaceFormData.name,
+        category: replaceFormData.category,
+        infor: replaceFormData.infor,
+        max_slots: parseInt(replaceFormData.maxSlots) || 49,
+        import_cost: Number(replaceFormData.importCost || 0),
+        expire_date: replaceFormData.expireDate,
+        purchase_date: new Date().toISOString().split('T')[0],
+        notes: replaceFormData.notes
+      }, replaceFormData.reason);
+
+      toast.success(`Đã tạo Team mới "${res.newTeam.name}" và chuyển ${res.migratedCount} đơn hàng sang Team mới!`);
+      setShowReplaceTeamModal(null);
+      loadData();
+    } catch (err) {
+      console.error(err);
+      toast.error(err.message || 'Lỗi khi tạo team thay thế.');
+    }
   };
 
   // ─── TEAM + PURCHASE COMPUTED VALS ───────────────────────────────
@@ -957,13 +1003,25 @@ export default function Inventory() {
                   <div key={team.id} className="glass-panel" style={{ display: 'flex', flexDirection: 'column', gap: '12px', padding: '16px', border: isDie ? '2px solid #ef4444' : '1px solid ' + catColor + '30', position: 'relative' }}>
                     {/* Team Name & Category Header */}
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <div style={{ fontSize: '15px', fontWeight: '800', color: '#fff' }}>{team.name}</div>
+                      <div>
+                        <div style={{ fontSize: '15px', fontWeight: '800', color: '#fff' }}>{team.name}</div>
+                        {team.replaced_by_team_name && (
+                          <div style={{ fontSize: '11px', color: '#ef4444', fontWeight: '700', marginTop: '2px' }}>
+                            🔒 Đã đóng băng — Thay bởi: {team.replaced_by_team_name}
+                          </div>
+                        )}
+                        {team.replaces_team_name && (
+                          <div style={{ fontSize: '11px', color: '#10b981', fontWeight: '700', marginTop: '2px' }}>
+                            🛡️ Bảo hành thay thế cho: {team.replaces_team_name}
+                          </div>
+                        )}
+                      </div>
                       <div style={{ background: catColor + '20', color: catColor, fontSize: '10.5px', fontWeight: '700', padding: '2px 8px', borderRadius: '12px', border: '1px solid ' + catColor + '40' }}>
                         {team.category}
                       </div>
                     </div>
 
-                    {/* TOP RED BOX: Single Row, Equal Height Controls (Status Badge, Báo DIE, Sửa, Xóa) */}
+                    {/* TOP RED BOX: Single Row, Equal Height Controls (Status Badge, Báo DIE / Thay Thế, Sửa, Xóa) */}
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px', width: '100%' }}>
                       <div style={{
                         flex: '1.4', height: '30px', background: statusBadge.bg, color: statusBadge.color,
@@ -972,6 +1030,20 @@ export default function Inventory() {
                       }}>
                         {statusBadge.label}
                       </div>
+
+                      {isDie && (
+                        <button
+                          onClick={() => handleOpenReplaceTeamModal(team)}
+                          style={{
+                            flex: '1.2', height: '30px', background: 'linear-gradient(135deg, #10b981, #059669)',
+                            color: '#fff', border: 'none', borderRadius: '8px', fontSize: '10.5px', fontWeight: '800', cursor: 'pointer',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px', whiteSpace: 'nowrap'
+                          }}
+                          title="Tạo team thay thế và tự động chuyển đơn hàng còn hạn sang team mới"
+                        >
+                          ⚡ Đổi Team BH
+                        </button>
+                      )}
 
                       <button
                         onClick={() => handleToggleTeamDieStatus(team)}
@@ -1517,20 +1589,91 @@ export default function Inventory() {
             )}
           </div>
 
-          {/* Supplier Faulty Claim List */}
+          {/* Section 1: Kho Team Bị DIE Cần Đòi Bảo Hành NCC */}
+          <div className="glass-panel" style={{ padding: '20px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', flexWrap: 'wrap', gap: '10px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <AlertTriangle size={20} color="#ef4444" />
+                <h3 style={{ fontSize: '16px', fontWeight: '800', margin: 0, color: '#fff' }}>
+                  🔴 Kho Team Bị DIE Cần Đòi Bảo Hành NCC ({teams.filter(t => t.status === 'FAULTY_DIE').length} Team)
+                </h3>
+              </div>
+            </div>
+
+            {teams.filter(t => t.status === 'FAULTY_DIE').length === 0 ? (
+              <div style={{ color: '#10b981', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13.5px' }}>
+                <CheckCircle2 size={16} /> 100% Kho Team đang hoạt động tốt. Không có Team nào bị DIE!
+              </div>
+            ) : (
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+                  <thead>
+                    <tr style={{ background: 'rgba(255,255,255,0.04)', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+                      <th style={{ padding: '10px 14px', textAlign: 'left', color: '#475569' }}>Tên Kho Team Bị DIE</th>
+                      <th style={{ padding: '10px 14px', textAlign: 'left', color: '#475569' }}>Loại Dịch Vụ</th>
+                      <th style={{ padding: '10px 14px', textAlign: 'left', color: '#475569' }}>NCC Cung Cấp</th>
+                      <th style={{ padding: '10px 14px', textAlign: 'center', color: '#475569' }}>Quy Mô</th>
+                      <th style={{ padding: '10px 14px', textAlign: 'center', color: '#475569' }}>Thao Tác Xử Lý Bảo Hành</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {teams.filter(t => t.status === 'FAULTY_DIE').map(t => (
+                      <tr key={t.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                        <td style={{ padding: '10px 14px', fontWeight: '700', color: '#fff' }}>
+                          {t.name}
+                          {t.replaced_by_team_name && (
+                            <div style={{ fontSize: '11px', color: '#10b981', marginTop: '2px', fontWeight: '600' }}>
+                              ⚡ Đã thay thế bởi: {t.replaced_by_team_name}
+                            </div>
+                          )}
+                        </td>
+                        <td style={{ padding: '10px 14px', color: '#38bdf8' }}>{t.category}</td>
+                        <td style={{ padding: '10px 14px', color: '#c084fc', fontWeight: '700' }}>🏭 {t.supplier_name || t.supplierName || '—'}</td>
+                        <td style={{ padding: '10px 14px', textAlign: 'center', color: '#ef4444', fontWeight: '700' }}>{t.max_slots || t.maxSlots || 49} slot</td>
+                        <td style={{ padding: '10px 14px', textAlign: 'center' }}>
+                          <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
+                            <button
+                              className="glass-button"
+                              onClick={() => handleOpenReplaceTeamModal(t)}
+                              style={{ padding: '5px 12px', fontSize: '11.5px', background: 'linear-gradient(135deg, #10b981, #059669)', color: '#fff', fontWeight: '800' }}
+                            >
+                              ⚡ Tạo Team Thay Thế (Bảo Hành)
+                            </button>
+                            <button
+                              className="glass-button"
+                              onClick={async () => {
+                                await TeamService.update(t.id, { status: 'ACTIVE' });
+                                toast.success(`Đã khôi phục Team "${t.name}" về Active!`);
+                                loadData();
+                              }}
+                              style={{ padding: '5px 10px', fontSize: '11.5px', background: 'rgba(255,255,255,0.06)', color: '#cbd5e1' }}
+                            >
+                              🟢 Khôi Phục Cũ
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+
+          {/* Section 2: Supplier Faulty Claim List for Single Keys */}
           <div className="glass-panel" style={{ padding: '20px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', flexWrap: 'wrap', gap: '10px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                 <ShieldAlert size={20} color="#f59e0b" />
                 <h3 style={{ fontSize: '16px', fontWeight: '800', margin: 0 }}>
-                  Danh Sách Key Lỗi Cần Đòi Bảo Hành / Đổi Trả NCC ({summary.faultyCount})
+                  Danh Sách Key Rời Lỗi Cần Đòi Bảo Hành NCC ({items.filter(i => i.status === 'FAULTY' || i.status === 'SUPPLIER_CLAIM').length})
                 </h3>
               </div>
             </div>
 
-            {summary.faultyCount === 0 ? (
+            {items.filter(i => i.status === 'FAULTY' || i.status === 'SUPPLIER_CLAIM').length === 0 ? (
               <div style={{ color: '#10b981', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13.5px' }}>
-                <CheckCircle2 size={16} /> Không có key lỗi nào tồn đọng. 100% kho hoạt động hoàn hảo!
+                <CheckCircle2 size={16} /> Không có key rời lỗi nào tồn đọng!
               </div>
             ) : (
               <div style={{ overflowX: 'auto' }}>
@@ -1760,6 +1903,70 @@ export default function Inventory() {
         onConfirm={handleDeleteItem}
         onCancel={() => setConfirmDeleteId(null)}
       />
+
+      {/* Modal Replace Team */}
+      {showReplaceTeamModal && createPortal(
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 99999, padding: '20px' }} onClick={() => setShowReplaceTeamModal(null)}>
+          <div style={{ background: '#111528', border: '1px solid rgba(239,68,68,0.3)', borderRadius: '16px', padding: '26px', width: '100%', maxWidth: '580px', maxHeight: '90vh', overflowY: 'auto' }} onClick={e => e.stopPropagation()}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', borderBottom: '1px solid rgba(255,255,255,0.08)', paddingBottom: '12px' }}>
+              <h3 style={{ fontSize: '18px', fontWeight: '800', color: '#fff', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                ⚡ Tạo Kho Team Thay Thế Bảo Hành
+              </h3>
+              <button onClick={() => setShowReplaceTeamModal(null)} style={{ background: 'none', border: 'none', color: '#64748b', cursor: 'pointer' }}><X size={18} /></button>
+            </div>
+
+            <div style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: '10px', padding: '12px 14px', marginBottom: '16px', fontSize: '13px', color: '#fca5a5' }}>
+              <strong>Team Cũ Bị DIE:</strong> {showReplaceTeamModal.name} ({showReplaceTeamModal.category})<br/>
+              <strong>NCC Bảo Hành:</strong> {showReplaceTeamModal.supplier_name || showReplaceTeamModal.supplierName || '—'}<br/>
+              <span style={{ fontSize: '12px', color: '#94a3b8', marginTop: '6px', display: 'block' }}>
+                🔒 Team cũ sẽ được <strong>ĐÓNG BĂNG VĨNH VIỄN</strong> để lưu giữ nguyên thông tin nick cũ làm bằng chứng đối soát với NCC. Toàn bộ đơn hàng còn hạn sẽ tự động chuyển sang Team mới!
+              </span>
+            </div>
+
+            <form onSubmit={handleConfirmReplaceTeam} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+              <div>
+                <label style={{ fontSize: '12px', color: '#94a3b8', display: 'block', marginBottom: '6px', fontWeight: '600' }}>Tên Team Mới Từ NCC *</label>
+                <input required value={replaceFormData.name} onChange={e => setReplaceFormData(f => ({ ...f, name: e.target.value }))}
+                  style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: '10px', padding: '10px 14px', color: '#fff', fontSize: '14px', boxSizing: 'border-box' }} />
+              </div>
+
+              <div>
+                <label style={{ fontSize: '12px', color: '#94a3b8', display: 'block', marginBottom: '6px', fontWeight: '600' }}>🔑 Thông Tin Acc Gốc / Link Invite Mới Từ NCC *</label>
+                <textarea required rows={3} value={replaceFormData.infor} onChange={e => setReplaceFormData(f => ({ ...f, infor: e.target.value }))}
+                  placeholder="Dán email admin, password hoặc link invite team mới do NCC vừa cấp..."
+                  style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: '10px', padding: '10px 14px', color: '#fff', fontSize: '13px', boxSizing: 'border-box' }} />
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                <div>
+                  <label style={{ fontSize: '12px', color: '#94a3b8', display: 'block', marginBottom: '6px', fontWeight: '600' }}>Số Slot Mới</label>
+                  <input type="number" min="1" value={replaceFormData.maxSlots} onChange={e => setReplaceFormData(f => ({ ...f, maxSlots: e.target.value }))}
+                    style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: '10px', padding: '10px 14px', color: '#fff', fontSize: '14px', boxSizing: 'border-box' }} />
+                </div>
+                <div>
+                  <label style={{ fontSize: '12px', color: '#94a3b8', display: 'block', marginBottom: '6px', fontWeight: '600' }}>⌛ Hạn Dùng Mới</label>
+                  <input type="date" value={replaceFormData.expireDate} onChange={e => setReplaceFormData(f => ({ ...f, expireDate: e.target.value }))}
+                    style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: '10px', padding: '10px 14px', color: '#fff', fontSize: '14px', boxSizing: 'border-box' }} />
+                </div>
+              </div>
+
+              <div>
+                <label style={{ fontSize: '12px', color: '#94a3b8', display: 'block', marginBottom: '6px', fontWeight: '600' }}>📝 Ghi Chú Bảo Hành</label>
+                <input value={replaceFormData.reason} onChange={e => setReplaceFormData(f => ({ ...f, reason: e.target.value }))}
+                  style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: '10px', padding: '10px 14px', color: '#fff', fontSize: '13px', boxSizing: 'border-box' }} />
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '10px' }}>
+                <button type="button" className="glass-button" onClick={() => setShowReplaceTeamModal(null)} style={{ color: '#fff' }}>Hủy</button>
+                <button type="submit" className="glass-button" style={{ background: '#10b981', color: '#fff', fontWeight: '800' }}>
+                  ✅ Xác Nhận Tạo Team Thay Thế
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>,
+        document.body
+      )}
     </div>
   );
 }
