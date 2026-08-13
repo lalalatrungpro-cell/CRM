@@ -248,6 +248,35 @@ export default function Inventory() {
       setConfirmDeleteTeamId(null); toast.success('Đã xóa kho team!');
     } catch (err) { console.error(err); toast.error('Lỗi khi xóa kho team.'); }
   };
+
+  const handleClearEmptyTeams = async () => {
+    const emptyTeams = teams.filter(t => {
+      const usedCount = orders.filter(o => String(o.team_id || o.teamId) === String(t.id)).length;
+      return usedCount === 0;
+    });
+
+    if (emptyTeams.length === 0) {
+      return toast.info('Không tìm thấy kho team trống (0 slot đã bán) nào để dọn dẹp.');
+    }
+
+    if (window.confirm(`🚨 BẠN CÓ CHẮC CHẮN MUỐN DỌN DẸP HÀNG LOẠT ${emptyTeams.length} KHO TEAM TRỐNG (0 Slot đã bán)?\n\nThao tác này sẽ xóa sạch ${emptyTeams.length} team bị trùng lặp trong 1 giây mà KHÔNG làm mất đơn hàng nào.`)) {
+      setLoading(true);
+      try {
+        let count = 0;
+        for (const t of emptyTeams) {
+          await TeamService.remove(t.id);
+          count++;
+        }
+        setTeams(prev => prev.filter(t => !emptyTeams.some(et => String(et.id) === String(t.id))));
+        toast.success(`🎉 Đã xóa sạch thành công ${count} kho team trống!`);
+      } catch (err) {
+        console.error(err);
+        toast.error('Lỗi khi xóa hàng loạt kho team.');
+      } finally {
+        setLoading(false);
+      }
+    }
+  };
   const handleCopyTeamInfor = (text, teamId) => {
     navigator.clipboard.writeText(text);
     setTeamCopiedId('team-' + teamId); toast.success('Đã copy thông tin!');
@@ -526,13 +555,23 @@ export default function Inventory() {
           )}
 
           {activeTab === 'teams_pool' && (
-            <button
-              className="glass-button"
-              onClick={handleOpenAddTeamModal}
-              style={{ background: 'linear-gradient(135deg, #10b981, #059669)', color: '#fff', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '6px' }}
-            >
-              <Plus size={18} /> Tạo Kho Team Mới
-            </button>
+            <>
+              <button
+                className="glass-button"
+                onClick={handleClearEmptyTeams}
+                style={{ background: 'rgba(239,68,68,0.18)', border: '1px solid rgba(239,68,68,0.4)', color: '#ef4444', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '6px' }}
+                title="Xóa hàng loạt các team trùng lặp chưa bán slot nào"
+              >
+                <Trash2 size={16} /> 🧹 Dọn Dẹp / Xóa Hàng Loạt Team Trống (0 Slot)
+              </button>
+              <button
+                className="glass-button"
+                onClick={handleOpenAddTeamModal}
+                style={{ background: 'linear-gradient(135deg, #10b981, #059669)', color: '#fff', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '6px' }}
+              >
+                <Plus size={18} /> Tạo Kho Team Mới
+              </button>
+            </>
           )}
 
           {activeTab === 'purchases' && (
