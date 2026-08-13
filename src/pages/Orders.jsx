@@ -19,6 +19,181 @@ import {
 
 const PAGE_SIZE = 15;
 
+
+// Helper for Brand Channel Logo Icons (Facebook 'f', Zalo 'Z', Telegram, etc.)
+const renderChannelBrandIcon = (source, fullChannelName) => {
+  const src = String(source || '').toLowerCase();
+  const title = fullChannelName || source || 'Kênh Bán Hàng';
+
+  if (src.includes('facebook') || src.includes('fb')) {
+    return (
+      <span
+        title={title}
+        style={{
+          width: '28px',
+          height: '28px',
+          borderRadius: '50%',
+          background: '#1877F2',
+          color: '#ffffff',
+          display: 'inline-flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          fontWeight: '900',
+          fontSize: '17px',
+          fontFamily: 'Helvetica, Arial, sans-serif',
+          boxShadow: '0 2px 6px rgba(24,119,242,0.4)',
+          cursor: 'help',
+          userSelect: 'none'
+        }}
+      >
+        f
+      </span>
+    );
+  }
+
+  if (src.includes('zalo')) {
+    return (
+      <span
+        title={title}
+        style={{
+          width: '28px',
+          height: '28px',
+          borderRadius: '50%',
+          background: '#0068FF',
+          color: '#ffffff',
+          display: 'inline-flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          fontWeight: '900',
+          fontSize: '13px',
+          fontFamily: 'Arial, sans-serif',
+          boxShadow: '0 2px 6px rgba(0,104,255,0.4)',
+          cursor: 'help',
+          userSelect: 'none'
+        }}
+      >
+        Z
+      </span>
+    );
+  }
+
+  if (src.includes('tiktok')) {
+    return (
+      <span
+        title={title}
+        style={{
+          width: '28px',
+          height: '28px',
+          borderRadius: '50%',
+          background: '#000000',
+          color: '#25F4EE',
+          border: '1px solid #FE2C55',
+          display: 'inline-flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          fontSize: '13px',
+          boxShadow: '0 2px 6px rgba(254,44,85,0.4)',
+          cursor: 'help',
+          userSelect: 'none'
+        }}
+      >
+        🎵
+      </span>
+    );
+  }
+
+  if (src.includes('telegram')) {
+    return (
+      <span
+        title={title}
+        style={{
+          width: '28px',
+          height: '28px',
+          borderRadius: '50%',
+          background: '#229ED9',
+          color: '#ffffff',
+          display: 'inline-flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          fontSize: '12px',
+          boxShadow: '0 2px 6px rgba(34,158,217,0.4)',
+          cursor: 'help',
+          userSelect: 'none'
+        }}
+      >
+        ✈️
+      </span>
+    );
+  }
+
+  if (src.includes('website')) {
+    return (
+      <span
+        title={title}
+        style={{
+          width: '28px',
+          height: '28px',
+          borderRadius: '50%',
+          background: 'rgba(139,92,246,0.2)',
+          color: '#a78bfa',
+          border: '1px solid rgba(139,92,246,0.4)',
+          display: 'inline-flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          fontSize: '13px',
+          cursor: 'help'
+        }}
+      >
+        🌐
+      </span>
+    );
+  }
+
+  if (src.includes('giới thiệu') || src.includes('gioi thieu')) {
+    return (
+      <span
+        title={title}
+        style={{
+          width: '28px',
+          height: '28px',
+          borderRadius: '50%',
+          background: 'rgba(245,158,11,0.2)',
+          color: '#fbbf24',
+          border: '1px solid rgba(245,158,11,0.4)',
+          display: 'inline-flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          fontSize: '13px',
+          cursor: 'help'
+        }}
+      >
+        🤝
+      </span>
+    );
+  }
+
+  return (
+    <span
+      title={title}
+      style={{
+        width: '28px',
+        height: '28px',
+        borderRadius: '50%',
+        background: 'rgba(100,116,139,0.2)',
+        color: '#94a3b8',
+        border: '1px solid rgba(100,116,139,0.4)',
+        display: 'inline-flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        fontSize: '13px',
+        cursor: 'help'
+      }}
+    >
+      📌
+    </span>
+  );
+};
+
 const SOURCE_CONFIG = {
   'Facebook Page': { label: 'FB Page', color: '#3b82f6', bg: 'rgba(59,130,246,0.15)', icon: '🌐' },
   'Zalo': { label: 'Zalo', color: '#10b981', bg: 'rgba(16,185,129,0.15)', icon: '💬' },
@@ -1098,26 +1273,9 @@ export default function Orders() {
                         )}
                       </td>
 
-                      {/* 4. NGUỒN / KÊNH (CHỈ ICON) */}
+                      {/* 4. NGUỒN / KÊNH (BRAND LOGO ICON) */}
                       <td style={{ padding: '12px 10px', whiteSpace: 'nowrap', textAlign: 'center' }}>
-                        <span
-                          title={order.channel || order.source || 'Facebook Page'}
-                          style={{
-                            background: srcCfg.bg,
-                            color: srcCfg.color,
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            width: '28px',
-                            height: '28px',
-                            borderRadius: '50%',
-                            fontSize: '13px',
-                            border: `1px solid ${srcCfg.color}40`,
-                            cursor: 'help'
-                          }}
-                        >
-                          {srcCfg.icon}
-                        </span>
+                        {renderChannelBrandIcon(order.source, order.channel || order.source || 'Facebook Page')}
                       </td>
 
                       {/* 5. THỜI HẠN (MỚI) */}
