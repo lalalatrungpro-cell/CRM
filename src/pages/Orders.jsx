@@ -1098,10 +1098,25 @@ export default function Orders() {
                         )}
                       </td>
 
-                      {/* 4. NGUỒN / KÊNH */}
-                      <td style={{ padding: '12px 10px', whiteSpace: 'nowrap' }}>
-                        <span className="badge" style={{ background: srcCfg.bg, color: srcCfg.color, whiteSpace: 'nowrap', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                          {srcCfg.icon} {order.channel || order.source || 'FB Page'}
+                      {/* 4. NGUỒN / KÊNH (CHỈ ICON) */}
+                      <td style={{ padding: '12px 10px', whiteSpace: 'nowrap', textAlign: 'center' }}>
+                        <span
+                          title={order.channel || order.source || 'Facebook Page'}
+                          style={{
+                            background: srcCfg.bg,
+                            color: srcCfg.color,
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            width: '28px',
+                            height: '28px',
+                            borderRadius: '50%',
+                            fontSize: '13px',
+                            border: `1px solid ${srcCfg.color}40`,
+                            cursor: 'help'
+                          }}
+                        >
+                          {srcCfg.icon}
                         </span>
                       </td>
 
