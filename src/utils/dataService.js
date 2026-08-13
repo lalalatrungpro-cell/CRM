@@ -1942,15 +1942,33 @@ export const InventoryService = {
     } catch (e) {}
   },
 
-  // Nhập - Xuất - Tồn (N-X-T Report)
+  // Nhập - Xuất - Tồn (N-X-T Report 360°)
   async getNxtReport(shopId, startDate = null, endDate = null) {
+    const products = await ProductService.list(shopId);
     const items = await this.list(shopId);
-    const logs = await InventoryLogService.list(shopId);
+    const teams = await TeamService.list(shopId);
+    const orders = await OrderService.list(shopId);
 
     const reportMap = {};
 
-    // Group items by product_name
-    items.forEach(i => {
+    // 1. Initialize from Product Catalog
+    (products || []).forEach(p => {
+      const pName = p.name;
+      reportMap[pName] = {
+        product_name: pName,
+        category: p.category || 'Dịch Vụ',
+        opening_stock: 0,
+        imported_qty: 0,
+        exported_sold_qty: 0,
+        exported_faulty_qty: 0,
+        closing_stock: 0,
+        avg_cost: Number(p.default_cost || p.defaultCost || 0),
+        total_closing_value: 0
+      };
+    });
+
+    // 2. Aggregate Single Key Items
+    (items || []).forEach(i => {
       const pName = i.product_name || 'Khác';
       if (!reportMap[pName]) {
         reportMap[pName] = {
@@ -1965,17 +1983,61 @@ export const InventoryService = {
           total_closing_value: 0
         };
       }
+      const row = reportMap[pName];
+      row.imported_qty += 1;
       if (i.status === 'AVAILABLE') {
-        reportMap[pName].closing_stock += 1;
-        reportMap[pName].total_closing_value += Number(i.cost_price || 0);
+        row.closing_stock += 1;
+        row.total_closing_value += Number(i.cost_price || 0);
       } else if (i.status === 'SOLD') {
-        reportMap[pName].exported_sold_qty += 1;
+        row.exported_sold_qty += 1;
       } else if (i.status === 'FAULTY' || i.status === 'SUPPLIER_CLAIM') {
-        reportMap[pName].exported_faulty_qty += 1;
+        row.exported_faulty_qty += 1;
       }
-      reportMap[pName].imported_qty += 1;
     });
 
+    // 3. Aggregate Team Slots
+    (teams || []).forEach(t => {
+      const matchedProd = (products || []).find(p => {
+        const tCat = (t.category || '').toLowerCase().trim();
+        const pN = (p.name || '').toLowerCase().trim();
+        const pCat = (p.category || '').toLowerCase().trim();
+        return (tCat && pCat && tCat === pCat) || (tCat && pN && pN.includes(tCat));
+      });
+
+      const pName = matchedProd ? matchedProd.name : (t.category || t.name);
+      if (!reportMap[pName]) {
+        reportMap[pName] = {
+          product_name: pName,
+          category: t.category || 'Kho Slot Team',
+          opening_stock: 0,
+          imported_qty: 0,
+          exported_sold_qty: 0,
+          exported_faulty_qty: 0,
+          closing_stock: 0,
+          avg_cost: 0,
+          total_closing_value: 0
+        };
+      }
+      const row = reportMap[pName];
+      const maxSlots = t.max_slots || t.maxSlots || 1;
+      const teamOrders = (orders || []).filter(o => String(o.team_id || o.teamId) === String(t.id));
+      const usedSlots = teamOrders.length;
+      const unitCost = maxSlots > 0 ? Math.round(Number(t.import_cost || t.importCost || 0) / maxSlots) : 0;
+
+      row.imported_qty += maxSlots;
+      row.exported_sold_qty += usedSlots;
+
+      if (t.status === 'FAULTY_DIE') {
+        const faultySlots = Math.max(0, maxSlots - usedSlots);
+        row.exported_faulty_qty += faultySlots;
+      } else {
+        const availSlots = Math.max(0, maxSlots - usedSlots);
+        row.closing_stock += availSlots;
+        row.total_closing_value += availSlots * unitCost;
+      }
+    });
+
+    // 4. Compute opening stock and average cost per product
     const reportList = Object.values(reportMap).map(row => {
       row.opening_stock = Math.max(0, row.closing_stock + row.exported_sold_qty + row.exported_faulty_qty - row.imported_qty);
       if (row.closing_stock > 0) {
