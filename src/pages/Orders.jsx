@@ -1215,6 +1215,16 @@ export default function Orders() {
                       <td style={{ padding: '12px 10px', maxWidth: '220px' }}>
                         <strong style={{ color: '#818cf8', display: 'block', marginBottom: '2px', fontSize: '13px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{prodName}</strong>
                         {(() => {
+                          const linkedSupp = suppliers.find(s => String(s.id) === String(order.supplier_id || order.supplierId));
+                          const suppDisplayName = linkedSupp ? linkedSupp.name : (order.supplier_name || order.supplierName || null);
+                          if (!suppDisplayName) return null;
+                          return (
+                            <div style={{ fontSize: '10px', color: '#38bdf8', fontWeight: '600', marginBottom: '2px', display: 'inline-flex', alignItems: 'center', gap: '3px', background: 'rgba(56,189,248,0.1)', padding: '1px 6px', borderRadius: '4px', border: '1px solid rgba(56,189,248,0.2)', whiteSpace: 'nowrap', maxWidth: '180px', overflow: 'hidden', textOverflow: 'ellipsis' }} title={`Nhà Cung Cấp: ${suppDisplayName}`}>
+                              <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>🏬 ${suppDisplayName}</span>
+                            </div>
+                          );
+                        })()}
+                        {(() => {
                           const linkedTeam = teams.find(t => String(t.id) === String(order.team_id || order.teamId));
                           const rawTeamName = linkedTeam ? linkedTeam.name : (order.team_name || order.teamName || (order.team_id ? `Team #${order.team_id}` : null));
                           if (!rawTeamName) return null;
