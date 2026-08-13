@@ -694,15 +694,17 @@ export default function Inventory() {
             background: activeTab === 'rma_alerts' ? '#ef4444' : 'rgba(255,255,255,0.04)',
             color: activeTab === 'rma_alerts' ? '#fff' : '#94a3b8',
             fontWeight: activeTab === 'rma_alerts' ? '700' : '500',
-            position: 'relative'
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '6px'
           }}
         >
           <AlertTriangle size={16} /> Đòi Bảo Hành NCC & Cảnh Báo
           {(summary.faultyCount > 0 || alerts.lowStockAlerts.length > 0) && (
             <span style={{
-              position: 'absolute', top: '-6px', right: '-6px', background: '#ef4444', color: '#fff',
-              fontSize: '10px', fontWeight: '800', width: '18px', height: '18px', borderRadius: '50%',
-              display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 6px rgba(239,68,68,0.5)'
+              background: '#ef4444', color: '#fff',
+              fontSize: '11px', fontWeight: '800', padding: '1px 7px', borderRadius: '10px',
+              display: 'inline-flex', alignItems: 'center', justifyContent: 'center'
             }}>
               {summary.faultyCount + alerts.lowStockAlerts.length}
             </span>

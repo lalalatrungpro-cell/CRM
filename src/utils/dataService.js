@@ -1579,41 +1579,47 @@ export const InventoryService = {
 
   async getSummary(shopId) {
     const items = await this.list(shopId);
-    const totalItems = items.length;
-    const availableItems = items.filter(i => i.status === 'AVAILABLE');
-    const soldItems = items.filter(i => i.status === 'SOLD');
-    const faultyItems = items.filter(i => i.status === 'FAULTY' || i.status === 'SUPPLIER_CLAIM');
-    const expiredItems = items.filter(i => i.status === 'EXPIRED');
+    const teams = await TeamService.list(shopId);
+    const orders = await OrderService.list(shopId);
 
-    // Total inventory value based on cost price of available assets
-    const totalInventoryValue = availableItems.reduce((sum, i) => sum + Number(i.cost_price || 0), 0);
+    const singleAvailable = items.filter(i => i.status === 'AVAILABLE');
+    const singleSold = items.filter(i => i.status === 'SOLD');
+    const singleFaulty = items.filter(i => i.status === 'FAULTY' || i.status === 'SUPPLIER_CLAIM');
+    const singleExpired = items.filter(i => i.status === 'EXPIRED');
 
-    // Group by product
-    const productMap = {};
-    items.forEach(i => {
-      const pName = i.product_name || 'Khác';
-      if (!productMap[pName]) {
-        productMap[pName] = { product_name: pName, total: 0, available: 0, sold: 0, faulty: 0, total_value: 0 };
-      }
-      productMap[pName].total += 1;
-      if (i.status === 'AVAILABLE') {
-        productMap[pName].available += 1;
-        productMap[pName].total_value += Number(i.cost_price || 0);
-      } else if (i.status === 'SOLD') {
-        productMap[pName].sold += 1;
-      } else if (i.status === 'FAULTY' || i.status === 'SUPPLIER_CLAIM') {
-        productMap[pName].faulty += 1;
+    let totalItems = items.length;
+    let availableCount = singleAvailable.length;
+    let soldCount = singleSold.length;
+    let faultyCount = singleFaulty.length;
+    let expiredCount = singleExpired.length;
+    let totalInventoryValue = singleAvailable.reduce((sum, i) => sum + Number(i.cost_price || 0), 0);
+
+    // Aggregate Kho Team slots into 360 Inventory Summary
+    (teams || []).forEach(t => {
+      const maxSlots = t.max_slots || t.maxSlots || 1;
+      const teamOrders = (orders || []).filter(o => String(o.team_id || o.teamId) === String(t.id));
+      const usedSlots = teamOrders.length;
+      const unitCost = maxSlots > 0 ? Math.round(Number(t.import_cost || t.importCost || 0) / maxSlots) : 0;
+
+      totalItems += maxSlots;
+      soldCount += usedSlots;
+
+      if (t.status === 'FAULTY_DIE') {
+        faultyCount += Math.max(0, maxSlots - usedSlots);
+      } else {
+        const availSlots = Math.max(0, maxSlots - usedSlots);
+        availableCount += availSlots;
+        totalInventoryValue += availSlots * unitCost;
       }
     });
 
     return {
       totalItems,
-      availableCount: availableItems.length,
-      soldCount: soldItems.length,
-      faultyCount: faultyItems.length,
-      expiredCount: expiredItems.length,
-      totalInventoryValue,
-      productBreakdown: Object.values(productMap)
+      availableCount,
+      soldCount,
+      faultyCount,
+      expiredCount,
+      totalInventoryValue
     };
   },
 
