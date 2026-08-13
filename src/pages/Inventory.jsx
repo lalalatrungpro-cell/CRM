@@ -7,6 +7,7 @@ import {
 } from '../utils/dataService';
 import { useToast } from '../components/Toast';
 import ConfirmDialog from '../components/ConfirmDialog';
+import DateFilterBar from '../components/DateFilterBar';
 import {
   Boxes, Plus, Search, Filter, Copy, Check, Eye, EyeOff,
   Trash2, RefreshCw, AlertTriangle, ShieldAlert, ArrowDownLeft,
@@ -47,6 +48,7 @@ export default function Inventory() {
 
   const [activeTab, setActiveTab] = useState('single_keys'); // 'single_keys', 'teams_pool', 'purchases', 'nxt_report', 'rma_alerts'
   const [items, setItems] = useState([]);
+  const [dateRange, setDateRange] = useState({ startDate: '', endDate: '', preset: 'ALL' });
   const [summary, setSummary] = useState({
     totalItems: 0, availableCount: 0, soldCount: 0, faultyCount: 0, expiredCount: 0, totalInventoryValue: 0, productBreakdown: []
   });
@@ -306,11 +308,19 @@ export default function Inventory() {
   const purchaseLiveCost = Number(purchaseFormData.importCost || 0);
   const purchaseLiveQty = parseInt(purchaseFormData.quantity || 1) || 1;
   const purchaseLiveUnit = purchaseLiveQty > 0 ? Math.round(purchaseLiveCost / purchaseLiveQty) : 0;
-  const totalImportCost = purchases.reduce((s, p) => s + Number(p.import_cost || 0), 0);
-  const paidImportCost = purchases.filter(p => p.payment_status === 'PAID').reduce((s, p) => s + Number(p.import_cost || 0), 0);
-  const debtImportCost = purchases.filter(p => p.payment_status === 'DEBT').reduce((s, p) => s + Number(p.import_cost || 0), 0);
-  const totalSlots = purchases.reduce((s, p) => s + parseInt(p.quantity || 0), 0);
-  const filteredPurchases = purchases.filter(p => {
+  const periodPurchases = purchases.filter(p => {
+    const d = p.purchase_date || p.purchaseDate || p.created_at;
+    const ds = d ? String(d).split('T')[0] : '';
+    if (dateRange.startDate && ds < dateRange.startDate) return false;
+    if (dateRange.endDate && ds > dateRange.endDate) return false;
+    return true;
+  });
+
+  const totalImportCost = periodPurchases.reduce((s, p) => s + Number(p.import_cost || 0), 0);
+  const paidImportCost = periodPurchases.filter(p => p.payment_status === 'PAID').reduce((s, p) => s + Number(p.import_cost || 0), 0);
+  const debtImportCost = periodPurchases.filter(p => p.payment_status === 'DEBT').reduce((s, p) => s + Number(p.import_cost || 0), 0);
+  const totalSlots = periodPurchases.reduce((s, p) => s + parseInt(p.quantity || 0), 0);
+  const filteredPurchases = periodPurchases.filter(p => {
     const matchSearch = (p.product_name || '').toLowerCase().includes(purchaseSearchTerm.toLowerCase()) ||
                         (p.supplier_name || '').toLowerCase().includes(purchaseSearchTerm.toLowerCase());
     const matchPay = filterPayment === 'ALL' || p.payment_status === filterPayment;
@@ -594,6 +604,9 @@ export default function Inventory() {
           </div>
         </div>
       </div>
+
+      {/* Date Filter Bar */}
+      <DateFilterBar onFilterChange={setDateRange} label="Kỳ Báo Cáo Kho:" />
 
       {/* Navigation Tabs */}
       <div style={{ display: 'flex', gap: '8px', borderBottom: '1px solid rgba(255,255,255,0.08)', paddingBottom: '12px', flexWrap: 'wrap' }}>

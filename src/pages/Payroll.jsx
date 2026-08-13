@@ -4,6 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { StaffMemberService, PayrollService } from '../utils/dataService';
 import { useToast } from '../components/Toast';
 import ConfirmDialog from '../components/ConfirmDialog';
+import DateFilterBar from '../components/DateFilterBar';
 import {
   Users, UserCheck, Plus, RefreshCw, X, Trash2, Edit2,
   DollarSign, Calculator, CheckCircle2, Clock, Award, Shield
@@ -17,6 +18,7 @@ export default function Payroll() {
   const [staffList, setStaffList] = useState([]);
   const [payrollRecords, setPayrollRecords] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [dateRange, setDateRange] = useState({ startDate: '', endDate: '', preset: 'ALL' });
 
   // Month selector (default current YYYY-MM)
   const currentMonthPeriod = new Date().toISOString().slice(0, 7);
@@ -214,6 +216,9 @@ export default function Payroll() {
           </button>
         </div>
       </div>
+
+      {/* Date Filter Bar */}
+      <DateFilterBar onFilterChange={setDateRange} label="Kỳ Bảng Lương:" />
 
       {/* KPI Cards */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px' }}>

@@ -3,6 +3,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { CustomerService, OrderService, SupplierService, VietQRService, CashTransactionService } from '../utils/dataService';
 import { getVietQRUrl } from '../utils/storage';
 import { useToast } from '../components/Toast';
+import DateFilterBar from '../components/DateFilterBar';
 import { Wallet, ArrowDownLeft, ArrowUpRight, FileText, Printer, Copy, X } from 'lucide-react';
 
 function numberToVietnameseWords(amount) {
@@ -90,6 +91,7 @@ export default function Debt() {
   const [suppliers, setSuppliers] = useState([]);
   const [vietqr, setVietqr] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [dateRange, setDateRange] = useState({ startDate: '', endDate: '', preset: 'ALL' });
 
   const [selectedInvoiceCust, setSelectedInvoiceCust] = useState(null);
   const [selectedInvoiceSupp, setSelectedInvoiceSupp] = useState(null);
@@ -258,6 +260,9 @@ export default function Debt() {
           </p>
         </div>
       </div>
+
+      {/* Date Filter Bar */}
+      <DateFilterBar onFilterChange={setDateRange} label="Kỳ Công Nợ:" />
 
       {/* Overview Metric Cards */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '20px' }}>

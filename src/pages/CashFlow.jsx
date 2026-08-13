@@ -4,6 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { CashTransactionService } from '../utils/dataService';
 import { useToast } from '../components/Toast';
 import ConfirmDialog from '../components/ConfirmDialog';
+import DateFilterBar from '../components/DateFilterBar';
 import {
   Wallet, ArrowDownRight, ArrowUpRight, Plus, Search,
   RefreshCw, X, Trash2, Landmark, DollarSign, Calendar
@@ -21,6 +22,7 @@ export default function CashFlow() {
   const [activeTab, setActiveTab] = useState('ALL'); // 'ALL' | 'INCOME' | 'EXPENSE'
   const [filterAccount, setFilterAccount] = useState('ALL'); // 'ALL' | 'BANK' | 'CASH'
   const [searchTerm, setSearchTerm] = useState('');
+  const [dateRange, setDateRange] = useState({ startDate: '', endDate: '', preset: 'ALL' });
 
   // Modal
   const [showModal, setShowModal] = useState(false);
@@ -118,6 +120,11 @@ export default function CashFlow() {
   };
 
   const filteredTransactions = transactions.filter(t => {
+    const d = t.transaction_date || t.transactionDate || t.created_at;
+    const ds = d ? String(d).split('T')[0] : '';
+    if (dateRange.startDate && ds < dateRange.startDate) return false;
+    if (dateRange.endDate && ds > dateRange.endDate) return false;
+
     const matchesTab = activeTab === 'ALL' || t.type === activeTab;
     const matchesAccount = filterAccount === 'ALL' || (t.account_type || 'BANK') === filterAccount;
     const matchesSearch = (t.category || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -160,6 +167,9 @@ export default function CashFlow() {
         </div>
       </div>
 
+      {/* Date Filter Bar */}
+      <DateFilterBar onFilterChange={setDateRange} label="Kỳ Sổ Quỹ:" />
+
       {/* KPI Cards */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px' }}>
         <div className="glass-panel" style={{ padding: '18px 20px', border: summary.netBalance >= 0 ? '1px solid rgba(16,185,129,0.3)' : '1px solid rgba(239,68,68,0.3)' }}>
@@ -186,23 +196,35 @@ export default function CashFlow() {
 
         <div className="glass-panel" style={{ padding: '18px 20px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span style={{ fontSize: '12px', color: '#94a3b8', fontWeight: '600' }}>Quỹ Tiền Mặt</span>
+            <span style={{ fontSize: '12px', color: '#94a3b8', fontWeight: '600' }}>Két Tiền Mặt</span>
             <DollarSign size={20} color="#f59e0b" />
           </div>
           <div style={{ fontSize: '22px', fontWeight: '800', color: '#f59e0b', marginTop: '6px' }}>
             {summary.cashBalance.toLocaleString()}đ
           </div>
-          <div style={{ fontSize: '11px', color: '#64748b', marginTop: '4px' }}>Tiền mặt tại két shop</div>
+          <div style={{ fontSize: '11px', color: '#64748b', marginTop: '4px' }}>Quỹ tiền mặt trực tiếp tại shop</div>
         </div>
 
         <div className="glass-panel" style={{ padding: '18px 20px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span style={{ fontSize: '12px', color: '#94a3b8', fontWeight: '600' }}>Tổng Thu vs Tổng Chi</span>
+            <span style={{ fontSize: '12px', color: '#94a3b8', fontWeight: '600' }}>Thu - Chi Theo Kỳ</span>
             <Calendar size={20} color="#818cf8" />
           </div>
           <div style={{ fontSize: '13px', display: 'flex', flexDirection: 'column', gap: '2px', marginTop: '6px' }}>
-            <span style={{ color: '#10b981', fontWeight: '700' }}>Thu: +{summary.totalIncome.toLocaleString()}đ</span>
-            <span style={{ color: '#ef4444', fontWeight: '700' }}>Chi: -{summary.totalExpense.toLocaleString()}đ</span>
+            <span style={{ color: '#10b981', fontWeight: '700' }}>Thu: +{transactions.filter(t => {
+              const d = t.transaction_date || t.transactionDate || t.created_at;
+              const ds = d ? String(d).split('T')[0] : todayStr;
+              if (dateRange.startDate && ds < dateRange.startDate) return false;
+              if (dateRange.endDate && ds > dateRange.endDate) return false;
+              return true;
+            }).filter(t => t.type === 'INCOME').reduce((s, t) => s + Number(t.amount || 0), 0).toLocaleString()}đ</span>
+            <span style={{ color: '#ef4444', fontWeight: '700' }}>Chi: -{transactions.filter(t => {
+              const d = t.transaction_date || t.transactionDate || t.created_at;
+              const ds = d ? String(d).split('T')[0] : todayStr;
+              if (dateRange.startDate && ds < dateRange.startDate) return false;
+              if (dateRange.endDate && ds > dateRange.endDate) return false;
+              return true;
+            }).filter(t => t.type === 'EXPENSE').reduce((s, t) => s + Number(t.amount || 0), 0).toLocaleString()}đ</span>
           </div>
         </div>
       </div>

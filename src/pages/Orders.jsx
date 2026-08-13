@@ -9,6 +9,7 @@ import { supabase } from '../utils/supabaseClient';
 import { getVietQRUrl } from '../utils/storage';
 import { useToast } from '../components/Toast';
 import ConfirmDialog from '../components/ConfirmDialog';
+import DateFilterBar from '../components/DateFilterBar';
 import { convertAllOldOrderIds, convertAllOldCustomerIds } from '../utils/orderMigrator';
 import {
   Plus, Users, Copy, Check, ShieldAlert, FileText, UserPlus, Search,
@@ -40,6 +41,7 @@ export default function Orders() {
   const [channels, setChannels] = useState([]);
   const [vietqr, setVietqr] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [dateRange, setDateRange] = useState({ startDate: '', endDate: '', preset: 'ALL' });
 
   // Modals
   const [showModal, setShowModal] = useState(false);
@@ -307,17 +309,17 @@ export default function Orders() {
     newCustomerSource: 'Facebook Page',
     newCustomerSubChannel: '',
     newCustomerNotes: '',
-    productName: 'Canva Pro (1 tháng)',
+    productName: '',
     teamId: '',
     supplierId: '',
     inventoryItemId: null,
     inventoryHint: null,
     infor: '',
-    sellPrice: 150000,
-    costPrice: 50000,
-    status: 'Đã thanh toán',
+    sellPrice: '',
+    costPrice: '',
+    status: '',
     purchaseDate: todayStr,
-    expireDate: nextMonthStr,
+    expireDate: '',
     durationDays: 30,
     source: 'Facebook Page',
     subChannelName: '',
@@ -459,6 +461,13 @@ export default function Orders() {
 
   const handleCreateOrder = async (e) => {
     e.preventDefault();
+
+    if (!formData.productName) {
+      return toast.error('Vui lòng chọn Sản phẩm dịch vụ!');
+    }
+    if (!formData.status) {
+      return toast.error('Vui lòng chọn Trạng thái thanh toán (Đã thanh toán hoặc Nợ)!');
+    }
 
     let finalCustId = formData.customerId;
     let finalCustName = '';
@@ -834,6 +843,11 @@ export default function Orders() {
   };
 
   const filteredOrders = orders.filter(o => {
+    const d = o.purchase_date || o.purchaseDate || o.created_at;
+    const ds = d ? String(d).split('T')[0] : '';
+    if (dateRange.startDate && ds < dateRange.startDate) return false;
+    if (dateRange.endDate && ds > dateRange.endDate) return false;
+
     const custName = o.customer_name || o.customerName || '';
     const prodName = o.product_name || o.productName || '';
     const matchesSearch = custName.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -886,6 +900,9 @@ export default function Orders() {
           <Plus size={18} /> Tạo Đơn POS Mới
         </button>
       </div>
+
+      {/* Date Filter Bar */}
+      <DateFilterBar onFilterChange={setDateRange} label="Kỳ Đơn Hàng:" />
 
       {/* Filters Bar */}
       <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'center' }}>
@@ -1595,11 +1612,16 @@ export default function Orders() {
               )}
 
               <div>
-                <label className="form-label">Chọn Sản Phẩm Dịch Vụ</label>
+                <label className="form-label">Chọn Sản Phẩm Dịch Vụ *</label>
                 <select
-                  className="glass-input"
+                  className="glass-input" required
+                  style={{
+                    borderColor: !formData.productName ? 'rgba(239,68,68,0.5)' : 'rgba(255,255,255,0.12)',
+                    background: !formData.productName ? 'rgba(239,68,68,0.08)' : 'rgba(0,0,0,0.2)'
+                  }}
                   value={formData.productName} onChange={e => handleProductSelect(e.target.value)}
                 >
+                  <option value="">-- Chọn Sản Phẩm Dịch Vụ * --</option>
                   {products.map(p => (
                     <option key={p.id} value={p.name}>{p.name}</option>
                   ))}
@@ -1722,13 +1744,18 @@ export default function Orders() {
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                 <div>
-                  <label className="form-label">Trạng Thái Thanh Toán</label>
+                  <label className="form-label" style={{ color: !formData.status ? '#f87171' : '#94a3b8' }}>Trạng Thái Thanh Toán *</label>
                   <select
-                    className="glass-input"
+                    className="glass-input" required
+                    style={{
+                      borderColor: !formData.status ? 'rgba(239,68,68,0.5)' : 'rgba(255,255,255,0.12)',
+                      background: !formData.status ? 'rgba(239,68,68,0.08)' : 'rgba(0,0,0,0.2)'
+                    }}
                     value={formData.status} onChange={e => setFormData({ ...formData, status: e.target.value })}
                   >
-                    <option value="Đã thanh toán">Đã thanh toán</option>
-                    <option value="Nợ">Nợ</option>
+                    <option value="">-- Chọn Trạng Thái Thanh Toán * --</option>
+                    <option value="Đã thanh toán">🟢 Đã thanh toán</option>
+                    <option value="Nợ">🔴 Nợ (Chưa thanh toán)</option>
                   </select>
                 </div>
                 {!isEvergreen ? (

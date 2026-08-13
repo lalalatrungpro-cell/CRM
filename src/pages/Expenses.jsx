@@ -4,6 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { ExpenseService } from '../utils/dataService';
 import { useToast } from '../components/Toast';
 import ConfirmDialog from '../components/ConfirmDialog';
+import DateFilterBar from '../components/DateFilterBar';
 import {
   TrendingDown, Plus, Search, RefreshCw, X, Trash2, Edit2,
   Building, Megaphone, Server, Zap, CheckCircle2, Clock
@@ -19,6 +20,7 @@ export default function Expenses() {
   // Filters & Tabs
   const [activeTab, setActiveTab] = useState('ALL'); // 'ALL' | 'FIXED' | 'VARIABLE'
   const [searchTerm, setSearchTerm] = useState('');
+  const [dateRange, setDateRange] = useState({ startDate: '', endDate: '', preset: 'ALL' });
 
   // Modals & Form
   const [showModal, setShowModal] = useState(false);
@@ -70,17 +72,17 @@ export default function Expenses() {
     setShowModal(true);
   };
 
-  const handleOpenEditModal = (item) => {
-    setEditingExpense(item);
+  const handleOpenEditModal = (exp) => {
+    setEditingExpense(exp);
     setFormData({
-      name: item.name || '',
-      expenseType: item.expense_type || item.expenseType || 'FIXED',
-      category: item.category || 'Mặt bằng',
-      amount: item.amount || '',
-      recurrence: item.recurrence || 'MONTHLY',
-      expenseDate: item.expense_date || item.expenseDate || todayStr,
-      notes: item.notes || '',
-      isPaid: item.is_paid !== undefined ? item.is_paid : true
+      name: exp.name || '',
+      expenseType: exp.expense_type || exp.expenseType || 'FIXED',
+      category: exp.category || 'Mặt bằng',
+      amount: exp.amount || '',
+      recurrence: exp.recurrence || 'MONTHLY',
+      expenseDate: exp.expense_date || exp.expenseDate || todayStr,
+      notes: exp.notes || '',
+      isPaid: exp.is_paid !== undefined ? exp.is_paid : true
     });
     setShowModal(true);
   };
@@ -88,8 +90,7 @@ export default function Expenses() {
   const handleSaveExpense = async (e) => {
     e.preventDefault();
     const amt = Number(formData.amount || 0);
-    if (!formData.name.trim()) return toast.error('Vui lòng nhập tên khoản chi!');
-    if (amt <= 0) return toast.error('Vui lòng nhập số tiền chi phí hợp lệ (> 0đ)!');
+    if (amt <= 0) return toast.error('Vui lòng nhập số tiền hợp lệ (> 0đ)!');
 
     const payload = {
       name: formData.name.trim(),
@@ -105,12 +106,12 @@ export default function Expenses() {
     try {
       if (editingExpense) {
         await ExpenseService.update(editingExpense.id, payload);
-        toast.success(`Đã cập nhật chi phí "${payload.name}"!`);
+        toast.success(`Đã cập nhật khoản chi "${formData.name}"!`);
       } else {
         await ExpenseService.create(shopId, payload);
-        toast.success(`Đã thêm khoản chi phí "${payload.name}" (${amt.toLocaleString()}đ) thành công!`);
+        toast.success(`Đã thêm khoản chi phí mới ${amt.toLocaleString()}đ!`);
       }
-      closeModal();
+      setShowModal(false);
       loadData();
     } catch (err) {
       console.error(err);
@@ -132,12 +133,23 @@ export default function Expenses() {
     }
   };
 
-  // KPI Metrics
-  const totalFixed = expenses.filter(e => (e.expense_type || e.expenseType) === 'FIXED').reduce((sum, e) => sum + Number(e.amount || 0), 0);
-  const totalVariable = expenses.filter(e => (e.expense_type || e.expenseType) === 'VARIABLE').reduce((sum, e) => sum + Number(e.amount || 0), 0);
+  // KPI Metrics & Date Filtering
+  const isDateInRange = (dateStr) => {
+    if (!dateRange.startDate && !dateRange.endDate) return true;
+    if (!dateStr) return true;
+    const d = String(dateStr).split('T')[0];
+    if (dateRange.startDate && d < dateRange.startDate) return false;
+    if (dateRange.endDate && d > dateRange.endDate) return false;
+    return true;
+  };
+
+  const periodExpenses = expenses.filter(e => isDateInRange(e.expense_date || e.expenseDate || e.created_at));
+
+  const totalFixed = periodExpenses.filter(e => (e.expense_type || e.expenseType) === 'FIXED').reduce((sum, e) => sum + Number(e.amount || 0), 0);
+  const totalVariable = periodExpenses.filter(e => (e.expense_type || e.expenseType) === 'VARIABLE').reduce((sum, e) => sum + Number(e.amount || 0), 0);
   const totalOpex = totalFixed + totalVariable;
 
-  const filteredExpenses = expenses.filter(e => {
+  const filteredExpenses = periodExpenses.filter(e => {
     const matchesTab = activeTab === 'ALL' || (e.expense_type || e.expenseType) === activeTab;
     const matchesSearch = (e.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
                           (e.category || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -167,6 +179,9 @@ export default function Expenses() {
           </button>
         </div>
       </div>
+
+      {/* Date Filter Bar */}
+      <DateFilterBar onFilterChange={setDateRange} label="Kỳ Chi Phí OPEX:" />
 
       {/* KPI Cards */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px' }}>

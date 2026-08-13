@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { OrderService, TeamService } from '../utils/dataService';
 import { useToast } from '../components/Toast';
+import DateFilterBar from '../components/DateFilterBar';
 import { Clock, Truck, Copy, Check, RefreshCw, Search, X } from 'lucide-react';
 
 export default function ExpiringAccounts() {
@@ -15,6 +16,7 @@ export default function ExpiringAccounts() {
   const [copiedId, setCopiedId] = useState('');
   const [activeTab, setActiveTab] = useState('orders'); // 'orders' | 'teams'
   const [searchTerm, setSearchTerm] = useState('');
+  const [dateRange, setDateRange] = useState({ startDate: '', endDate: '', preset: 'ALL' });
 
   // Renewal Modals
   const [renewingOrder, setRenewingOrder] = useState(null);
@@ -104,17 +106,28 @@ export default function ExpiringAccounts() {
   }, [teams]);
 
   const filteredOrders = ordersWithDays.filter(o => {
+    const expStr = o.expire_date || o.expireDate;
+    const ds = expStr ? String(expStr).split('T')[0] : '';
+    if (dateRange.startDate && ds < dateRange.startDate) return false;
+    if (dateRange.endDate && ds > dateRange.endDate) return false;
+
     const custName = o.customer_name || o.customerName || '';
     const prodName = o.product_name || o.productName || '';
     return custName.toLowerCase().includes(searchTerm.toLowerCase()) ||
            (o.phone || '').includes(searchTerm) ||
-           prodName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-           String(o.id).includes(searchTerm);
+           prodName.toLowerCase().includes(searchTerm.toLowerCase());
   });
 
   const filteredTeams = teamsWithDays.filter(t => {
-    return (t.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-           (t.category || '').toLowerCase().includes(searchTerm.toLowerCase());
+    const expStr = t.expire_date || t.expireDate;
+    const ds = expStr ? String(expStr).split('T')[0] : '';
+    if (dateRange.startDate && ds < dateRange.startDate) return false;
+    if (dateRange.endDate && ds > dateRange.endDate) return false;
+
+    const teamName = t.name || '';
+    const category = t.category || '';
+    return teamName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+           category.toLowerCase().includes(searchTerm.toLowerCase());
   });
 
   const handleCopyInfor = (text, id) => {
@@ -256,6 +269,9 @@ export default function ExpiringAccounts() {
           </button>
         </div>
       </div>
+
+      {/* Date Filter Bar */}
+      <DateFilterBar onFilterChange={setDateRange} label="Kỳ Hết Hạn:" />
 
       {/* Search Bar */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', maxWidth: '400px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '10px', padding: '8px 14px' }}>

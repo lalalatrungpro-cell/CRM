@@ -84,6 +84,8 @@ const isUnpaid = (status) => {
   return s === 'nợ' || s === 'no' || s === 'chưa thanh toán';
 };
 
+import DateFilterBar from '../components/DateFilterBar';
+
 export default function CustomerDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -97,6 +99,7 @@ export default function CustomerDetail() {
   const [warrantyLogs, setWarrantyLogs] = useState([]);
   const [vietqr, setVietqr] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [dateRange, setDateRange] = useState({ startDate: '', endDate: '', preset: 'ALL' });
 
   const [notes, setNotes] = useState('');
   const [copiedId, setCopiedId] = useState('');
