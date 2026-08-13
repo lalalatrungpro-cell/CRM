@@ -520,15 +520,21 @@ export default function Orders() {
         channelVal = `${formData.source} - ${formData.subChannelName}`;
       }
 
+      const safeParseId = (val) => {
+        if (!val) return null;
+        const num = Number(val);
+        return isNaN(num) ? val : num;
+      };
+
       const payload = {
         customer_id: finalCustId,
         customer_name: finalCustName,
         phone: finalCustPhone,
-        supplier_id: formData.supplierId ? parseInt(formData.supplierId) : null,
+        supplier_id: safeParseId(formData.supplierId),
         supplier_name: suppName,
-        team_id: formData.teamId ? parseInt(formData.teamId) : null,
+        team_id: safeParseId(formData.teamId),
         product_name: formData.productName,
-        infor: formData.infor.trim() || '',
+        infor: (formData.infor || '').trim(),
         cost_price: parseFloat(formData.costPrice) || 0,
         sell_price: parseFloat(formData.sellPrice) || 0,
         status: formData.status || 'Đã thanh toán',
@@ -556,8 +562,8 @@ export default function Orders() {
       closeModal();
       toast.success(`Đã tạo đơn hàng POS thành công cho ${finalCustName}!`);
     } catch (err) {
-      console.error(err);
-      toast.error('Lỗi khi tạo đơn hàng. Vui lòng thử lại.');
+      console.error('Order creation error:', err);
+      toast.error('Lỗi khi tạo đơn hàng: ' + (err.message || 'Vui lòng thử lại.'));
     }
   };
 
@@ -581,13 +587,19 @@ export default function Orders() {
     const order = showWarrantyModal;
     const newWarrantyCount = (order.warranty_count || order.warrantyCount || 0) + 1;
 
+    const safeParseId = (val) => {
+      if (!val) return null;
+      const num = Number(val);
+      return isNaN(num) ? val : num;
+    };
+
     try {
       await supabase.from('warranty_logs').insert({
         shop_id: shopId,
         order_id: order.id,
         reason: warrantyReason.trim(),
         new_infor: warrantyNewInfor.trim() || order.infor,
-        new_team_id: warrantyNewTeamId ? parseInt(warrantyNewTeamId) : order.team_id,
+        new_team_id: warrantyNewTeamId ? safeParseId(warrantyNewTeamId) : order.team_id,
         note: 'Bảo hành đổi tài khoản'
       });
 
@@ -596,7 +608,7 @@ export default function Orders() {
         infor: warrantyNewInfor.trim() || order.infor
       };
       if (warrantyNewTeamId) {
-        updatePayload.team_id = parseInt(warrantyNewTeamId);
+        updatePayload.team_id = safeParseId(warrantyNewTeamId);
       }
 
       const updatedOrder = await OrderService.update(order.id, updatePayload);
