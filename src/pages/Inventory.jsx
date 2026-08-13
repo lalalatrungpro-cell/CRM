@@ -555,23 +555,13 @@ export default function Inventory() {
           )}
 
           {activeTab === 'teams_pool' && (
-            <>
-              <button
-                className="glass-button"
-                onClick={handleClearEmptyTeams}
-                style={{ background: 'rgba(239,68,68,0.18)', border: '1px solid rgba(239,68,68,0.4)', color: '#ef4444', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '6px' }}
-                title="Xóa hàng loạt các team trùng lặp chưa bán slot nào"
-              >
-                <Trash2 size={16} /> 🧹 Dọn Dẹp / Xóa Hàng Loạt Team Trống (0 Slot)
-              </button>
-              <button
-                className="glass-button"
-                onClick={handleOpenAddTeamModal}
-                style={{ background: 'linear-gradient(135deg, #10b981, #059669)', color: '#fff', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '6px' }}
-              >
-                <Plus size={18} /> Tạo Kho Team Mới
-              </button>
-            </>
+            <button
+              className="glass-button"
+              onClick={handleOpenAddTeamModal}
+              style={{ background: 'linear-gradient(135deg, #10b981, #059669)', color: '#fff', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '6px' }}
+            >
+              <Plus size={18} /> Tạo Kho Team Mới
+            </button>
           )}
 
           {activeTab === 'purchases' && (
