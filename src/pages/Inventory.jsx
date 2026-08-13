@@ -12,7 +12,7 @@ import {
   Trash2, RefreshCw, AlertTriangle, ShieldAlert, ArrowDownLeft,
   ArrowUpRight, Download, Layers, ShieldCheck, Clock, CheckCircle2,
   FileSpreadsheet, Tag, Truck, ExternalLink, X, HelpCircle,
-  PackagePlus, Edit2, DollarSign, Wallet, Building2
+  PackagePlus, Edit2, DollarSign, Wallet, Building2, Key
 } from 'lucide-react';
 
 const STATUS_CONFIG = {
@@ -97,9 +97,11 @@ export default function Inventory() {
   const emptyTeamForm = {
     name: '', category: 'Canva Pro', infor: '', maxSlots: 49,
     importCost: 0, purchaseDate: todayStr, expireDate: nextYearStr,
-    supplierId: '', notes: ''
+    supplierId: '', notes: '', warrantyPolicy: '', status: 'ACTIVE'
   };
   const [showTeamModal, setShowTeamModal] = useState(false);
+  const [showWarrantyModal, setShowWarrantyModal] = useState(null);
+  const [showCredentialsModal, setShowCredentialsModal] = useState(null);
   const [editingTeam, setEditingTeam] = useState(null);
   const [confirmDeleteTeamId, setConfirmDeleteTeamId] = useState(null);
   const [teamRevealedInfors, setTeamRevealedInfors] = useState({});
@@ -169,7 +171,9 @@ export default function Inventory() {
       importCost: team.import_cost || team.importCost || 0,
       purchaseDate: team.purchase_date || team.purchaseDate || todayStr,
       expireDate: team.expire_date || team.expireDate || nextYearStr,
-      supplierId: team.supplier_id || team.supplierId || '', notes: team.notes || ''
+      supplierId: team.supplier_id || team.supplierId || '', notes: team.notes || '',
+      warrantyPolicy: team.warranty_policy || team.warrantyPolicy || '',
+      status: team.status || 'ACTIVE'
     });
     setShowTeamModal(true);
   };
@@ -190,7 +194,9 @@ export default function Inventory() {
       purchase_date: teamFormData.purchaseDate || todayStr,
       expire_date: teamFormData.expireDate || nextYearStr,
       supplier_id: teamFormData.supplierId ? parseInt(teamFormData.supplierId) : null,
-      supplier_name: suppName, notes: teamFormData.notes.trim()
+      supplier_name: suppName, notes: teamFormData.notes.trim(),
+      warranty_policy: (teamFormData.warrantyPolicy || '').trim(),
+      status: teamFormData.status || 'ACTIVE'
     };
     try {
       if (editingTeam) {
@@ -213,6 +219,19 @@ export default function Inventory() {
       }
       closeTeamModal(); loadData();
     } catch (err) { console.error(err); toast.error('Lỗi khi lưu kho team.'); }
+  };
+  const handleToggleTeamDieStatus = async (team) => {
+    const isDie = team.status === 'FAULTY_DIE';
+    const newStatus = isDie ? 'ACTIVE' : 'FAULTY_DIE';
+    try {
+      const updated = await TeamService.update(team.id, { status: newStatus });
+      setTeams(prev => prev.map(t => t.id === team.id ? { ...t, ...updated, status: newStatus } : t));
+      if (newStatus === 'FAULTY_DIE') {
+        toast.error('Đã đánh dấu Team "' + team.name + '" BỊ DIE (LỖI)!');
+      } else {
+        toast.success('Đã khôi phục Team "' + team.name + '" về Đang hoạt động!');
+      }
+    } catch (err) { console.error(err); toast.error('Lỗi khi đổi trạng thái Team.'); }
   };
   const handleDeleteTeamConfirmed = async () => {
     const id = confirmDeleteTeamId;
@@ -876,76 +895,145 @@ export default function Inventory() {
                 const unitCost = maxSlots > 0 ? Math.round(importCost / maxSlots) : 0;
                 const catColor = CATEGORY_COLORS[team.category] || '#64748b';
                 const isRevealed = teamRevealedInfors[team.id];
+                const purchaseDate = team.purchase_date || team.purchaseDate || '';
                 const expireDate = team.expire_date || team.expireDate || '';
                 const daysLeft = expireDate ? Math.ceil((new Date(expireDate) - new Date()) / 86400000) : null;
+                const isDie = team.status === 'FAULTY_DIE';
+
+                let statusBadge = { label: '🟢 ĐANG HOẠT ĐỘNG', color: '#10b981', bg: 'rgba(16,185,129,0.15)' };
+                if (isDie) {
+                  statusBadge = { label: '🔴 TEAM BỊ DIE (LỖI)', color: '#ef4444', bg: 'rgba(239,68,68,0.2)' };
+                } else if (daysLeft !== null && daysLeft <= 0) {
+                  statusBadge = { label: '⚪ ĐÃ HẾT HẠN', color: '#64748b', bg: 'rgba(100,116,139,0.2)' };
+                } else if (daysLeft !== null && daysLeft <= 7) {
+                  statusBadge = { label: '🟡 SẮP HẾT HẠN', color: '#f59e0b', bg: 'rgba(245,158,11,0.2)' };
+                }
+
                 return (
-                  <div key={team.id} className="glass-panel" style={{ display: 'flex', flexDirection: 'column', gap: '12px', border: '1px solid ' + catColor + '30', position: 'relative' }}>
-                    {/* Card Header */}
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                      <div>
-                        <div style={{ fontSize: '15px', fontWeight: '800', color: '#fff', marginBottom: '4px' }}>{team.name}</div>
-                        <div style={{ display: 'inline-block', background: catColor + '20', color: catColor, fontSize: '11px', fontWeight: '700', padding: '2px 8px', borderRadius: '20px', border: '1px solid ' + catColor + '40' }}>
-                          {team.category}
-                        </div>
+                  <div key={team.id} className="glass-panel" style={{ display: 'flex', flexDirection: 'column', gap: '12px', padding: '16px', border: isDie ? '2px solid #ef4444' : '1px solid ' + catColor + '30', position: 'relative' }}>
+                    {/* Team Name & Category Header */}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div style={{ fontSize: '15px', fontWeight: '800', color: '#fff' }}>{team.name}</div>
+                      <div style={{ background: catColor + '20', color: catColor, fontSize: '10.5px', fontWeight: '700', padding: '2px 8px', borderRadius: '12px', border: '1px solid ' + catColor + '40' }}>
+                        {team.category}
                       </div>
-                      <div style={{ display: 'flex', gap: '6px' }}>
-                        <button onClick={() => handleOpenEditTeamModal(team)} style={{ background: 'rgba(99,102,241,0.15)', border: '1px solid rgba(99,102,241,0.3)', borderRadius: '8px', padding: '5px 8px', color: '#818cf8', cursor: 'pointer' }} title="Sửa team"><Edit2 size={13} /></button>
-                        <button onClick={() => setConfirmDeleteTeamId(team.id)} style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.25)', borderRadius: '8px', padding: '5px 8px', color: '#f87171', cursor: 'pointer' }} title="Xóa team"><Trash2 size={13} /></button>
+                    </div>
+
+                    {/* TOP RED BOX: Single Row, Equal Height Controls (Status Badge, Báo DIE, Sửa, Xóa) */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', width: '100%' }}>
+                      <div style={{
+                        flex: '1.4', height: '30px', background: statusBadge.bg, color: statusBadge.color,
+                        fontSize: '10.5px', fontWeight: '800', borderRadius: '8px', border: '1px solid ' + statusBadge.color + '40',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 6px', textOverflow: 'ellipsis', whiteSpace: 'nowrap', overflow: 'hidden'
+                      }}>
+                        {statusBadge.label}
                       </div>
+
+                      <button
+                        onClick={() => handleToggleTeamDieStatus(team)}
+                        title={isDie ? 'Khôi phục team về Active' : 'Đánh dấu Báo Team DIE'}
+                        style={{
+                          flex: '1.2', height: '30px', background: isDie ? 'rgba(16,185,129,0.15)' : 'rgba(239,68,68,0.15)',
+                          color: isDie ? '#10b981' : '#ef4444', border: isDie ? '1px solid rgba(16,185,129,0.3)' : '1px solid rgba(239,68,68,0.3)',
+                          borderRadius: '8px', fontSize: '10.5px', fontWeight: '800', cursor: 'pointer',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px', whiteSpace: 'nowrap'
+                        }}
+                      >
+                        <AlertTriangle size={12} />
+                        {isDie ? 'Khôi Phục' : 'Báo DIE'}
+                      </button>
+
+                      <button onClick={() => handleOpenEditTeamModal(team)} style={{ width: '30px', height: '30px', background: 'rgba(99,102,241,0.15)', border: '1px solid rgba(99,102,241,0.3)', borderRadius: '8px', color: '#818cf8', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }} title="Sửa team">
+                        <Edit2 size={13} />
+                      </button>
+
+                      <button onClick={() => setConfirmDeleteTeamId(team.id)} style={{ width: '30px', height: '30px', background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.25)', borderRadius: '8px', color: '#f87171', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }} title="Xóa team">
+                        <Trash2 size={13} />
+                      </button>
                     </div>
 
                     {/* Slot Fill Rate */}
                     <div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', color: '#94a3b8', marginBottom: '6px' }}>
-                        <span>Slot đã bán: <strong style={{ color: '#fff' }}>{usedSlots}/{maxSlots}</strong></span>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11.5px', color: '#94a3b8', marginBottom: '4px' }}>
+                        <span>Đã bán: <strong style={{ color: '#fff' }}>{usedSlots}/{maxSlots} slot</strong></span>
                         <span style={{ color: availSlots === 0 ? '#ef4444' : availSlots <= 3 ? '#f59e0b' : '#10b981', fontWeight: '700' }}>{availSlots} slot trống</span>
                       </div>
-                      <div style={{ height: '6px', background: 'rgba(255,255,255,0.08)', borderRadius: '3px', overflow: 'hidden' }}>
-                        <div style={{ height: '100%', width: usagePct + '%', background: usagePct >= 100 ? '#ef4444' : usagePct >= 80 ? '#f59e0b' : catColor, borderRadius: '3px', transition: 'width 0.4s ease' }} />
+                      <div style={{ height: '5px', background: 'rgba(255,255,255,0.08)', borderRadius: '3px', overflow: 'hidden' }}>
+                        <div style={{ height: '100%', width: usagePct + '%', background: isDie ? '#ef4444' : usagePct >= 100 ? '#ef4444' : usagePct >= 80 ? '#f59e0b' : catColor, borderRadius: '3px', transition: 'width 0.4s ease' }} />
                       </div>
                     </div>
 
-                    {/* Finance Info */}
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
-                      <div style={{ background: 'rgba(255,255,255,0.04)', borderRadius: '8px', padding: '8px' }}>
-                        <div style={{ fontSize: '10px', color: '#64748b', marginBottom: '2px' }}>Giá Vốn/Slot</div>
-                        <div style={{ fontSize: '13px', fontWeight: '700', color: '#f59e0b' }}>{unitCost.toLocaleString()}đ</div>
+                    {/* Condensed 2x2 Metrics Grid (Finance & Dates) */}
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px', background: 'rgba(0,0,0,0.2)', padding: '8px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                      <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: '6px', padding: '6px 8px' }}>
+                        <div style={{ fontSize: '9.5px', color: '#64748b', fontWeight: '700', textTransform: 'uppercase' }}>Vốn/Slot</div>
+                        <div style={{ fontSize: '12.5px', fontWeight: '800', color: '#f59e0b' }}>{unitCost.toLocaleString()}đ</div>
                       </div>
-                      <div style={{ background: 'rgba(255,255,255,0.04)', borderRadius: '8px', padding: '8px' }}>
-                        <div style={{ fontSize: '10px', color: '#64748b', marginBottom: '2px' }}>Tổng Vốn Team</div>
-                        <div style={{ fontSize: '13px', fontWeight: '700', color: '#ef4444' }}>{importCost.toLocaleString()}đ</div>
+                      <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: '6px', padding: '6px 8px' }}>
+                        <div style={{ fontSize: '9.5px', color: '#64748b', fontWeight: '700', textTransform: 'uppercase' }}>Tổng Vốn</div>
+                        <div style={{ fontSize: '12.5px', fontWeight: '800', color: '#ef4444' }}>{importCost.toLocaleString()}đ</div>
+                      </div>
+                      <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: '6px', padding: '6px 8px' }}>
+                        <div style={{ fontSize: '9.5px', color: '#64748b', fontWeight: '700', textTransform: 'uppercase' }}>📅 Mua</div>
+                        <div style={{ fontSize: '11.5px', fontWeight: '700', color: '#cbd5e1' }}>{purchaseDate ? new Date(purchaseDate).toLocaleDateString('vi-VN') : '—'}</div>
+                      </div>
+                      <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: '6px', padding: '6px 8px' }}>
+                        <div style={{ fontSize: '9.5px', color: '#64748b', fontWeight: '700', textTransform: 'uppercase' }}>⌛ Hạn Dùng</div>
+                        <div style={{ fontSize: '11.5px', fontWeight: '700', color: daysLeft !== null && daysLeft <= 0 ? '#ef4444' : '#cbd5e1' }}>
+                          {expireDate ? new Date(expireDate).toLocaleDateString('vi-VN') : '—'}
+                          {daysLeft !== null && (
+                            <span style={{ marginLeft: '3px', fontSize: '9.5px', color: daysLeft <= 0 ? '#ef4444' : daysLeft <= 7 ? '#f59e0b' : '#10b981', fontWeight: '700' }}>
+                              ({daysLeft <= 0 ? 'Hết hạn' : `${daysLeft}d`})
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </div>
 
-                    {/* Supplier & Expiry */}
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11.5px', color: '#64748b' }}>
-                      <span>{team.supplier_name || team.supplierName ? '🏭 ' + (team.supplier_name || team.supplierName) : '—'}</span>
-                      {daysLeft !== null && (
-                        <span style={{ color: daysLeft <= 7 ? '#ef4444' : daysLeft <= 30 ? '#f59e0b' : '#64748b', fontWeight: daysLeft <= 30 ? '700' : '400' }}>
-                          {daysLeft <= 0 ? '⛔ Đã hết hạn' : '📅 Còn ' + daysLeft + ' ngày'}
-                        </span>
+                    {/* BOTTOM RED BOX: Single Row, Equal Size Grid (NCC Badge, Acc Gốc Button, Bảo Hành Button) */}
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '6px', width: '100%', alignItems: 'center' }}>
+                      {/* NCC Badge */}
+                      <div style={{
+                        height: '32px', background: 'rgba(168, 85, 247, 0.15)', color: '#c084fc',
+                        border: '1px solid rgba(168, 85, 247, 0.35)', borderRadius: '8px', fontSize: '10.5px', fontWeight: '700',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px', padding: '0 4px', whiteSpace: 'nowrap', overflow: 'hidden'
+                      }}>
+                        <span style={{ fontSize: '11px' }}>🏭</span>
+                        <strong style={{ color: '#fff', fontWeight: '800', textOverflow: 'ellipsis', overflow: 'hidden' }}>{team.supplier_name || team.supplierName || '—'}</strong>
+                      </div>
+
+                      {/* Acc Gốc Button */}
+                      {team.infor ? (
+                        <button
+                          onClick={() => setShowCredentialsModal(team)}
+                          style={{
+                            height: '32px', padding: '0 4px', fontSize: '10.5px', fontWeight: '700', borderRadius: '8px', cursor: 'pointer',
+                            color: '#38bdf8', background: 'rgba(56,189,248,0.15)', border: '1px solid rgba(56,189,248,0.3)',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px', whiteSpace: 'nowrap'
+                          }}
+                        >
+                          <Eye size={11} /> 🔑 Acc Gốc
+                        </button>
+                      ) : (
+                        <div style={{ height: '32px' }} />
+                      )}
+
+                      {/* Bảo Hành Button */}
+                      {(team.warranty_policy || team.warrantyPolicy) ? (
+                        <button
+                          onClick={() => setShowWarrantyModal(team)}
+                          style={{
+                            height: '32px', padding: '0 4px', fontSize: '10.5px', fontWeight: '700', borderRadius: '8px', cursor: 'pointer',
+                            color: '#818cf8', background: 'rgba(99,102,241,0.15)', border: '1px solid rgba(99,102,241,0.3)',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px', whiteSpace: 'nowrap'
+                          }}
+                        >
+                          <ShieldCheck size={11} /> 📜 Bảo Hành
+                        </button>
+                      ) : (
+                        <div style={{ height: '32px' }} />
                       )}
                     </div>
-
-                    {/* Account Credentials */}
-                    {team.infor && (
-                      <div style={{ background: 'rgba(0,0,0,0.3)', borderRadius: '8px', padding: '8px 10px', fontSize: '12px', border: '1px solid rgba(255,255,255,0.06)' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
-                          <span style={{ color: '#64748b', fontSize: '10px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Tài Khoản Gốc</span>
-                          <div style={{ display: 'flex', gap: '4px' }}>
-                            <button onClick={() => toggleTeamRevealInfor(team.id)} style={{ background: 'none', border: 'none', color: '#64748b', cursor: 'pointer', padding: '2px' }}>
-                              {isRevealed ? <EyeOff size={12} /> : <Eye size={12} />}
-                            </button>
-                            <button onClick={() => handleCopyTeamInfor(team.infor, team.id)} style={{ background: 'none', border: 'none', color: teamCopiedId === 'team-' + team.id ? '#10b981' : '#64748b', cursor: 'pointer', padding: '2px' }}>
-                              {teamCopiedId === 'team-' + team.id ? <Check size={12} /> : <Copy size={12} />}
-                            </button>
-                          </div>
-                        </div>
-                        <div style={{ color: '#fff', fontFamily: 'monospace', fontSize: '11.5px', filter: isRevealed ? 'none' : 'blur(4px)', userSelect: isRevealed ? 'text' : 'none', wordBreak: 'break-all' }}>
-                          {team.infor}
-                        </div>
-                      </div>
-                    )}
                   </div>
                 );
               })}
@@ -955,7 +1043,7 @@ export default function Inventory() {
           {/* Team CRUD Modal */}
           {showTeamModal && createPortal(
             <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999, padding: '20px' }} onClick={closeTeamModal}>
-              <div style={{ background: '#111528', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '16px', padding: '28px', width: '100%', maxWidth: '560px', maxHeight: '90vh', overflowY: 'auto' }} onClick={e => e.stopPropagation()}>
+              <div style={{ background: '#111528', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '16px', padding: '28px', width: '100%', maxWidth: '580px', maxHeight: '90vh', overflowY: 'auto' }} onClick={e => e.stopPropagation()}>
                 <h3 style={{ fontSize: '18px', fontWeight: '800', color: '#fff', margin: '0 0 20px 0' }}>
                   {editingTeam ? '✏️ Chỉnh Sửa Kho Team' : '➕ Tạo Kho Team Mới'}
                 </h3>
@@ -986,30 +1074,73 @@ export default function Inventory() {
                         style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: '10px', padding: '10px 14px', color: '#fff', fontSize: '14px', boxSizing: 'border-box' }} />
                     </div>
                     <div style={{ background: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.2)', borderRadius: '10px', padding: '10px 14px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-                      <div style={{ fontSize: '10px', color: '#64748b', fontWeight: '600' }}>GIỐNG VỐN / 1 SLOT</div>
-                      <div style={{ fontSize: '16px', fontWeight: '800', color: '#10b981' }}>{teamLiveUnitCost.toLocaleString()}đ</div>
+                      <div style={{ fontSize: '10px', color: '#64748b', fontWeight: '600' }}>GIÁ VỐN / 1 SLOT</div>
+                      <div style={{ fontSize: '16px', fontWeight: '800', color: '#10b981' }}>
+                        {((parseInt(teamFormData.maxSlots) || 1) > 0 ? Math.round(Number(teamFormData.importCost || 0) / (parseInt(teamFormData.maxSlots) || 1)) : 0).toLocaleString()}đ
+                      </div>
                     </div>
                   </div>
-                  <div>
-                    <label style={{ fontSize: '12px', color: '#94a3b8', display: 'block', marginBottom: '6px', fontWeight: '600' }}>Thông Tin Tài Khoản Gốc (Email | Pass | 2FA)</label>
-                    <textarea rows={3} value={teamFormData.infor} onChange={e => setTeamFormData(f => ({ ...f, infor: e.target.value }))}
-                      placeholder="email@gmail.com | password123 | 2FA_secret" style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: '10px', padding: '10px 14px', color: '#fff', fontSize: '13px', fontFamily: 'monospace', resize: 'vertical', boxSizing: 'border-box' }} />
-                  </div>
+
+                  {/* Dates Setup */}
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                     <div>
-                      <label style={{ fontSize: '12px', color: '#94a3b8', display: 'block', marginBottom: '6px', fontWeight: '600' }}>Nhà Cung Cấp</label>
-                      <select value={teamFormData.supplierId} onChange={e => setTeamFormData(f => ({ ...f, supplierId: e.target.value }))}
-                        style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: '10px', padding: '10px 14px', color: '#fff', fontSize: '14px', boxSizing: 'border-box' }}>
-                        <option value="">— Chọn NCC —</option>
-                        {suppliers.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-                      </select>
+                      <label style={{ fontSize: '12px', color: '#94a3b8', display: 'block', marginBottom: '6px', fontWeight: '600' }}>📅 Ngày Mua Team</label>
+                      <input type="date" value={teamFormData.purchaseDate} onChange={e => setTeamFormData(f => ({ ...f, purchaseDate: e.target.value }))}
+                        style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: '10px', padding: '10px 14px', color: '#fff', fontSize: '14px', boxSizing: 'border-box' }} />
                     </div>
                     <div>
-                      <label style={{ fontSize: '12px', color: '#94a3b8', display: 'block', marginBottom: '6px', fontWeight: '600' }}>Hết Hạn Nguồn Sỉ</label>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                        <label style={{ fontSize: '12px', color: '#94a3b8', fontWeight: '600' }}>⌛ Ngày Hết Hạn</label>
+                        <div style={{ display: 'flex', gap: '4px' }}>
+                          <button type="button" onClick={() => {
+                            const d = new Date(teamFormData.purchaseDate || Date.now());
+                            d.setFullYear(d.getFullYear() + 1);
+                            setTeamFormData(f => ({ ...f, expireDate: d.toISOString().split('T')[0] }));
+                          }} style={{ background: 'rgba(255,255,255,0.08)', border: 'none', color: '#38bdf8', fontSize: '10px', padding: '2px 6px', borderRadius: '4px', cursor: 'pointer' }}>+1 Năm</button>
+                          <button type="button" onClick={() => {
+                            const d = new Date(teamFormData.purchaseDate || Date.now());
+                            d.setMonth(d.getMonth() + 6);
+                            setTeamFormData(f => ({ ...f, expireDate: d.toISOString().split('T')[0] }));
+                          }} style={{ background: 'rgba(255,255,255,0.08)', border: 'none', color: '#38bdf8', fontSize: '10px', padding: '2px 6px', borderRadius: '4px', cursor: 'pointer' }}>+6 Thg</button>
+                        </div>
+                      </div>
                       <input type="date" value={teamFormData.expireDate} onChange={e => setTeamFormData(f => ({ ...f, expireDate: e.target.value }))}
                         style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: '10px', padding: '10px 14px', color: '#fff', fontSize: '14px', boxSizing: 'border-box' }} />
                     </div>
                   </div>
+
+                  {/* Status Selection */}
+                  <div>
+                    <label style={{ fontSize: '12px', color: '#94a3b8', display: 'block', marginBottom: '6px', fontWeight: '600' }}>Trạng Thái Ban Đầu</label>
+                    <select value={teamFormData.status} onChange={e => setTeamFormData(f => ({ ...f, status: e.target.value }))}
+                      style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: '10px', padding: '10px 14px', color: '#fff', fontSize: '14px', boxSizing: 'border-box' }}>
+                      <option value="ACTIVE">🟢 Đang hoạt động (ACTIVE)</option>
+                      <option value="FAULTY_DIE">🔴 Team Bị Die / Lỗi (FAULTY_DIE)</option>
+                      <option value="EXPIRED">⚪ Đã hết hạn (EXPIRED)</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label style={{ fontSize: '12px', color: '#94a3b8', display: 'block', marginBottom: '6px', fontWeight: '600' }}>Thông Tin Tài Khoản Gốc (Email | Pass | 2FA)</label>
+                    <textarea rows={2} value={teamFormData.infor} onChange={e => setTeamFormData(f => ({ ...f, infor: e.target.value }))}
+                      placeholder="email@gmail.com | password123 | 2FA_secret" style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: '10px', padding: '10px 14px', color: '#fff', fontSize: '13px', fontFamily: 'monospace', resize: 'vertical', boxSizing: 'border-box' }} />
+                  </div>
+
+                  <div>
+                    <label style={{ fontSize: '12px', color: '#94a3b8', display: 'block', marginBottom: '6px', fontWeight: '600' }}>📜 Điều Khoản & Chính Sách Bảo Hành Riêng Của Team</label>
+                    <textarea rows={3} value={teamFormData.warrantyPolicy} onChange={e => setTeamFormData(f => ({ ...f, warrantyPolicy: e.target.value }))}
+                      placeholder="VD: Không kick thành viên quá nhiều, Không set quyền Admin quá 2 người, Không tự ý đổi email..." style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: '10px', padding: '10px 14px', color: '#fff', fontSize: '13px', resize: 'vertical', boxSizing: 'border-box' }} />
+                  </div>
+
+                  <div>
+                    <label style={{ fontSize: '12px', color: '#94a3b8', display: 'block', marginBottom: '6px', fontWeight: '600' }}>Nhà Cung Cấp</label>
+                    <select value={teamFormData.supplierId} onChange={e => setTeamFormData(f => ({ ...f, supplierId: e.target.value }))}
+                      style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: '10px', padding: '10px 14px', color: '#fff', fontSize: '14px', boxSizing: 'border-box' }}>
+                      <option value="">— Chọn NCC —</option>
+                      {suppliers.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                    </select>
+                  </div>
+
                   <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', marginTop: '6px' }}>
                     <button type="button" onClick={closeTeamModal} className="glass-button" style={{ color: '#94a3b8' }}>Hủy</button>
                     <button type="submit" className="glass-button" style={{ background: 'linear-gradient(135deg,#10b981,#059669)', color: '#fff', fontWeight: '700' }}>
@@ -1022,6 +1153,78 @@ export default function Inventory() {
             document.body
           )}
 
+          {/* Credentials View Modal */}
+          {showCredentialsModal && createPortal(
+            <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 99999, padding: '20px' }} onClick={() => setShowCredentialsModal(null)}>
+              <div style={{ background: '#111528', border: '1px solid rgba(56,189,248,0.3)', borderRadius: '16px', padding: '24px', width: '100%', maxWidth: '520px' }} onClick={e => e.stopPropagation()}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', borderBottom: '1px solid rgba(255,255,255,0.08)', paddingBottom: '12px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <Key size={20} color="#38bdf8" />
+                    <h3 style={{ fontSize: '16px', fontWeight: '800', color: '#fff', margin: 0 }}>
+                      Tài Khoản Gốc: {showCredentialsModal.name}
+                    </h3>
+                  </div>
+                  <button onClick={() => setShowCredentialsModal(null)} style={{ background: 'none', border: 'none', color: '#64748b', cursor: 'pointer' }}><X size={18} /></button>
+                </div>
+
+                <div style={{ background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(255,255,255,0.08)', padding: '14px', borderRadius: '10px', fontSize: '13px', fontFamily: 'monospace', color: '#fff', wordBreak: 'break-all', lineHeight: '1.6' }}>
+                  {showCredentialsModal.infor || 'Chưa cập nhật tài khoản gốc'}
+                </div>
+
+                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '16px' }}>
+                  <button
+                    className="glass-button"
+                    onClick={() => {
+                      navigator.clipboard.writeText(showCredentialsModal.infor || '');
+                      toast.success('Đã copy tài khoản gốc!');
+                    }}
+                    style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#10b981' }}
+                  >
+                    <Copy size={14} /> Copy Tài Khoản
+                  </button>
+                  <button className="glass-button" onClick={() => setShowCredentialsModal(null)} style={{ color: '#fff' }}>Đóng</button>
+                </div>
+              </div>
+            </div>,
+            document.body
+          )}
+
+          {/* Warranty Policy View Modal */}
+          {showWarrantyModal && createPortal(
+            <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 99999, padding: '20px' }} onClick={() => setShowWarrantyModal(null)}>
+              <div style={{ background: '#111528', border: '1px solid rgba(99,102,241,0.3)', borderRadius: '16px', padding: '24px', width: '100%', maxWidth: '520px' }} onClick={e => e.stopPropagation()}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', borderBottom: '1px solid rgba(255,255,255,0.08)', paddingBottom: '12px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <ShieldCheck size={20} color="#6366f1" />
+                    <h3 style={{ fontSize: '16px', fontWeight: '800', color: '#fff', margin: 0 }}>
+                      Chính Sách Bảo Hành: {showWarrantyModal.name}
+                    </h3>
+                  </div>
+                  <button onClick={() => setShowWarrantyModal(null)} style={{ background: 'none', border: 'none', color: '#64748b', cursor: 'pointer' }}><X size={18} /></button>
+                </div>
+
+                <div style={{ background: 'rgba(255,255,255,0.03)', padding: '14px', borderRadius: '10px', fontSize: '13px', color: '#cbd5e1', lineHeight: '1.6', whiteSpace: 'pre-wrap', maxHeight: '300px', overflowY: 'auto' }}>
+                  {showWarrantyModal.warranty_policy || showWarrantyModal.warrantyPolicy || 'Chưa thiết lập điều khoản bảo hành riêng cho team này.'}
+                </div>
+
+                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '16px' }}>
+                  <button
+                    className="glass-button"
+                    onClick={() => {
+                      navigator.clipboard.writeText(showWarrantyModal.warranty_policy || showWarrantyModal.warrantyPolicy || '');
+                      toast.success('Đã copy nội dung bảo hành!');
+                    }}
+                    style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#38bdf8' }}
+                  >
+                    <Copy size={14} /> Copy Gửi Khách
+                  </button>
+                  <button className="glass-button" onClick={() => setShowWarrantyModal(null)} style={{ color: '#fff' }}>Đóng</button>
+                </div>
+              </div>
+            </div>,
+            document.body
+          )}
+
           {/* Delete Team Confirm */}
           <ConfirmDialog
             isOpen={!!confirmDeleteTeamId}
@@ -1029,6 +1232,147 @@ export default function Inventory() {
             message="Hành động này không thể hoàn tác. Team sẽ bị xóa vĩnh viễn."
             onConfirm={handleDeleteTeamConfirmed}
             onCancel={() => setConfirmDeleteTeamId(null)}
+          />
+        </div>
+      )}
+
+      {/* ─── TAB 3: PHIẾU NHẬP HÀNG (PURCHASES) ─── */}
+      {activeTab === 'purchases' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          {/* Summary Financial Cards for Purchases */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '12px' }}>
+            <div className="glass-panel" style={{ padding: '14px 18px' }}>
+              <div style={{ fontSize: '11px', color: '#64748b', fontWeight: '700', textTransform: 'uppercase', marginBottom: '4px' }}>Tổng Vốn Nhập Kho</div>
+              <div style={{ fontSize: '20px', fontWeight: '800', color: '#38bdf8' }}>{totalImportCost.toLocaleString()}đ</div>
+              <div style={{ fontSize: '11px', color: '#94a3b8', marginTop: '2px' }}>{totalSlots} slot / key đã nhập</div>
+            </div>
+            <div className="glass-panel" style={{ padding: '14px 18px' }}>
+              <div style={{ fontSize: '11px', color: '#64748b', fontWeight: '700', textTransform: 'uppercase', marginBottom: '4px' }}>Đã Thanh Toán NCC</div>
+              <div style={{ fontSize: '20px', fontWeight: '800', color: '#10b981' }}>{paidImportCost.toLocaleString()}đ</div>
+              <div style={{ fontSize: '11px', color: '#10b981', marginTop: '2px' }}>Đã quyết toán sỉ</div>
+            </div>
+            <div className="glass-panel" style={{ padding: '14px 18px' }}>
+              <div style={{ fontSize: '11px', color: '#64748b', fontWeight: '700', textTransform: 'uppercase', marginBottom: '4px' }}>Còn Nợ NCC</div>
+              <div style={{ fontSize: '20px', fontWeight: '800', color: '#ef4444' }}>{debtImportCost.toLocaleString()}đ</div>
+              <div style={{ fontSize: '11px', color: '#ef4444', marginTop: '2px' }}>Công nợ phải trả</div>
+            </div>
+          </div>
+
+          {/* Search & Filter Controls */}
+          <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
+            <div style={{ position: 'relative', flex: 1, minWidth: '220px' }}>
+              <Search style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#64748b' }} size={16} />
+              <input
+                type="text"
+                placeholder="Tìm phiếu nhập theo tên sản phẩm, NCC, ghi chú..."
+                value={purchaseSearchTerm}
+                onChange={e => setPurchaseSearchTerm(e.target.value)}
+                style={{
+                  width: '100%', padding: '10px 12px 10px 38px', background: 'rgba(255,255,255,0.05)',
+                  border: '1px solid rgba(255,255,255,0.1)', borderRadius: '10px', color: '#fff', fontSize: '13px', boxSizing: 'border-box'
+                }}
+              />
+            </div>
+
+            <select
+              value={filterPayment}
+              onChange={e => setFilterPayment(e.target.value)}
+              style={{
+                padding: '10px 14px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)',
+                borderRadius: '10px', color: '#fff', fontSize: '13px', cursor: 'pointer'
+              }}
+            >
+              <option value="ALL">Tất cả thanh toán</option>
+              <option value="PAID">Đã thanh toán (PAID)</option>
+              <option value="DEBT">Còn nợ NCC (DEBT)</option>
+            </select>
+          </div>
+
+          {/* Purchases Table */}
+          {filteredPurchases.length === 0 ? (
+            <div className="glass-panel" style={{ textAlign: 'center', padding: '40px', color: '#64748b', fontSize: '14px' }}>
+              Chưa có phiếu nhập hàng nào. Nhấn "+ Lập Phiếu Nhập Hàng Mới" để tạo.
+            </div>
+          ) : (
+            <div className="glass-panel" style={{ padding: 0, overflow: 'hidden' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+                <thead>
+                  <tr style={{ background: 'rgba(255,255,255,0.04)', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+                    <th style={{ padding: '12px 16px', textAlign: 'left', color: '#475569', fontSize: '11px', textTransform: 'uppercase', fontWeight: '700' }}>Mã Phiếu / Ngày Nhập</th>
+                    <th style={{ padding: '12px 16px', textAlign: 'left', color: '#475569', fontSize: '11px', textTransform: 'uppercase', fontWeight: '700' }}>Tên Sản Phẩm / Gói</th>
+                    <th style={{ padding: '12px 16px', textAlign: 'left', color: '#475569', fontSize: '11px', textTransform: 'uppercase', fontWeight: '700' }}>Nhà Cung Cấp</th>
+                    <th style={{ padding: '12px 16px', textAlign: 'right', color: '#475569', fontSize: '11px', textTransform: 'uppercase', fontWeight: '700' }}>Số Lượng</th>
+                    <th style={{ padding: '12px 16px', textAlign: 'right', color: '#475569', fontSize: '11px', textTransform: 'uppercase', fontWeight: '700' }}>Tổng Vốn Nhập</th>
+                    <th style={{ padding: '12px 16px', textAlign: 'center', color: '#475569', fontSize: '11px', textTransform: 'uppercase', fontWeight: '700' }}>Thanh Toán</th>
+                    <th style={{ padding: '12px 16px', textAlign: 'right', color: '#475569', fontSize: '11px', textTransform: 'uppercase', fontWeight: '700' }}>Thao Tác</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredPurchases.map(p => {
+                    const suppName = p.supplier_name || p.supplierName || '—';
+                    const isPaid = p.payment_status === 'PAID';
+                    return (
+                      <tr key={p.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+                        <td style={{ padding: '12px 16px', color: '#94a3b8' }}>
+                          <div style={{ fontWeight: '700', color: '#fff' }}>PN-{String(p.id).padStart(4, '0')}</div>
+                          <div style={{ fontSize: '11px', color: '#64748b' }}>{p.purchase_date || p.purchaseDate ? new Date(p.purchase_date || p.purchaseDate).toLocaleDateString('vi-VN') : '—'}</div>
+                        </td>
+                        <td style={{ padding: '12px 16px', color: '#fff', fontWeight: '600' }}>
+                          {p.product_name || p.productName || 'Sản phẩm nhập kho'}
+                        </td>
+                        <td style={{ padding: '12px 16px', color: '#c084fc', fontWeight: '700' }}>
+                          🏭 {suppName}
+                        </td>
+                        <td style={{ padding: '12px 16px', textAlign: 'right', fontWeight: '700', color: '#38bdf8' }}>
+                          {p.quantity || 1}
+                        </td>
+                        <td style={{ padding: '12px 16px', textAlign: 'right', fontWeight: '800', color: '#f59e0b' }}>
+                          {Number(p.import_cost || p.importCost || 0).toLocaleString()}đ
+                        </td>
+                        <td style={{ padding: '12px 16px', textAlign: 'center' }}>
+                          <span style={{
+                            background: isPaid ? 'rgba(16,185,129,0.15)' : 'rgba(239,68,68,0.15)',
+                            color: isPaid ? '#10b981' : '#ef4444',
+                            padding: '3px 8px', borderRadius: '12px', fontSize: '10.5px', fontWeight: '700',
+                            border: isPaid ? '1px solid rgba(16,185,129,0.3)' : '1px solid rgba(239,68,68,0.3)'
+                          }}>
+                            {isPaid ? '🟢 Đã trả đủ' : '🔴 Còn nợ'}
+                          </span>
+                        </td>
+                        <td style={{ padding: '12px 16px', textAlign: 'right' }}>
+                          <button
+                            onClick={() => setConfirmDeletePurchaseId(p.id)}
+                            style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.25)', borderRadius: '6px', padding: '4px 8px', color: '#f87171', cursor: 'pointer' }}
+                            title="Xóa phiếu nhập"
+                          >
+                            <Trash2 size={13} />
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          {/* Confirm Delete Purchase Modal */}
+          <ConfirmDialog
+            isOpen={!!confirmDeletePurchaseId}
+            title="Xóa Phiếu Nhập Hàng?"
+            message="Hành động này sẽ xóa vĩnh viễn phiếu nhập hàng khỏi sổ kế toán."
+            onConfirm={async () => {
+              const id = confirmDeletePurchaseId;
+              try {
+                await PurchaseService.remove(id);
+                setPurchases(prev => prev.filter(p => String(p.id) !== String(id)));
+                setConfirmDeletePurchaseId(null);
+                toast.success('Đã xóa phiếu nhập hàng!');
+              } catch (e) {
+                toast.error('Lỗi khi xóa phiếu nhập hàng.');
+              }
+            }}
+            onCancel={() => setConfirmDeletePurchaseId(null)}
           />
         </div>
       )}
