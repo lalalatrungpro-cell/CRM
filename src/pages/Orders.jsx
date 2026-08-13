@@ -414,7 +414,21 @@ export default function Orders() {
       } catch (e) {}
 
       const availTeam = teams.find(t => {
-        if (t.category !== prod.category) return false;
+        if (t.status === 'FAULTY_DIE') return false;
+
+        const tCat = (t.category || '').toLowerCase().trim();
+        const tName = (t.name || '').toLowerCase().trim();
+        const pCat = (prod.category || '').toLowerCase().trim();
+        const pN = (pName || '').toLowerCase().trim();
+
+        let isMatch = false;
+        if (tCat && pCat && tCat === pCat) isMatch = true;
+        else if (tCat && pN && (pN.includes(tCat) || tCat.includes(pN))) isMatch = true;
+        else if (pCat && tName && (tName.includes(pCat) || pCat.includes(tName))) isMatch = true;
+        else if (tName && pN && (tName.includes(pN) || pN.includes(tName))) isMatch = true;
+
+        if (!isMatch) return false;
+
         const used = orders.filter(o => String(o.team_id || o.teamId) === String(t.id)).length;
         return (t.max_slots || t.maxSlots || 1) - used > 0;
       });

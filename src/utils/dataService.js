@@ -2004,8 +2004,27 @@ export const InventoryService = {
       // Available single keys
       const availKeys = items.filter(i => i.product_name === pName && i.status === 'AVAILABLE').length;
 
-      // Available team slots
-      const matchingTeams = teams.filter(t => t.category === prod.category || t.name.includes(pName));
+      // Available team slots (Smart team matching)
+      const matchingTeams = teams.filter(t => {
+        if (t.status === 'FAULTY_DIE') return false;
+
+        const tCat = (t.category || '').toLowerCase().trim();
+        const tName = (t.name || '').toLowerCase().trim();
+        const pCat = (prod.category || '').toLowerCase().trim();
+        const pN = (pName || '').toLowerCase().trim();
+
+        if (tCat && pCat && tCat === pCat) return true;
+        if (tCat && pN && (pN.includes(tCat) || tCat.includes(pN))) return true;
+        if (pCat && tName && (tName.includes(pCat) || pCat.includes(tName))) return true;
+        if (tName && pN && (tName.includes(pN) || pN.includes(tName))) return true;
+
+        const tClean = tCat.replace(/(pro|premium|plus|slot|team)/gi, '').trim();
+        const pClean = pN.replace(/(pro|premium|plus|\(.*?\))/gi, '').trim();
+        if (tClean && pClean && tClean.length > 2 && (tClean.includes(pClean) || pClean.includes(tClean))) return true;
+
+        return false;
+      });
+
       let availSlots = 0;
       matchingTeams.forEach(t => {
         const used = orders.filter(o => String(o.team_id || o.teamId) === String(t.id)).length;
