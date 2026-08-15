@@ -430,8 +430,14 @@ export default function Inventory() {
 
   const handleBulkImport = async (e) => {
     e.preventDefault();
-    if (!bulkFormData.productName) return toast.error('Vui lòng chọn hoặc nhập tên sản phẩm!');
-    if (!bulkFormData.linesText.trim()) return toast.error('Vui lòng dán danh sách key / tài khoản!');
+    if (!bulkFormData.productName) return toast.error('Vui lòng chọn Sản phẩm!');
+    if (!bulkFormData.assetType) return toast.error('Vui lòng chọn Loại tài sản số!');
+    if (!bulkFormData.supplierId) return toast.error('Vui lòng chọn Nhà cung cấp!');
+    if (bulkFormData.costPrice === '' || bulkFormData.costPrice === null || bulkFormData.costPrice === undefined) {
+      return toast.error('Vui lòng nhập Giá vốn cho 1 Key (VNĐ)!');
+    }
+    if (!bulkFormData.expireDate) return toast.error('Vui lòng chọn hoặc nhập Thời gian bảo hành / Hạn sử dụng!');
+    if (!bulkFormData.linesText.trim()) return toast.error('Vui lòng dán Danh sách key / tài khoản!');
 
     const supp = suppliers.find(s => String(s.id) === String(bulkFormData.supplierId));
     const suppName = supp ? supp.name : '';
@@ -1785,7 +1791,7 @@ export default function Inventory() {
                     onChange={e => handleProductSelect(e.target.value)}
                     required
                   >
-                    <option value="">-- Chọn sản phẩm --</option>
+                    <option value="">-- Chọn sản phẩm * --</option>
                     {products.map(p => (
                       <option key={p.id} value={p.name}>{p.name}</option>
                     ))}
@@ -1793,11 +1799,12 @@ export default function Inventory() {
                 </div>
 
                 <div>
-                  <label className="form-label">Loại Tài Sản Số</label>
+                  <label className="form-label">Loại Tài Sản Số *</label>
                   <select
                     className="glass-input"
                     value={bulkFormData.assetType}
                     onChange={e => setBulkFormData({ ...bulkFormData, assetType: e.target.value })}
+                    required
                   >
                     <option value="ACCOUNT">Tài Khoản (Email|Pass)</option>
                     <option value="SINGLE_KEY">License Key / Serial</option>
@@ -1809,13 +1816,14 @@ export default function Inventory() {
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                 <div>
-                  <label className="form-label">Nhà Cung Cấp</label>
+                  <label className="form-label">Nhà Cung Cấp *</label>
                   <select
                     className="glass-input"
                     value={bulkFormData.supplierId}
                     onChange={e => setBulkFormData({ ...bulkFormData, supplierId: e.target.value })}
+                    required
                   >
-                    <option value="">-- Chọn nhà cung cấp --</option>
+                    <option value="">-- Chọn nhà cung cấp * --</option>
                     {suppliers.map(s => (
                       <option key={s.id} value={s.id}>{s.name}</option>
                     ))}
@@ -1823,13 +1831,59 @@ export default function Inventory() {
                 </div>
 
                 <div>
-                  <label className="form-label">Giá Vốn / 1 Key (VNĐ)</label>
+                  <label className="form-label">Giá Vốn / 1 Key (VNĐ) *</label>
                   <input
                     type="number"
+                    min="0"
                     className="glass-input"
                     value={bulkFormData.costPrice}
                     onChange={e => setBulkFormData({ ...bulkFormData, costPrice: e.target.value })}
                     placeholder="VD: 50000"
+                    required
+                  />
+                </div>
+              </div>
+
+              {/* Warranty & Expiry Date Row (NEW) */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                <div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                    <label className="form-label" style={{ margin: 0 }}>🛡️ Thời Gian BH / Hạn Sử Dụng *</label>
+                    <div style={{ display: 'flex', gap: '4px' }}>
+                      <button type="button" onClick={() => {
+                        const d = new Date();
+                        d.setMonth(d.getMonth() + 1);
+                        setBulkFormData(f => ({ ...f, expireDate: d.toISOString().split('T')[0] }));
+                      }} style={{ background: 'rgba(255,255,255,0.08)', border: 'none', color: '#38bdf8', fontSize: '10px', padding: '2px 6px', borderRadius: '4px', cursor: 'pointer' }}>+1 Thg</button>
+                      <button type="button" onClick={() => {
+                        const d = new Date();
+                        d.setMonth(d.getMonth() + 6);
+                        setBulkFormData(f => ({ ...f, expireDate: d.toISOString().split('T')[0] }));
+                      }} style={{ background: 'rgba(255,255,255,0.08)', border: 'none', color: '#38bdf8', fontSize: '10px', padding: '2px 6px', borderRadius: '4px', cursor: 'pointer' }}>+6 Thg</button>
+                      <button type="button" onClick={() => {
+                        const d = new Date();
+                        d.setFullYear(d.getFullYear() + 1);
+                        setBulkFormData(f => ({ ...f, expireDate: d.toISOString().split('T')[0] }));
+                      }} style={{ background: 'rgba(255,255,255,0.08)', border: 'none', color: '#38bdf8', fontSize: '10px', padding: '2px 6px', borderRadius: '4px', cursor: 'pointer' }}>+1 Năm</button>
+                    </div>
+                  </div>
+                  <input
+                    type="date"
+                    required
+                    className="glass-input"
+                    value={bulkFormData.expireDate || ''}
+                    onChange={e => setBulkFormData({ ...bulkFormData, expireDate: e.target.value })}
+                  />
+                </div>
+
+                <div>
+                  <label className="form-label">Ghi Chú Đợt Nhập (Tùy chọn)</label>
+                  <input
+                    type="text"
+                    className="glass-input"
+                    value={bulkFormData.notes || ''}
+                    onChange={e => setBulkFormData({ ...bulkFormData, notes: e.target.value })}
+                    placeholder="Ghi chú thêm về đợt nhập..."
                   />
                 </div>
               </div>
