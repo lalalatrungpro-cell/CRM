@@ -193,11 +193,17 @@ export default function Inventory() {
   };
   const handleSaveTeam = async (e) => {
     e.preventDefault();
-    if (!teamFormData.name.trim()) return toast.error('Vui lòng nhập tên team!');
+    if (!teamFormData.name.trim()) return toast.error('Vui lòng nhập Tên team!');
+    if (!teamFormData.category) return toast.error('Vui lòng chọn Loại dịch vụ!');
+    if (!teamFormData.maxSlots || parseInt(teamFormData.maxSlots) <= 0) return toast.error('Vui lòng nhập Số slot tối đa (> 0)!');
+    if (teamFormData.importCost === '' || teamFormData.importCost === null || teamFormData.importCost === undefined) return toast.error('Vui lòng nhập Tổng tiền vốn mua!');
+    if (!teamFormData.purchaseDate) return toast.error('Vui lòng chọn Ngày mua team!');
+    if (!teamFormData.expireDate) return toast.error('Vui lòng chọn Ngày hết hạn!');
+    if (!teamFormData.status) return toast.error('Vui lòng chọn Trạng thái ban đầu!');
+    if (!teamFormData.infor.trim()) return toast.error('Vui lòng nhập Thông tin tài khoản gốc (Email | Pass | 2FA)!');
+    if (!teamFormData.supplierId) return toast.error('Vui lòng chọn Nhà cung cấp!');
+    if (!teamFormData.paymentStatus) return toast.error('Vui lòng chọn Trạng thái thanh toán cho NCC!');
     const cost = Number(teamFormData.importCost || 0);
-    if (!editingTeam && cost > 0 && !teamFormData.paymentStatus) {
-      return toast.error('Vui lòng chọn trạng thái thanh toán cho NCC (Đã trả đủ hoặc Còn nợ)!');
-    }
     const supp = suppliers.find(s => String(s.id) === String(teamFormData.supplierId));
     const suppName = supp ? supp.name : '';
     const slots = parseInt(teamFormData.maxSlots) || 1;
@@ -1191,22 +1197,22 @@ export default function Inventory() {
                   </div>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                     <div>
-                      <label style={{ fontSize: '12px', color: '#94a3b8', display: 'block', marginBottom: '6px', fontWeight: '600' }}>Loại Dịch Vụ</label>
-                      <select value={teamFormData.category} onChange={e => handleTeamCategoryChange(e.target.value)}
+                      <label style={{ fontSize: '12px', color: '#94a3b8', display: 'block', marginBottom: '6px', fontWeight: '600' }}>Loại Dịch Vụ *</label>
+                      <select required value={teamFormData.category} onChange={e => handleTeamCategoryChange(e.target.value)}
                         style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: '10px', padding: '10px 14px', color: '#fff', fontSize: '14px', boxSizing: 'border-box' }}>
                         {Object.keys(CATEGORY_SLOTS).map(cat => <option key={cat} value={cat}>{cat}</option>)}
                       </select>
                     </div>
                     <div>
-                      <label style={{ fontSize: '12px', color: '#94a3b8', display: 'block', marginBottom: '6px', fontWeight: '600' }}>Số Slot Tối Đa</label>
-                      <input type="number" min="1" value={teamFormData.maxSlots} onChange={e => setTeamFormData(f => ({ ...f, maxSlots: e.target.value }))}
+                      <label style={{ fontSize: '12px', color: '#94a3b8', display: 'block', marginBottom: '6px', fontWeight: '600' }}>Số Slot Tối Đa *</label>
+                      <input required type="number" min="1" value={teamFormData.maxSlots} onChange={e => setTeamFormData(f => ({ ...f, maxSlots: e.target.value }))}
                         style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: '10px', padding: '10px 14px', color: '#fff', fontSize: '14px', boxSizing: 'border-box' }} />
                     </div>
                   </div>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                     <div>
-                      <label style={{ fontSize: '12px', color: '#94a3b8', display: 'block', marginBottom: '6px', fontWeight: '600' }}>Tổng Tiền Vốn Mua (đ)</label>
-                      <input type="number" min="0" value={teamFormData.importCost} onChange={e => setTeamFormData(f => ({ ...f, importCost: e.target.value }))}
+                      <label style={{ fontSize: '12px', color: '#94a3b8', display: 'block', marginBottom: '6px', fontWeight: '600' }}>Tổng Tiền Vốn Mua (đ) *</label>
+                      <input required type="number" min="0" value={teamFormData.importCost} onChange={e => setTeamFormData(f => ({ ...f, importCost: e.target.value }))}
                         style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: '10px', padding: '10px 14px', color: '#fff', fontSize: '14px', boxSizing: 'border-box' }} />
                     </div>
                     <div style={{ background: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.2)', borderRadius: '10px', padding: '10px 14px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
@@ -1220,13 +1226,13 @@ export default function Inventory() {
                   {/* Dates Setup */}
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                     <div>
-                      <label style={{ fontSize: '12px', color: '#94a3b8', display: 'block', marginBottom: '6px', fontWeight: '600' }}>📅 Ngày Mua Team</label>
-                      <input type="date" value={teamFormData.purchaseDate} onChange={e => setTeamFormData(f => ({ ...f, purchaseDate: e.target.value }))}
+                      <label style={{ fontSize: '12px', color: '#94a3b8', display: 'block', marginBottom: '6px', fontWeight: '600' }}>📅 Ngày Mua Team *</label>
+                      <input required type="date" value={teamFormData.purchaseDate} onChange={e => setTeamFormData(f => ({ ...f, purchaseDate: e.target.value }))}
                         style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: '10px', padding: '10px 14px', color: '#fff', fontSize: '14px', boxSizing: 'border-box' }} />
                     </div>
                     <div>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-                        <label style={{ fontSize: '12px', color: '#94a3b8', fontWeight: '600' }}>⌛ Ngày Hết Hạn</label>
+                        <label style={{ fontSize: '12px', color: '#94a3b8', fontWeight: '600' }}>⌛ Ngày Hết Hạn *</label>
                         <div style={{ display: 'flex', gap: '4px' }}>
                           <button type="button" onClick={() => {
                             const d = new Date(teamFormData.purchaseDate || Date.now());
@@ -1240,15 +1246,15 @@ export default function Inventory() {
                           }} style={{ background: 'rgba(255,255,255,0.08)', border: 'none', color: '#38bdf8', fontSize: '10px', padding: '2px 6px', borderRadius: '4px', cursor: 'pointer' }}>+6 Thg</button>
                         </div>
                       </div>
-                      <input type="date" value={teamFormData.expireDate} onChange={e => setTeamFormData(f => ({ ...f, expireDate: e.target.value }))}
+                      <input required type="date" value={teamFormData.expireDate} onChange={e => setTeamFormData(f => ({ ...f, expireDate: e.target.value }))}
                         style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: '10px', padding: '10px 14px', color: '#fff', fontSize: '14px', boxSizing: 'border-box' }} />
                     </div>
                   </div>
 
                   {/* Status Selection */}
                   <div>
-                    <label style={{ fontSize: '12px', color: '#94a3b8', display: 'block', marginBottom: '6px', fontWeight: '600' }}>Trạng Thái Ban Đầu</label>
-                    <select value={teamFormData.status} onChange={e => setTeamFormData(f => ({ ...f, status: e.target.value }))}
+                    <label style={{ fontSize: '12px', color: '#94a3b8', display: 'block', marginBottom: '6px', fontWeight: '600' }}>Trạng Thái Ban Đầu *</label>
+                    <select required value={teamFormData.status} onChange={e => setTeamFormData(f => ({ ...f, status: e.target.value }))}
                       style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: '10px', padding: '10px 14px', color: '#fff', fontSize: '14px', boxSizing: 'border-box' }}>
                       <option value="ACTIVE">🟢 Đang hoạt động (ACTIVE)</option>
                       <option value="FAULTY_DIE">🔴 Team Bị Die / Lỗi (FAULTY_DIE)</option>
@@ -1257,8 +1263,8 @@ export default function Inventory() {
                   </div>
 
                   <div>
-                    <label style={{ fontSize: '12px', color: '#94a3b8', display: 'block', marginBottom: '6px', fontWeight: '600' }}>Thông Tin Tài Khoản Gốc (Email | Pass | 2FA)</label>
-                    <textarea rows={2} value={teamFormData.infor} onChange={e => setTeamFormData(f => ({ ...f, infor: e.target.value }))}
+                    <label style={{ fontSize: '12px', color: '#94a3b8', display: 'block', marginBottom: '6px', fontWeight: '600' }}>Thông Tin Tài Khoản Gốc (Email | Pass | 2FA) *</label>
+                    <textarea required rows={2} value={teamFormData.infor} onChange={e => setTeamFormData(f => ({ ...f, infor: e.target.value }))}
                       placeholder="email@gmail.com | password123 | 2FA_secret" style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: '10px', padding: '10px 14px', color: '#fff', fontSize: '13px', fontFamily: 'monospace', resize: 'vertical', boxSizing: 'border-box' }} />
                   </div>
 
@@ -1270,8 +1276,8 @@ export default function Inventory() {
 
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                     <div>
-                      <label style={{ fontSize: '12px', color: '#94a3b8', display: 'block', marginBottom: '6px', fontWeight: '600' }}>🏭 Nhà Cung Cấp</label>
-                      <select value={teamFormData.supplierId} onChange={e => setTeamFormData(f => ({ ...f, supplierId: e.target.value }))}
+                      <label style={{ fontSize: '12px', color: '#94a3b8', display: 'block', marginBottom: '6px', fontWeight: '600' }}>🏭 Nhà Cung Cấp *</label>
+                      <select required value={teamFormData.supplierId} onChange={e => setTeamFormData(f => ({ ...f, supplierId: e.target.value }))}
                         style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: '10px', padding: '10px 14px', color: '#fff', fontSize: '14px', boxSizing: 'border-box' }}>
                         <option value="">— Chọn NCC —</option>
                         {suppliers.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
