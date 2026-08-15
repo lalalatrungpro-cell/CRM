@@ -84,6 +84,7 @@ export default function Inventory() {
     assetType: 'ACCOUNT',
     supplierId: '',
     costPrice: 0,
+    paymentStatus: '', // Mandatory user selection
     isPaidToSupplier: true,
     linesText: '',
     activationDeadline: '',
@@ -437,6 +438,7 @@ export default function Inventory() {
       return toast.error('Vui lòng nhập Giá vốn cho 1 Key (VNĐ)!');
     }
     if (!bulkFormData.expireDate) return toast.error('Vui lòng chọn hoặc nhập Thời gian bảo hành / Hạn sử dụng!');
+    if (!bulkFormData.paymentStatus) return toast.error('Vui lòng chọn Trạng thái thanh toán cho NCC!');
     if (!bulkFormData.linesText.trim()) return toast.error('Vui lòng dán Danh sách key / tài khoản!');
 
     const supp = suppliers.find(s => String(s.id) === String(bulkFormData.supplierId));
@@ -451,7 +453,7 @@ export default function Inventory() {
         supplier_id: bulkFormData.supplierId,
         supplier_name: suppName,
         cost_price: Number(bulkFormData.costPrice || 0),
-        is_paid_to_supplier: bulkFormData.isPaidToSupplier,
+        is_paid_to_supplier: bulkFormData.paymentStatus === 'PAID',
         lines_text: bulkFormData.linesText,
         activation_deadline: bulkFormData.activationDeadline || null,
         expire_date: bulkFormData.expireDate || null,
@@ -1906,22 +1908,42 @@ export default function Inventory() {
                 />
               </div>
 
-              {/* Auto-accounting summary bar */}
-              <div style={{ background: 'rgba(99,102,241,0.08)', border: '1px solid rgba(99,102,241,0.2)', padding: '10px 14px', borderRadius: '10px', fontSize: '12.5px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <div>
-                  <span style={{ color: '#94a3b8' }}>Tổng tiền vốn đợt nhập:</span>
-                  <strong style={{ color: '#f59e0b', fontSize: '14px', marginLeft: '6px' }}>
+              {/* Auto-accounting summary & Mandatory Payment Selection Bar */}
+              <div style={{ background: 'rgba(99,102,241,0.08)', border: '1px solid rgba(99,102,241,0.2)', padding: '12px 16px', borderRadius: '12px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ color: '#94a3b8', fontSize: '13px', fontWeight: '600' }}>💰 Tổng tiền vốn đợt nhập:</span>
+                  <strong style={{ color: '#f59e0b', fontSize: '16px', fontWeight: '800' }}>
                     {liveTotalBatchCost.toLocaleString()} VNĐ
                   </strong>
                 </div>
-                <label style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#fff', cursor: 'pointer' }}>
-                  <input
-                    type="checkbox"
-                    checked={bulkFormData.isPaidToSupplier}
-                    onChange={e => setBulkFormData({ ...bulkFormData, isPaidToSupplier: e.target.checked })}
-                  />
-                  <span>Đã thanh toán ngay (Ghi sổ quỹ)</span>
-                </label>
+
+                <div>
+                  <label style={{ fontSize: '12px', color: !bulkFormData.paymentStatus ? '#ef4444' : '#94a3b8', display: 'block', marginBottom: '6px', fontWeight: '700' }}>
+                    💳 Thanh Toán Cho NCC (Bắt buộc chọn) *
+                  </label>
+                  <select
+                    required
+                    value={bulkFormData.paymentStatus || ''}
+                    onChange={e => {
+                      const val = e.target.value;
+                      setBulkFormData(f => ({ ...f, paymentStatus: val, isPaidToSupplier: val === 'PAID' }));
+                    }}
+                    style={{
+                      width: '100%',
+                      background: 'rgba(0,0,0,0.3)',
+                      border: !bulkFormData.paymentStatus ? '1.5px solid #ef4444' : '1px solid rgba(255,255,255,0.15)',
+                      borderRadius: '8px',
+                      padding: '10px 14px',
+                      color: bulkFormData.paymentStatus ? '#fff' : '#f87171',
+                      fontSize: '13.5px',
+                      boxSizing: 'border-box'
+                    }}
+                  >
+                    <option value="" disabled>-- Bắt buộc chọn trạng thái thanh toán NCC * --</option>
+                    <option value="PAID">🟢 Đã thanh toán ngay cho NCC (Ghi sổ quỹ / Chi tiền)</option>
+                    <option value="DEBT">🔴 Còn Nợ NCC (Ghi sổ công nợ nhà cung cấp)</option>
+                  </select>
+                </div>
               </div>
 
               <div style={{ display: 'flex', gap: '10px', marginTop: '6px' }}>
