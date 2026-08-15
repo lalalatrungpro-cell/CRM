@@ -1,6 +1,14 @@
 import React, { useState } from 'react';
 import { Calendar, X } from 'lucide-react';
 
+// Safe local-timezone date formatter — avoids UTC conversion losing last day of month (UTC+7 issue)
+const toLocalDateStr = (date) => {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+};
+
 export default function DateFilterBar({ onFilterChange, initialPreset = 'ALL', label = 'Khoảng Thời Gian:' }) {
   const [datePreset, setDatePreset] = useState(initialPreset);
   const [startDate, setStartDate] = useState('');
@@ -16,15 +24,15 @@ export default function DateFilterBar({ onFilterChange, initialPreset = 'ALL', l
       start = '';
       end = '';
     } else if (preset === 'THIS_MONTH') {
-      start = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
-      end = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0];
+      start = toLocalDateStr(new Date(now.getFullYear(), now.getMonth(), 1));
+      end = toLocalDateStr(new Date(now.getFullYear(), now.getMonth() + 1, 0));
     } else if (preset === 'LAST_MONTH') {
-      start = new Date(now.getFullYear(), now.getMonth() - 1, 1).toISOString().split('T')[0];
-      end = new Date(now.getFullYear(), now.getMonth(), 0).toISOString().split('T')[0];
+      start = toLocalDateStr(new Date(now.getFullYear(), now.getMonth() - 1, 1));
+      end = toLocalDateStr(new Date(now.getFullYear(), now.getMonth(), 0));
     } else if (preset === 'THIS_QUARTER') {
       const qMonth = Math.floor(now.getMonth() / 3) * 3;
-      start = new Date(now.getFullYear(), qMonth, 1).toISOString().split('T')[0];
-      end = new Date(now.getFullYear(), qMonth + 3, 0).toISOString().split('T')[0];
+      start = toLocalDateStr(new Date(now.getFullYear(), qMonth, 1));
+      end = toLocalDateStr(new Date(now.getFullYear(), qMonth + 3, 0));
     } else if (preset === 'THIS_YEAR') {
       start = `${now.getFullYear()}-01-01`;
       end = `${now.getFullYear()}-12-31`;

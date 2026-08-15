@@ -79,7 +79,14 @@ const mergeData = (supaList, localKey) => {
   localList.forEach(item => map.set(String(item.id), item));
   supaList.forEach(item => map.set(String(item.id), item));
   
-  return Array.from(map.values()).sort((a, b) => (b.id - a.id));
+  return Array.from(map.values()).sort((a, b) => {
+    const aId = String(a.id || '');
+    const bId = String(b.id || '');
+    const aNum = Number(aId);
+    const bNum = Number(bId);
+    if (!isNaN(aNum) && !isNaN(bNum)) return bNum - aNum;
+    return bId.localeCompare(aId);
+  });
 };
 
 
@@ -266,7 +273,7 @@ export function generateDailyOrderId(currentOrders = []) {
   });
 
   const nextSeq = maxSeq + 1;
-  return `${datePrefix}${nextSeq}`;
+  return `${datePrefix}${String(nextSeq).padStart(3, '0')}`;
 }
 
 // ==================== ORDERS ====================
@@ -2030,9 +2037,24 @@ export const InventoryService = {
   // Nhập - Xuất - Tồn (N-X-T Report 360°)
   async getNxtReport(shopId, startDate = null, endDate = null) {
     const products = await ProductService.list(shopId);
-    const items = await this.list(shopId);
+    const allItems = await this.list(shopId);
     const teams = await TeamService.list(shopId);
-    const orders = await OrderService.list(shopId);
+    const allOrders = await OrderService.list(shopId);
+
+    // Bug #2 Fix: Filter by date range so N-X-T report reflects the selected period
+    const inDateRange = (dateStr) => {
+      if (!dateStr) return true;
+      const d = String(dateStr).split('T')[0];
+      if (startDate && d < startDate) return false;
+      if (endDate && d > endDate) return false;
+      return true;
+    };
+    const items = (startDate || endDate)
+      ? allItems.filter(i => inDateRange(i.import_date || i.created_at))
+      : allItems;
+    const orders = (startDate || endDate)
+      ? allOrders.filter(o => inDateRange(o.purchase_date || o.created_at))
+      : allOrders;
 
     const reportMap = {};
 

@@ -724,6 +724,21 @@ export default function Orders() {
 
       const newOrder = await OrderService.create(shopId, payload);
 
+      // Bug #3 Fix: Sync customer.debt field when a Nợ order is created
+      if (payload.status === 'Nợ' && finalCustId && finalCustId !== 'NEW') {
+        try {
+          const custObj = customers.find(c => String(c.id) === String(finalCustId));
+          const currentDebt = Number(custObj?.debt || 0);
+          const newDebt = currentDebt + Number(payload.sell_price || 0);
+          await CustomerService.update(finalCustId, { debt: newDebt });
+          setCustomers(prev => prev.map(c =>
+            String(c.id) === String(finalCustId) ? { ...c, debt: newDebt } : c
+          ));
+        } catch (debtErr) {
+          console.error('Lỗi cập nhật công nợ khách hàng:', debtErr);
+        }
+      }
+
       // Auto-assign inventory item if used
       if (formData.inventoryItemId) {
         try {

@@ -31,6 +31,7 @@ export default function Dashboard() {
   const [suppliers, setSuppliers] = useState([]);
   const [cashSummary, setCashSummary] = useState({ totalIncome: 0, totalExpense: 0, netBalance: 0, cashBalance: 0, bankBalance: 0 });
   const [opexSummary, setOpexSummary] = useState({ totalFixed: 0, totalVariable: 0, totalOpex: 0 });
+  const [rawExpenses, setRawExpenses] = useState([]);
   const [payrolls, setPayrolls] = useState([]);
   const [purchases, setPurchases] = useState([]);
   const [inventorySummary, setInventorySummary] = useState({ availableCount: 0, totalInventoryValue: 0 });
@@ -81,7 +82,7 @@ export default function Dashboard() {
         CustomerService.list(shopId),
         SupplierService.list(shopId),
         CashTransactionService.getBalanceSummary(shopId),
-        ExpenseService.getOpexSummary(shopId),
+        ExpenseService.list(shopId),
         PayrollService.list(shopId),
         PurchaseService.list(shopId),
         InventoryService.getSummary(shopId),
@@ -92,7 +93,8 @@ export default function Dashboard() {
       setCustomers(cList || []);
       setSuppliers(sList || []);
       setCashSummary(cSum || { totalIncome: 0, totalExpense: 0, netBalance: 0, cashBalance: 0, bankBalance: 0 });
-      setOpexSummary(oSum || { totalFixed: 0, totalVariable: 0, totalOpex: 0 });
+      // Bug #1 Fix: store raw expense list, computed filtered opex in computed section
+      setRawExpenses(rawExpenseList || []);
       setPayrolls(pList || []);
       setPurchases(purList || []);
       setInventorySummary(invSum || { availableCount: 0, totalInventoryValue: 0 });
@@ -120,7 +122,14 @@ export default function Dashboard() {
   };
 
   const filteredOrders = orders.filter(o => isDateInRange(o.purchase_date || o.purchaseDate));
-  const paidOrders = filteredOrders.filter(o => o.status !== 'Từ chối bảo hành' && !String(o.status || '').includes('100%'));
+  const // Bug #5 Fix: Align with Customers.jsx — only count 'Đã thanh toán' as collected revenue
+  paidOrders = filteredOrders.filter(o => {
+    const s = String(o.status || '');
+    return s === 'Đã thanh toán' || (s.includes('Hoàn tiền') && !s.includes('100%'));
+  });
+  // Track Nợ (AR) separately for display in summary
+  const debtOrders = filteredOrders.filter(o => String(o.status || '').toLowerCase().trim() === 'nợ');
+  const totalDebtAR = debtOrders.reduce((sum, o) => sum + Number(o.sell_price || o.sellPrice || 0), 0);
 
   const totalRevenue = paidOrders.reduce((sum, o) => {
     const sellP = Number(o.sell_price || o.sellPrice || 0);
@@ -135,7 +144,20 @@ export default function Dashboard() {
   // OPEX components
   const filteredPayrolls = payrolls.filter(p => isDateInRange(p.payment_date || p.created_at));
   const totalPayrollPaid = filteredPayrolls.filter(p => p.status === 'PAID').reduce((sum, p) => sum + Number(p.net_salary || 0), 0);
-  const totalOpexExpenses = opexSummary.totalOpex;
+  // Bug #1 Fix: Compute OPEX filtered by selected date range
+  const filteredOpexSummary = (() => {
+    let totalFixed = 0, totalVariable = 0;
+    rawExpenses.forEach(item => {
+      const d = String(item.expense_date || item.created_at || '').split('T')[0];
+      if (dateRange.startDate && d < dateRange.startDate) return;
+      if (dateRange.endDate && d > dateRange.endDate) return;
+      const amt = Number(item.amount || 0);
+      if (item.expense_type === 'FIXED') totalFixed += amt;
+      else totalVariable += amt;
+    });
+    return { totalFixed, totalVariable, totalOpex: totalFixed + totalVariable };
+  })();
+  const totalOpexExpenses = filteredOpexSummary.totalOpex;
   const totalOperatingCost = totalOpexExpenses + totalPayrollPaid;
 
   // Real Net Profit
@@ -290,8 +312,8 @@ export default function Dashboard() {
       ['Biên lãi gộp (%):', grossMargin + '%'],
       ['', ''],
       ['4. CHI PHÍ VẬN HÀNH (OPEX)', -totalOperatingCost],
-      ['  - Chi phí Cố định (Mặt bằng, VPS, Tool):', -opexSummary.totalFixed],
-      ['  - Chi phí Biến động (Ads, Marketing):', -opexSummary.totalVariable],
+      ['  - Chi phí Cố định (Mặt bằng, VPS, Tool):', -filteredOpexSummary.totalFixed],
+      ['  - Chi phí Biến động (Ads, Marketing):', -filteredOpexSummary.totalVariable],
       ['  - Chi phí Lương nhân viên & Hoa hồng:', -totalPayrollPaid],
       ['', ''],
       ['5. LÃI RÒNG THỰC TẾ DOANH NGHIỆP (NET PROFIT)', realNetProfit],
@@ -512,8 +534,8 @@ export default function Dashboard() {
                   <BarChart3 size={16} color="#ef4444" /> Cơ Cấu Chi Phí Vận Hành (OPEX)
                 </h3>
                 {[
-                  { label: 'Chi phí Cố định (Mặt bằng, VPS)', value: opexSummary.totalFixed, color: '#38bdf8', icon: <Building size={14} color="#38bdf8" /> },
-                  { label: 'Chi phí Biến động (Ads, Marketing)', value: opexSummary.totalVariable, color: '#f59e0b', icon: <Megaphone size={14} color="#f59e0b" /> },
+                  { label: 'Chi phí Cố định (Mặt bằng, VPS)', value: filteredOpexSummary.totalFixed, color: '#38bdf8', icon: <Building size={14} color="#38bdf8" /> },
+                  { label: 'Chi phí Biến động (Ads, Marketing)', value: filteredOpexSummary.totalVariable, color: '#f59e0b', icon: <Megaphone size={14} color="#f59e0b" /> },
                   { label: 'Quỹ Lương & Hoa Hồng', value: totalPayrollPaid, color: '#10b981', icon: <Users size={14} color="#10b981" /> },
                 ].map((item, i) => (
                   <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '13px', marginBottom: '10px' }}>

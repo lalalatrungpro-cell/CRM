@@ -218,7 +218,16 @@ export default function Customers() {
   const totalPages = Math.ceil(filteredCustomers.length / PAGE_SIZE) || 1;
   const paginatedCustomers = filteredCustomers.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
 
-  const totalSpentAll = orders.filter(o => o.status === 'Đã thanh toán').reduce((sum, o) => sum + (o.sell_price || o.sellPrice || 0), 0);
+  const totalSpentAll = orders
+    .filter(o => {
+      const s = String(o.status || '');
+      return s === 'Đã thanh toán' || (s.includes('Hoàn tiền') && !s.includes('100%'));
+    })
+    .reduce((sum, o) => {
+      const sellP = Number(o.sell_price || o.sellPrice || 0);
+      const refP = Number(o.refund_amount || 0);
+      return sum + Math.max(0, sellP - refP);
+    }, 0);
   const totalDebtAll = customers.reduce((sum, c) => sum + (c.debt || 0), 0);
 
   const handleClearAllData = () => {
@@ -320,8 +329,15 @@ export default function Customers() {
                 {paginatedCustomers.map(customer => {
                   const custOrders = orders.filter(o => String(o.customer_id || o.customerId) === String(customer.id));
                   const totalSpent = custOrders
-                    .filter(o => o.status === 'Đã thanh toán')
-                    .reduce((sum, o) => sum + (o.sell_price || o.sellPrice || 0), 0);
+                    .filter(o => {
+                      const s = String(o.status || '');
+                      return s === 'Đã thanh toán' || (s.includes('Hoàn tiền') && !s.includes('100%'));
+                    })
+                    .reduce((sum, o) => {
+                      const sellP = Number(o.sell_price || o.sellPrice || 0);
+                      const refP = Number(o.refund_amount || 0);
+                      return sum + Math.max(0, sellP - refP);
+                    }, 0);
 
                   return (
                     <tr key={customer.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>

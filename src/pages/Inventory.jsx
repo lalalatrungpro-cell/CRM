@@ -577,6 +577,18 @@ export default function Inventory() {
     return true;
   });
 
+  
+  // Bug #8 Fix: Compute summary from filtered items so header cards reflect current filter context
+  const filteredSummary = {
+    totalItems: filteredSingleItems.length,
+    availableCount: filteredSingleItems.filter(i => i.status === 'AVAILABLE').length,
+    soldCount: filteredSingleItems.filter(i => i.status === 'SOLD').length,
+    faultyCount: filteredSingleItems.filter(i => i.status === 'FAULTY').length,
+    totalInventoryValue: filteredSingleItems
+      .filter(i => i.status === 'AVAILABLE')
+      .reduce((sum, i) => sum + Number(i.cost_price || 0), 0),
+  };
+
   // Calculate live lines in Bulk Import modal
   const liveLinesCount = bulkFormData.linesText.split('\n').map(l => l.trim()).filter(l => l.length > 0).length;
   const liveTotalBatchCost = liveLinesCount * Number(bulkFormData.costPrice || 0);
@@ -652,21 +664,21 @@ export default function Inventory() {
         <div className="glass-panel" style={{ padding: '16px 20px', borderLeft: '4px solid #6366f1' }}>
           <span style={{ fontSize: '12px', color: '#94a3b8', fontWeight: '600' }}>TỔNG KEY TRONG KHO</span>
           <div style={{ fontSize: '24px', fontWeight: '800', color: '#fff', marginTop: '4px' }}>
-            {summary.totalItems} <span style={{ fontSize: '13px', color: '#64748b' }}>items</span>
+            {filteredSummary.totalItems} <span style={{ fontSize: '13px', color: '#64748b' }}>items</span>
           </div>
         </div>
 
         <div className="glass-panel" style={{ padding: '16px 20px', borderLeft: '4px solid #10b981' }}>
           <span style={{ fontSize: '12px', color: '#94a3b8', fontWeight: '600' }}>SẴN SÀNG BÁN (AVAILABLE)</span>
           <div style={{ fontSize: '24px', fontWeight: '800', color: '#10b981', marginTop: '4px' }}>
-            {summary.availableCount} <span style={{ fontSize: '13px', color: '#64748b' }}>khả dụng</span>
+            {filteredSummary.availableCount} <span style={{ fontSize: '13px', color: '#64748b' }}>khả dụng</span>
           </div>
         </div>
 
         <div className="glass-panel" style={{ padding: '16px 20px', borderLeft: '4px solid #818cf8' }}>
           <span style={{ fontSize: '12px', color: '#94a3b8', fontWeight: '600' }}>ĐÃ BÁN POS (SOLD)</span>
           <div style={{ fontSize: '24px', fontWeight: '800', color: '#818cf8', marginTop: '4px' }}>
-            {summary.soldCount} <span style={{ fontSize: '13px', color: '#64748b' }}>đơn hàng</span>
+            {filteredSummary.soldCount} <span style={{ fontSize: '13px', color: '#64748b' }}>đơn hàng</span>
           </div>
         </div>
 
@@ -680,7 +692,7 @@ export default function Inventory() {
         <div className="glass-panel" style={{ padding: '16px 20px', borderLeft: '4px solid #f59e0b' }}>
           <span style={{ fontSize: '12px', color: '#94a3b8', fontWeight: '600' }}>TỔNG GIÁ TRỊ TỒN KHO (VỐN)</span>
           <div style={{ fontSize: '22px', fontWeight: '800', color: '#f59e0b', marginTop: '4px' }}>
-            {(summary.totalInventoryValue || 0).toLocaleString()} <span style={{ fontSize: '13px', color: '#64748b' }}>VNĐ</span>
+            {(filteredSummary.totalInventoryValue || 0).toLocaleString()} <span style={{ fontSize: '13px', color: '#64748b' }}>VNĐ</span>
           </div>
         </div>
       </div>
