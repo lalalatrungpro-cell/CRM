@@ -1918,6 +1918,22 @@ export default function Orders() {
                   
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
                     <div>
+                      <label className="form-label" style={{ color: '#c084fc', fontWeight: '700' }}>🏷️ Phân Loại Khách Hàng *</label>
+                      <select
+                        className="glass-input"
+                        value={formData.newCustomerType || 'Le'}
+                        onChange={e => handleNewCustomerTypeChange(e.target.value)}
+                        style={{ borderColor: 'rgba(192,132,252,0.4)', color: '#fff' }}
+                      >
+                        <option value="Le">Khách Lẻ (Áp giá bán lẻ chuẩn)</option>
+                        <option value="CTV">Cộng Tác Viên (Áp giá chiết khấu CTV)</option>
+                        <option value="Si">🟣 Khách Sỉ / Đại Lý (Áp giá sỉ ưu đãi cao)</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                    <div>
                       <label className="form-label">Tên Khách Mới *</label>
                       <input
                         type="text" required className="glass-input" placeholder="VD: Nguyễn Văn B"
