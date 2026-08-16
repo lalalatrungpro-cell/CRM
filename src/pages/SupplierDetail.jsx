@@ -66,7 +66,14 @@ export default function SupplierDetail() {
       setPriceHistory(priceList || []);
       const catList = await SupplierCatalogService.listBySupplier(shopId, id);
       setCatalogItems(catList || []);
-      if ((prodList || []).length > 0) setDailyProductName(prodList[0].name);
+      if ((catList || []).length > 0) {
+        const firstCat = catList[0];
+        const firstName = firstCat.product_name || firstCat.productName;
+        setDailyProductName(firstName);
+        setDailyPrice(String(firstCat.wholesale_price || firstCat.wholesalePrice || ''));
+      } else if ((prodList || []).length > 0) {
+        setDailyProductName(prodList[0].name);
+      }
     } catch (err) {
       console.error(err);
       toast.error('Lỗi khi tải thông tin nhà cung cấp!');
@@ -92,12 +99,15 @@ export default function SupplierDetail() {
         warrantyPolicy: catWarrantyPolicy,
         productDescription: catDescription
       });
-      toast.success('Đã lưu sản phẩm vào danh mục NCC!');
+      toast.success('Đã lưu sản phẩm vào danh mục NCC & đồng bộ form nạp giá!');
+      const newPriceStr = String(catPrice);
       setCatPrice('');
       setCatDescription('');
       setShowAddCatalogModal(false);
       const updatedCat = await SupplierCatalogService.listBySupplier(shopId, id);
       setCatalogItems(updatedCat || []);
+      setDailyProductName(catProductName);
+      setDailyPrice(newPriceStr);
     } catch (err) {
       console.error(err);
       toast.error('Lỗi khi lưu danh mục sản phẩm.');
@@ -322,12 +332,60 @@ export default function SupplierDetail() {
           </h4>
           <form onSubmit={handleSaveDailyPrice} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
             <div>
-              <label className="form-label">Chọn Sản Phẩm Sỉ</label>
-              <select className="glass-input" required value={dailyProductName} onChange={e => setDailyProductName(e.target.value)}>
-                {products.map(p => (
-                  <option key={p.id} value={p.name}>{p.name}</option>
-                ))}
+              <label className="form-label" style={{ color: '#f59e0b', fontWeight: '700' }}>1. Chọn Sản Phẩm Sỉ *</label>
+              <select
+                className="glass-input" required
+                value={dailyProductName}
+                onChange={e => {
+                  const selectedName = e.target.value;
+                  setDailyProductName(selectedName);
+                  const matchedCat = catalogItems.find(c => (c.product_name || c.productName) === selectedName);
+                  if (matchedCat) {
+                    setDailyPrice(String(matchedCat.wholesale_price || matchedCat.wholesalePrice || ''));
+                  }
+                }}
+              >
+                {catalogItems.length > 0 && (
+                  <optgroup label={`📦 Danh Mục SP Của NCC ${supplier?.name || ''} (${catalogItems.length})`}>
+                    {catalogItems.map(c => {
+                      const pName = c.product_name || c.productName;
+                      const pPrice = Number(c.wholesale_price || c.wholesalePrice || 0).toLocaleString();
+                      return (
+                        <option key={'cat-' + c.id} value={pName}>
+                          {pName} (Giá sỉ chuẩn: {pPrice}đ)
+                        </option>
+                      );
+                    })}
+                  </optgroup>
+                )}
+                <optgroup label="🌐 Tất Cả Sản Phẩm Khác Trên Hệ Thống">
+                  {products
+                    .filter(p => !catalogItems.some(c => (c.product_name || c.productName) === p.name))
+                    .map(p => (
+                      <option key={'prod-' + p.id} value={p.name}>{p.name}</option>
+                    ))}
+                </optgroup>
               </select>
+
+              {/* Live Catalog & Warranty Info Badge */}
+              {(() => {
+                const matchedCat = catalogItems.find(c => (c.product_name || c.productName) === dailyProductName);
+                if (!matchedCat) return null;
+                const pol = matchedCat.warranty_policy || matchedCat.warrantyPolicy;
+                const stdPrice = Number(matchedCat.wholesale_price || matchedCat.wholesalePrice || 0).toLocaleString();
+                return (
+                  <div style={{ marginTop: '8px', background: 'rgba(56,189,248,0.08)', border: '1px solid rgba(56,189,248,0.2)', padding: '8px 12px', borderRadius: '8px', fontSize: '11.5px', color: '#cbd5e1', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '6px' }}>
+                    <div>
+                      <span style={{ color: '#94a3b8' }}>Chính sách BH: </span>
+                      {pol === 'FULL_WARRANTY' ? <strong style={{ color: '#10b981' }}>🟢 BH FULL THỜI HẠN</strong> : pol === 'SEVEN_DAYS' ? <strong style={{ color: '#f59e0b' }}>🟡 BH 7 NGÀY ĐẦU</strong> : <strong style={{ color: '#ef4444' }}>🔴 KHÔNG BẢO HÀNH</strong>}
+                    </div>
+                    <div>
+                      <span style={{ color: '#94a3b8' }}>Giá chuẩn danh mục: </span>
+                      <strong style={{ color: '#10b981' }}>{stdPrice}đ</strong>
+                    </div>
+                  </div>
+                );
+              })()}
             </div>
             <div>
               <label className="form-label">Giá Nhập Sỉ Hôm Nay (VND)</label>
