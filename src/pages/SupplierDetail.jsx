@@ -71,8 +71,9 @@ export default function SupplierDetail() {
         const firstName = firstCat.product_name || firstCat.productName;
         setDailyProductName(firstName);
         setDailyPrice(String(firstCat.wholesale_price || firstCat.wholesalePrice || ''));
-      } else if ((prodList || []).length > 0) {
-        setDailyProductName(prodList[0].name);
+      } else {
+        setDailyProductName('');
+        setDailyPrice('');
       }
     } catch (err) {
       console.error(err);
@@ -335,6 +336,7 @@ export default function SupplierDetail() {
               <label className="form-label" style={{ color: '#f59e0b', fontWeight: '700' }}>1. Chọn Sản Phẩm Sỉ *</label>
               <select
                 className="glass-input" required
+                disabled={catalogItems.length === 0}
                 value={dailyProductName}
                 onChange={e => {
                   const selectedName = e.target.value;
@@ -345,27 +347,26 @@ export default function SupplierDetail() {
                   }
                 }}
               >
-                {catalogItems.length > 0 && (
-                  <optgroup label={`📦 Danh Mục SP Của NCC ${supplier?.name || ''} (${catalogItems.length})`}>
-                    {catalogItems.map(c => {
-                      const pName = c.product_name || c.productName;
-                      const pPrice = Number(c.wholesale_price || c.wholesalePrice || 0).toLocaleString();
-                      return (
-                        <option key={'cat-' + c.id} value={pName}>
-                          {pName} (Giá sỉ chuẩn: {pPrice}đ)
-                        </option>
-                      );
-                    })}
-                  </optgroup>
+                {catalogItems.length === 0 ? (
+                  <option value="">-- Chưa có sản phẩm nào trong Danh Mục NCC --</option>
+                ) : (
+                  catalogItems.map(c => {
+                    const pName = c.product_name || c.productName;
+                    const pPrice = Number(c.wholesale_price || c.wholesalePrice || 0).toLocaleString();
+                    return (
+                      <option key={'cat-' + c.id} value={pName}>
+                        {pName} (Giá sỉ chuẩn: {pPrice}đ)
+                      </option>
+                    );
+                  })
                 )}
-                <optgroup label="🌐 Tất Cả Sản Phẩm Khác Trên Hệ Thống">
-                  {products
-                    .filter(p => !catalogItems.some(c => (c.product_name || c.productName) === p.name))
-                    .map(p => (
-                      <option key={'prod-' + p.id} value={p.name}>{p.name}</option>
-                    ))}
-                </optgroup>
               </select>
+
+              {catalogItems.length === 0 && (
+                <div style={{ marginTop: '8px', padding: '10px 12px', borderRadius: '8px', background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.3)', color: '#f59e0b', fontSize: '11.5px' }}>
+                  ⚠️ NCC "{supplier?.name || ''}" chưa có sản phẩm nào trong Danh Mục. Hãy bấm <strong>"+ Thêm SP Vào Danh Mục"</strong> ở mục trên trước khi nạp giá hằng ngày!
+                </div>
+              )}
 
               {/* Live Catalog & Warranty Info Badge */}
               {(() => {
