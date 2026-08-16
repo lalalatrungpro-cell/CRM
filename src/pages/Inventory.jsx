@@ -106,6 +106,7 @@ export default function Inventory() {
   const [showTeamModal, setShowTeamModal] = useState(false);
   const [showWarrantyModal, setShowWarrantyModal] = useState(null);
   const [showCredentialsModal, setShowCredentialsModal] = useState(null);
+  const [showTeamMembersModal, setShowTeamMembersModal] = useState(null);
   const [editingTeam, setEditingTeam] = useState(null);
   const [confirmDeleteTeamId, setConfirmDeleteTeamId] = useState(null);
   const [teamRevealedInfors, setTeamRevealedInfors] = useState({});
