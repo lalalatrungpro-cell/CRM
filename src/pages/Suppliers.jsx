@@ -20,6 +20,8 @@ export default function Suppliers() {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('LIST');
   const [selectedCompareProduct, setSelectedCompareProduct] = useState('');
+  const [showPriceModal, setShowPriceModal] = useState(false);
+  const [priceFormData, setPriceFormData] = useState({ supplierId: '', productName: '', price: '', notes: '', syncToProduct: false });
 
   // Modals & Forms
   const [showModal, setShowModal] = useState(false);
@@ -29,6 +31,40 @@ export default function Suppliers() {
 
   // Filters
   const [searchTerm, setSearchTerm] = useState('');
+
+    const handleOpenPriceModal = (prodName = '') => {
+    setPriceFormData({
+      supplierId: suppliers.length > 0 ? String(suppliers[0].id) : '',
+      productName: prodName || selectedCompareProduct || (products.length > 0 ? products[0].name : ''),
+      price: '',
+      notes: '',
+      syncToProduct: false
+    });
+    setShowPriceModal(true);
+  };
+
+  const handleSavePriceModal = async (e) => {
+    e.preventDefault();
+    if (!priceFormData.supplierId || !priceFormData.productName || !priceFormData.price) {
+      return toast.error('Vui lòng chọn Nhà Cung Cấp, Sản Phẩm và Nhập Giá Sỉ!');
+    }
+    try {
+      await SupplierPriceService.saveDailyPrice(shopId, {
+        supplierId: priceFormData.supplierId,
+        productName: priceFormData.productName,
+        price: Number(priceFormData.price),
+        notes: priceFormData.notes,
+        syncToProduct: priceFormData.syncToProduct
+      });
+      toast.success('Đã nạp báo giá sỉ hôm nay thành công!');
+      setShowPriceModal(false);
+      const updatedPrices = await SupplierPriceService.listTodayPrices(shopId);
+      setTodayPrices(updatedPrices || []);
+    } catch (err) {
+      console.error(err);
+      toast.error('Lỗi khi lưu báo giá sỉ.');
+    }
+  };
 
   const loadData = async () => {
     if (!shopId) return;
@@ -327,13 +363,33 @@ export default function Suppliers() {
               <label className="form-label" style={{ margin: 0, fontWeight: 'bold', color: '#38bdf8' }}>Sản Phẩm Cần So Sánh:</label>
               <select
                 className="glass-input"
-                style={{ width: '260px', border: '1px solid #38bdf8' }}
+                style={{ width: '220px', border: '1px solid #38bdf8' }}
                 value={selectedCompareProduct} onChange={e => setSelectedCompareProduct(e.target.value)}
               >
                 {products.map(p => (
                   <option key={p.id} value={p.name}>{p.name}</option>
                 ))}
               </select>
+              <button
+                type="button"
+                onClick={() => handleOpenPriceModal(selectedCompareProduct)}
+                style={{
+                  background: 'linear-gradient(135deg, #10b981, #059669)',
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: '8px',
+                  padding: '8px 14px',
+                  fontSize: '12px',
+                  fontWeight: '800',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  whiteSpace: 'nowrap'
+                }}
+              >
+                <Plus size={15} /> Nạp Báo Giá Sỉ Mới
+              </button>
             </div>
           </div>
 
@@ -356,8 +412,31 @@ export default function Suppliers() {
                   <tbody>
                     {matchedPrices.length === 0 ? (
                       <tr>
-                        <td colSpan={6} style={{ padding: '30px', textAlign: 'center', color: '#64748b', fontStyle: 'italic' }}>
-                          Chưa có nhà cung cấp nào cập nhật giá sỉ hôm nay cho sản phẩm này. Hãy vào trang chi tiết Nhà Cung Cấp để lưu giá sỉ!
+                        <td colSpan={6} style={{ padding: '40px 20px', textAlign: 'center' }}>
+                          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
+                            <div style={{ color: '#94a3b8', fontSize: '13.5px' }}>
+                              Chưa có báo giá sỉ hôm nay cho sản phẩm <strong style={{ color: '#38bdf8' }}>"{selectedCompareProduct}"</strong> từ bất kỳ NCC nào.
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => handleOpenPriceModal(selectedCompareProduct)}
+                              style={{
+                                background: 'linear-gradient(135deg, #10b981, #059669)',
+                                color: '#fff',
+                                border: 'none',
+                                borderRadius: '8px',
+                                padding: '9px 18px',
+                                fontSize: '13px',
+                                fontWeight: '800',
+                                cursor: 'pointer',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '6px'
+                              }}
+                            >
+                              <Plus size={16} /> Nạp Báo Giá Sỉ Cho "{selectedCompareProduct}" Ngay
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     ) : (
