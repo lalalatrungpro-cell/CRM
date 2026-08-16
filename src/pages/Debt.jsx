@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { CustomerService, OrderService, SupplierService, VietQRService, CashTransactionService } from '../utils/dataService';
+import { CustomerService, OrderService, SupplierService, PurchaseService, VietQRService, CashTransactionService } from '../utils/dataService';
 import { getVietQRUrl } from '../utils/storage';
 import { useToast } from '../components/Toast';
 import DateFilterBar from '../components/DateFilterBar';
@@ -89,6 +89,7 @@ export default function Debt() {
   const [customers, setCustomers] = useState([]);
   const [orders, setOrders] = useState([]);
   const [suppliers, setSuppliers] = useState([]);
+  const [purchases, setPurchases] = useState([]);
   const [vietqr, setVietqr] = useState(null);
   const [loading, setLoading] = useState(true);
   const [dateRange, setDateRange] = useState({ startDate: '', endDate: '', preset: 'ALL' });
@@ -100,15 +101,17 @@ export default function Debt() {
     if (!shopId) return;
     setLoading(true);
     try {
-      const [custList, orderList, suppList, vqrData] = await Promise.all([
+      const [custList, orderList, suppList, purchaseList, vqrData] = await Promise.all([
         CustomerService.list(shopId),
         OrderService.list(shopId),
         SupplierService.list(shopId),
+        PurchaseService.list(shopId),
         VietQRService.get(shopId)
       ]);
       setCustomers(custList || []);
       setOrders(orderList || []);
       setSuppliers(suppList || []);
+      setPurchases(purchaseList || []);
       setVietqr(vqrData || { bank_id: 'MB', account_no: '0901234567', account_name: 'SHOP DROPSHIP CRM', memo_prefix: 'DON' });
     } catch (err) {
       console.error(err);
@@ -137,16 +140,27 @@ export default function Debt() {
   }).filter(c => c.debt > 0);
 
   const supplierDebts = suppliers.map(s => {
+    // 1. Công nợ từ Phiếu Nhập Hàng (Kho Team & Bulk Import mua nợ)
+    const suppPurchases = purchases.filter(p =>
+      String(p.supplier_id || p.supplierId) === String(s.id) &&
+      (p.payment_status === 'DEBT' || p.paymentStatus === 'DEBT')
+    );
+    const purchaseDebt = suppPurchases.reduce((sum, p) => sum + Number(p.import_cost || p.importCost || 0), 0);
+
+    // 2. Công nợ từ đơn POS (nếu có)
     const suppOrders = orders.filter(o => String(o.supplier_id || o.supplierId) === String(s.id));
     const unpaidSuppOrders = suppOrders.filter(o => o.supplier_paid === false || o.supplierPaid === false);
-    const calculatedDebt = unpaidSuppOrders.reduce((sum, o) => sum + (o.cost_price || o.costPrice || 0), 0);
-    const finalDebt = calculatedDebt > 0 ? calculatedDebt : (s.debt || 0);
+    const orderDebt = unpaidSuppOrders.reduce((sum, o) => sum + Number(o.cost_price || o.costPrice || 0), 0);
+
+    // Tổng nợ thực tế
+    const totalDebt = (purchaseDebt + orderDebt) > 0 ? (purchaseDebt + orderDebt) : Number(s.debt || 0);
 
     return {
       ...s,
-      debt: finalDebt,
-      unpaidOrdersCount: unpaidSuppOrders.length,
-      unpaidOrdersList: unpaidSuppOrders
+      debt: totalDebt,
+      unpaidPurchasesList: suppPurchases,
+      unpaidOrdersList: unpaidSuppOrders,
+      unpaidOrdersCount: suppPurchases.length + unpaidSuppOrders.length
     };
   }).filter(s => s.debt > 0);
 
@@ -188,6 +202,10 @@ export default function Debt() {
       const unpaidOrders = supplier.unpaidOrdersList || [];
       for (const order of unpaidOrders) {
         await OrderService.update(order.id, { supplier_paid: true, supplierPaid: true });
+      }
+      const unpaidPurchases = supplier.unpaidPurchasesList || [];
+      for (const p of unpaidPurchases) {
+        await PurchaseService.update(p.id, { payment_status: 'PAID', paymentStatus: 'PAID' });
       }
       await SupplierService.update(supplier.id, { debt: 0 });
 
