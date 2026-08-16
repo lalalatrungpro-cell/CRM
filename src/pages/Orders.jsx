@@ -1228,9 +1228,31 @@ export default function Orders() {
 
                       {/* 3. SẢN PHẨM & ACC */}
                       <td style={{ padding: '12px 10px', maxWidth: '230px' }}>
-                        <strong style={{ color: '#818cf8', display: 'block', marginBottom: '4px', fontSize: '13px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        <strong style={{ color: '#818cf8', display: 'block', marginBottom: '3px', fontSize: '13px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                           {prodName}
                         </strong>
+                        {linkedProd?.description && (
+                          <div
+                            title={`Mô tả sản phẩm: ${linkedProd.description}`}
+                            style={{
+                              fontSize: '11px',
+                              color: '#94a3b8',
+                              background: 'rgba(255,255,255,0.03)',
+                              border: '1px solid rgba(255,255,255,0.06)',
+                              padding: '3px 7px',
+                              borderRadius: '5px',
+                              marginBottom: '4px',
+                              lineClamp: 2,
+                              WebkitLineClamp: 2,
+                              display: '-webkit-box',
+                              WebkitBoxOrient: 'vertical',
+                              overflow: 'hidden',
+                              lineHeight: '1.3'
+                            }}
+                          >
+                            📝 {linkedProd.description}
+                          </div>
+                        )}
 
                         {/* Badges container for Supplier & Team */}
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
@@ -1511,6 +1533,15 @@ export default function Orders() {
                     {showDetailModal.order.product_name || showDetailModal.order.productName}
                   </p>
                   <span style={{ color: '#64748b', fontSize: '12px' }}>Nguồn Sỉ: {showDetailModal.order.supplier_name || showDetailModal.order.supplierName || 'Tự nhập'}</span>
+                  {(() => {
+                    const pObj = products.find(p => p.name === (showDetailModal.order.product_name || showDetailModal.order.productName));
+                    if (!pObj?.description) return null;
+                    return (
+                      <div style={{ fontSize: '11.5px', color: '#94a3b8', background: 'rgba(255,255,255,0.03)', padding: '6px 8px', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.06)', marginTop: '4px' }}>
+                        📝 {pObj.description}
+                      </div>
+                    );
+                  })()}
                 </div>
               </div>
 
