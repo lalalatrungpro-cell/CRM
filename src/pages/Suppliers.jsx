@@ -478,6 +478,90 @@ export default function Suppliers() {
         </div>
       )}
 
+      {/* Modal Quick Add Supplier Price */}
+      {showPriceModal && createPortal(
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999, padding: '20px' }} onClick={() => setShowPriceModal(false)}>
+          <div style={{ background: '#111528', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '16px', padding: '24px', width: '100%', maxWidth: '480px' }} onClick={e => e.stopPropagation()}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '18px' }}>
+              <h3 style={{ fontSize: '17px', fontWeight: '800', color: '#10b981', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                📋 Cập Nhật Báo Giá Sỉ Hôm Nay
+              </h3>
+              <button onClick={() => setShowPriceModal(false)} style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer' }}><X size={18} /></button>
+            </div>
+
+            <form onSubmit={handleSavePriceModal} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+              <div>
+                <label className="form-label">1. Chọn Nhà Cung Cấp (NCC) *</label>
+                <select
+                  className="glass-input" required
+                  value={priceFormData.supplierId}
+                  onChange={e => setPriceFormData({ ...priceFormData, supplierId: e.target.value })}
+                >
+                  <option value="">-- Chọn Nhà Cung Cấp --</option>
+                  {suppliers.map(s => (
+                    <option key={s.id} value={s.id}>{s.name} ({s.phone || 'N/A'})</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="form-label">2. Chọn Sản Phẩm Sỉ *</label>
+                <select
+                  className="glass-input" required
+                  value={priceFormData.productName}
+                  onChange={e => setPriceFormData({ ...priceFormData, productName: e.target.value })}
+                >
+                  <option value="">-- Chọn Sản Phẩm --</option>
+                  {products.map(p => (
+                    <option key={p.id} value={p.name}>{p.name}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="form-label">3. Giá Nhập Sỉ Hôm Nay (VNĐ) *</label>
+                <input
+                  type="number" required min="1" className="glass-input"
+                  placeholder="VD: 45000"
+                  value={priceFormData.price}
+                  onChange={e => setPriceFormData({ ...priceFormData, price: e.target.value })}
+                />
+              </div>
+
+              <div>
+                <label className="form-label">4. Ghi Chú Báo Giá (Tùy chọn)</label>
+                <input
+                  type="text" className="glass-input"
+                  placeholder="VD: Đang khuyến mãi xả kho 10%"
+                  value={priceFormData.notes}
+                  onChange={e => setPriceFormData({ ...priceFormData, notes: e.target.value })}
+                />
+              </div>
+
+              <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12.5px', color: '#38bdf8', cursor: 'pointer', background: 'rgba(56,189,248,0.08)', padding: '10px 12px', borderRadius: '8px', border: '1px solid rgba(56,189,248,0.2)' }}>
+                <input
+                  type="checkbox"
+                  checked={priceFormData.syncToProduct}
+                  onChange={e => setPriceFormData({ ...priceFormData, syncToProduct: e.target.checked })}
+                  style={{ accentColor: '#38bdf8', cursor: 'pointer' }}
+                />
+                <span>⚡ Đồng bộ làm Giá vốn mặc định cho POS</span>
+              </label>
+
+              <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
+                <button type="button" className="glass-button" onClick={() => setShowPriceModal(false)} style={{ flex: 1, padding: '10px' }}>
+                  Hủy
+                </button>
+                <button type="submit" className="glass-button" style={{ flex: 1.5, background: 'linear-gradient(135deg, #10b981, #059669)', color: '#fff', fontWeight: '800', padding: '10px' }}>
+                  💾 Lưu Báo Giá Sỉ
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>,
+        document.body
+      )}
+
       {/* Add / Edit Modal */}
       {showModal && (
         <div className="modal-overlay" onClick={closeModal}>
