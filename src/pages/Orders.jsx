@@ -1231,28 +1231,37 @@ export default function Orders() {
                         <strong style={{ color: '#818cf8', display: 'block', marginBottom: '3px', fontSize: '13px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                           {prodName}
                         </strong>
-                        {linkedProd?.description && (
-                          <div
-                            title={`Mô tả sản phẩm: ${linkedProd.description}`}
-                            style={{
-                              fontSize: '11px',
-                              color: '#94a3b8',
-                              background: 'rgba(255,255,255,0.03)',
-                              border: '1px solid rgba(255,255,255,0.06)',
-                              padding: '3px 7px',
-                              borderRadius: '5px',
-                              marginBottom: '4px',
-                              lineClamp: 2,
-                              WebkitLineClamp: 2,
-                              display: '-webkit-box',
-                              WebkitBoxOrient: 'vertical',
-                              overflow: 'hidden',
-                              lineHeight: '1.3'
-                            }}
-                          >
-                            📝 {linkedProd.description}
-                          </div>
-                        )}
+                        {(() => {
+                          const descText = linkedProd?.description || order.notes || (
+                            prodName?.includes('Canva') ? 'Kích hoạt Slot Canva Pro chính chủ. BH 1 đổi 1 365 ngày' :
+                            prodName?.includes('ChatGPT') ? 'Tài khoản ChatGPT Plus dùng chung. BH full thời hạn' :
+                            prodName?.includes('Google') ? 'Gói Google AI Pro Premium. BH 100% thời hạn' :
+                            'Quy cách dịch vụ chính chủ. BH full thời hạn'
+                          );
+                          if (!descText) return null;
+                          return (
+                            <div
+                              title={`Mô tả sản phẩm: ${descText}`}
+                              style={{
+                                fontSize: '10.5px',
+                                color: '#94a3b8',
+                                background: 'rgba(255,255,255,0.03)',
+                                border: '1px solid rgba(255,255,255,0.06)',
+                                padding: '3px 7px',
+                                borderRadius: '5px',
+                                marginBottom: '4px',
+                                lineClamp: 2,
+                                WebkitLineClamp: 2,
+                                display: '-webkit-box',
+                                WebkitBoxOrient: 'vertical',
+                                overflow: 'hidden',
+                                lineHeight: '1.3'
+                              }}
+                            >
+                              📝 {descText}
+                            </div>
+                          );
+                        })()}
 
                         {/* Badges container for Supplier & Team */}
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
