@@ -60,6 +60,8 @@ export default function Customers() {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState('ALL');
   const [currentPage, setCurrentPage] = useState(1);
+  const [showLeaderboard, setShowLeaderboard] = useState(false);
+  const [copiedZaloMsg, setCopiedZaloMsg] = useState('');
 
   const loadData = async () => {
     if (!shopId) return;
@@ -265,18 +267,35 @@ export default function Customers() {
       </div>
 
       {/* Metrics Summary */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '16px' }}>
-        <div className="glass-panel" style={{ padding: '16px', borderLeft: '4px solid #6366f1', display: 'flex', flexDirection: 'column', gap: '4px' }}>
-          <span style={{ color: '#94a3b8', fontSize: '12px', fontWeight: '600' }}>Tổng Số Khách Hàng</span>
-          <p style={{ fontSize: '24px', fontWeight: '800', color: '#fff', margin: 0 }}>{customers.length} khách</p>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '14px' }}>
+        <div className="glass-panel" style={{ padding: '16px', borderLeft: '4px solid #6366f1' }}>
+          <span style={{ color: '#94a3b8', fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Tổng Khách Hàng</span>
+          <p style={{ fontSize: '26px', fontWeight: '800', color: '#fff', margin: '6px 0 0' }}>{customers.length} khách</p>
+          <div style={{ fontSize: '11px', color: '#475569', marginTop: '4px', display: 'flex', gap: '8px' }}>
+            <span>🔵 Lẻ: {customers.filter(c => (c.type||'Le')==='Le').length}</span>
+            <span>🟡 CTV: {customers.filter(c => c.type==='CTV').length}</span>
+            <span>🟣 Sỉ: {customers.filter(c => c.type==='Si').length}</span>
+          </div>
         </div>
-        <div className="glass-panel" style={{ padding: '16px', borderLeft: '4px solid #10b981', display: 'flex', flexDirection: 'column', gap: '4px' }}>
-          <span style={{ color: '#94a3b8', fontSize: '12px', fontWeight: '600' }}>Tổng Chi Tiêu (LTV)</span>
-          <p style={{ fontSize: '24px', fontWeight: '800', color: '#10b981', margin: 0 }}>{totalSpentAll.toLocaleString()}đ</p>
+        <div className="glass-panel" style={{ padding: '16px', borderLeft: '4px solid #10b981' }}>
+          <span style={{ color: '#94a3b8', fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Tổng LTV (Chi Tiêu)</span>
+          <p style={{ fontSize: '26px', fontWeight: '800', color: '#10b981', margin: '6px 0 0' }}>{totalSpentAll.toLocaleString()}đ</p>
+          <div style={{ fontSize: '11px', color: '#475569', marginTop: '4px' }}>Tổng doanh thu từ tất cả khách hàng</div>
         </div>
-        <div className="glass-panel" style={{ padding: '16px', borderLeft: '4px solid #ef4444', display: 'flex', flexDirection: 'column', gap: '4px' }}>
-          <span style={{ color: '#94a3b8', fontSize: '12px', fontWeight: '600' }}>Tổng Công Nợ Phải Thu</span>
-          <p style={{ fontSize: '24px', fontWeight: '800', color: '#ef4444', margin: 0 }}>{totalDebtAll.toLocaleString()}đ</p>
+        <div className="glass-panel" style={{ padding: '16px', borderLeft: '4px solid #a855f7' }}>
+          <span style={{ color: '#94a3b8', fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Doanh Thu CTV/Sỉ</span>
+          <p style={{ fontSize: '26px', fontWeight: '800', color: '#a855f7', margin: '6px 0 0' }}>
+            {orders.filter(o => {
+              const cust = customers.find(c => String(c.id) === String(o.customer_id || o.customerId));
+              return cust && (cust.type === 'CTV' || cust.type === 'Si') && (String(o.status||'') === 'Đã thanh toán');
+            }).reduce((sum, o) => sum + Number(o.sell_price || o.sellPrice || 0), 0).toLocaleString()}đ
+          </p>
+          <div style={{ fontSize: '11px', color: '#475569', marginTop: '4px' }}>Tổng đơn của nhóm CTV + Đại Lý Sỉ</div>
+        </div>
+        <div className="glass-panel" style={{ padding: '16px', borderLeft: '4px solid #ef4444' }}>
+          <span style={{ color: '#94a3b8', fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Công Nợ Phải Thu</span>
+          <p style={{ fontSize: '26px', fontWeight: '800', color: '#ef4444', margin: '6px 0 0' }}>{totalDebtAll.toLocaleString()}đ</p>
+          <div style={{ fontSize: '11px', color: '#ef4444', marginTop: '4px', opacity: 0.7 }}>Từ {customers.filter(c => (c.debt||0)>0).length} khách có nợ</div>
         </div>
       </div>
 
@@ -294,16 +313,122 @@ export default function Customers() {
           {searchTerm && <button onClick={() => setSearchTerm('')} style={{ background: 'none', border: 'none', color: '#475569', cursor: 'pointer' }}><X size={14} /></button>}
         </div>
 
-        <select
-          className="glass-input" style={{ width: 'auto' }}
-          value={filterType} onChange={e => { setFilterType(e.target.value); setCurrentPage(1); }}
+        {/* Visual Tab Filters */}
+        <div style={{ display: 'flex', gap: '6px' }}>
+          {[
+            { key: 'ALL', label: '🌐 Tất Cả', count: customers.length, color: '#6366f1', bg: 'rgba(99,102,241,0.18)' },
+            { key: 'Le', label: '🔵 Khách Lẻ', count: customers.filter(c => (c.type||'Le')==='Le').length, color: '#06b6d4', bg: 'rgba(6,182,212,0.18)' },
+            { key: 'CTV', label: '🟡 CTV', count: customers.filter(c => c.type==='CTV').length, color: '#f59e0b', bg: 'rgba(245,158,11,0.18)' },
+            { key: 'Si', label: '🟣 Khách Sỉ', count: customers.filter(c => c.type==='Si').length, color: '#a855f7', bg: 'rgba(168,85,247,0.18)' },
+          ].map(tab => (
+            <button
+              key={tab.key}
+              onClick={() => { setFilterType(tab.key); setCurrentPage(1); }}
+              style={{
+                padding: '6px 14px', borderRadius: '8px', fontSize: '12px', fontWeight: '700', cursor: 'pointer',
+                border: filterType === tab.key ? `1.5px solid ${tab.color}` : '1px solid rgba(255,255,255,0.1)',
+                background: filterType === tab.key ? tab.bg : 'rgba(255,255,255,0.03)',
+                color: filterType === tab.key ? tab.color : '#64748b',
+                transition: 'all 0.15s'
+              }}
+            >
+              {tab.label} <span style={{ opacity: 0.7 }}>({tab.count})</span>
+            </button>
+          ))}
+        </div>
+
+        {/* Leaderboard Toggle */}
+        <button
+          onClick={() => setShowLeaderboard(v => !v)}
+          style={{
+            padding: '6px 14px', borderRadius: '8px', fontSize: '12px', fontWeight: '700', cursor: 'pointer',
+            border: showLeaderboard ? '1.5px solid #f59e0b' : '1px solid rgba(255,255,255,0.1)',
+            background: showLeaderboard ? 'rgba(245,158,11,0.18)' : 'rgba(255,255,255,0.03)',
+            color: showLeaderboard ? '#f59e0b' : '#64748b',
+            display: 'flex', alignItems: 'center', gap: '5px'
+          }}
+          title="Xem bảng xếp hạng CTV/Sỉ theo doanh số"
         >
-          <option value="ALL">Tất cả phân loại</option>
-          <option value="Le">Khách Lẻ</option>
-          <option value="CTV">Cộng Tác Viên</option>
-          <option value="Si">Khách Sỉ / Đại Lý</option>
-        </select>
+          🏆 Leaderboard CTV/Sỉ
+        </button>
       </div>
+
+      {/* CTV/Sỉ Leaderboard Panel */}
+      {showLeaderboard && (() => {
+        const ctvSiCustomers = customers.filter(c => c.type === 'CTV' || c.type === 'Si');
+        const ranked = ctvSiCustomers.map(c => {
+          const cOrders = orders.filter(o => String(o.customer_id || o.customerId) === String(c.id) && String(o.status||'') === 'Đã thanh toán');
+          const ltv = cOrders.reduce((s, o) => s + Number(o.sell_price || o.sellPrice || 0), 0);
+          const orderCount = cOrders.length;
+          return { ...c, ltv, orderCount };
+        }).sort((a, b) => b.ltv - a.ltv);
+
+        return (
+          <div className="glass-panel" style={{ padding: '20px', border: '1px solid rgba(245,158,11,0.2)', borderRadius: '14px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+              <h3 style={{ margin: 0, fontSize: '16px', fontWeight: '800', color: '#f59e0b', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                🏆 Bảng Xếp Hạng CTV & Khách Sỉ Theo Doanh Số
+              </h3>
+              <span style={{ fontSize: '12px', color: '#64748b' }}>{ranked.length} đối tác</span>
+            </div>
+            {ranked.length === 0 ? (
+              <div style={{ textAlign: 'center', color: '#475569', padding: '20px' }}>Chưa có Khách Sỉ / CTV nào trong hệ thống.</div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                {ranked.map((c, idx) => {
+                  const phone = (c.phone || '').replace(/[^0-9]/g, '');
+                  const typeColor = c.type === 'Si' ? '#a855f7' : '#f59e0b';
+                  const medal = idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : ('#' + (idx+1));
+                  const maxLtv = ranked[0]?.ltv || 1;
+                  const barWidth = Math.round((c.ltv / maxLtv) * 100);
+                  const zaloMsg = `Xin chào ${c.name}! Đây là báo giá sỉ từ shop mình gửi bạn. Bạn có thể đặt hàng hoặc liên hệ mình qua Zalo để được hỗ trợ tốt nhất nhé! 😊`;
+                  return (
+                    <div key={c.id} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 14px', borderRadius: '10px', background: idx < 3 ? 'rgba(245,158,11,0.06)' : 'rgba(255,255,255,0.02)', border: idx < 3 ? '1px solid rgba(245,158,11,0.15)' : '1px solid rgba(255,255,255,0.04)' }}>
+                      <span style={{ fontSize: idx < 3 ? '22px' : '14px', fontWeight: '800', minWidth: '32px', textAlign: 'center', color: '#f59e0b' }}>{medal}</span>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                          <span style={{ fontWeight: '700', color: '#fff', fontSize: '13.5px' }}>{c.name}</span>
+                          <span style={{ fontSize: '10px', fontWeight: '800', padding: '1px 6px', borderRadius: '4px', background: `${typeColor}20`, color: typeColor, border: `1px solid ${typeColor}40` }}>
+                            {c.type === 'Si' ? '🟣 Sỉ' : '🟡 CTV'}
+                          </span>
+                        </div>
+                        <div style={{ height: '5px', background: 'rgba(255,255,255,0.06)', borderRadius: '3px', overflow: 'hidden' }}>
+                          <div style={{ width: `${barWidth}%`, height: '100%', background: `linear-gradient(90deg, ${typeColor}, ${typeColor}80)`, borderRadius: '3px', transition: 'width 0.3s' }} />
+                        </div>
+                        <div style={{ fontSize: '11px', color: '#64748b', marginTop: '3px' }}>{c.orderCount} đơn · {c.phone || '—'}</div>
+                      </div>
+                      <div style={{ textAlign: 'right', minWidth: '110px' }}>
+                        <div style={{ fontWeight: '800', fontSize: '15px', color: '#10b981' }}>{c.ltv.toLocaleString()}đ</div>
+                        <div style={{ fontSize: '11px', color: '#475569' }}>Tổng LTV</div>
+                      </div>
+                      <div style={{ display: 'flex', gap: '5px' }}>
+                        {phone && (
+                          <a
+                            href={`https://zalo.me/${phone}`}
+                            target="_blank" rel="noreferrer"
+                            style={{ padding: '5px 10px', fontSize: '11px', fontWeight: '700', borderRadius: '6px', background: '#0068ff', color: '#fff', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '3px' }}
+                          >💬 Zalo</a>
+                        )}
+                        <button
+                          onClick={() => {
+                            navigator.clipboard.writeText(zaloMsg);
+                            setCopiedZaloMsg(c.id);
+                            setTimeout(() => setCopiedZaloMsg(''), 2000);
+                          }}
+                          title="Copy tin nhắn báo giá sỉ để gửi qua Zalo/Facebook"
+                          style={{ padding: '5px 10px', fontSize: '11px', fontWeight: '700', borderRadius: '6px', background: copiedZaloMsg === c.id ? 'rgba(16,185,129,0.25)' : 'rgba(255,255,255,0.06)', color: copiedZaloMsg === c.id ? '#10b981' : '#94a3b8', border: '1px solid rgba(255,255,255,0.1)', cursor: 'pointer' }}
+                        >
+                          {copiedZaloMsg === c.id ? '✅ Đã Copy' : '📋 Copy Tin Nhắn'}
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        );
+      })()}
 
       {/* Table */}
       <div className="glass-panel" style={{ padding: 0, overflow: 'hidden' }}>
@@ -353,7 +478,19 @@ export default function Customers() {
                         </span>
                       </td>
                       <td style={{ padding: '14px 16px' }}>
-                        <span className="badge badge-info">{TYPE_MAP[customer.type] || customer.type || 'Khách Lẻ'}</span>
+                        {(() => {
+                          const t = customer.type || 'Le';
+                          const cfg = t === 'Si'
+                            ? { label: '🟣 Khách Sỉ', color: '#a855f7', bg: 'rgba(168,85,247,0.18)', border: 'rgba(168,85,247,0.4)' }
+                            : t === 'CTV'
+                            ? { label: '🟡 CTV', color: '#f59e0b', bg: 'rgba(245,158,11,0.18)', border: 'rgba(245,158,11,0.4)' }
+                            : { label: '🔵 Khách Lẻ', color: '#06b6d4', bg: 'rgba(6,182,212,0.15)', border: 'rgba(6,182,212,0.3)' };
+                          return (
+                            <span style={{ fontSize: '11px', fontWeight: '800', padding: '3px 9px', borderRadius: '5px', background: cfg.bg, color: cfg.color, border: `1px solid ${cfg.border}` }}>
+                              {cfg.label}
+                            </span>
+                          );
+                        })()}
                       </td>
                       <td style={{ padding: '14px 16px', color: '#10b981', fontWeight: '700' }}>{totalSpent.toLocaleString()}đ</td>
                       <td style={{ padding: '14px 16px' }}>
