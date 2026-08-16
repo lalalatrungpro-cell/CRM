@@ -21,9 +21,7 @@ export default function Suppliers() {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('LIST');
   const [selectedCompareProduct, setSelectedCompareProduct] = useState('');
-  const [showPriceModal, setShowPriceModal] = useState(false);
-  const [priceFormData, setPriceFormData] = useState({ supplierId: '', productName: '', price: '', notes: '', syncToProduct: false });
-
+    
   // Modals & Forms
   const [showModal, setShowModal] = useState(false);
   const [editingSupplier, setEditingSupplier] = useState(null);
@@ -33,41 +31,7 @@ export default function Suppliers() {
   // Filters
   const [searchTerm, setSearchTerm] = useState('');
 
-    const handleOpenPriceModal = (prodName = '') => {
-    setPriceFormData({
-      supplierId: suppliers.length > 0 ? String(suppliers[0].id) : '',
-      productName: prodName || selectedCompareProduct || (products.length > 0 ? products[0].name : ''),
-      price: '',
-      notes: '',
-      syncToProduct: false
-    });
-    setShowPriceModal(true);
-  };
-
-  const handleSavePriceModal = async (e) => {
-    e.preventDefault();
-    if (!priceFormData.supplierId || !priceFormData.productName || !priceFormData.price) {
-      return toast.error('Vui lòng chọn Nhà Cung Cấp, Sản Phẩm và Nhập Giá Sỉ!');
-    }
-    try {
-      await SupplierPriceService.saveDailyPrice(shopId, {
-        supplierId: priceFormData.supplierId,
-        productName: priceFormData.productName,
-        price: Number(priceFormData.price),
-        notes: priceFormData.notes,
-        syncToProduct: priceFormData.syncToProduct
-      });
-      toast.success('Đã nạp báo giá sỉ hôm nay thành công!');
-      setShowPriceModal(false);
-      const updatedPrices = await SupplierPriceService.listTodayPrices(shopId);
-      setTodayPrices(updatedPrices || []);
-    } catch (err) {
-      console.error(err);
-      toast.error('Lỗi khi lưu báo giá sỉ.');
-    }
-  };
-
-  const loadData = async () => {
+        const loadData = async () => {
     if (!shopId) return;
     setLoading(true);
     try {
@@ -364,33 +328,13 @@ export default function Suppliers() {
               <label className="form-label" style={{ margin: 0, fontWeight: 'bold', color: '#38bdf8' }}>Sản Phẩm Cần So Sánh:</label>
               <select
                 className="glass-input"
-                style={{ width: '220px', border: '1px solid #38bdf8' }}
+                style={{ width: '260px', border: '1px solid #38bdf8' }}
                 value={selectedCompareProduct} onChange={e => setSelectedCompareProduct(e.target.value)}
               >
                 {products.map(p => (
                   <option key={p.id} value={p.name}>{p.name}</option>
                 ))}
               </select>
-              <button
-                type="button"
-                onClick={() => handleOpenPriceModal(selectedCompareProduct)}
-                style={{
-                  background: 'linear-gradient(135deg, #10b981, #059669)',
-                  color: '#fff',
-                  border: 'none',
-                  borderRadius: '8px',
-                  padding: '8px 14px',
-                  fontSize: '12px',
-                  fontWeight: '800',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  whiteSpace: 'nowrap'
-                }}
-              >
-                <Plus size={15} /> Nạp Báo Giá Sỉ Mới
-              </button>
             </div>
           </div>
 
@@ -413,31 +357,8 @@ export default function Suppliers() {
                   <tbody>
                     {matchedPrices.length === 0 ? (
                       <tr>
-                        <td colSpan={6} style={{ padding: '40px 20px', textAlign: 'center' }}>
-                          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
-                            <div style={{ color: '#94a3b8', fontSize: '13.5px' }}>
-                              Chưa có báo giá sỉ hôm nay cho sản phẩm <strong style={{ color: '#38bdf8' }}>"{selectedCompareProduct}"</strong> từ bất kỳ NCC nào.
-                            </div>
-                            <button
-                              type="button"
-                              onClick={() => handleOpenPriceModal(selectedCompareProduct)}
-                              style={{
-                                background: 'linear-gradient(135deg, #10b981, #059669)',
-                                color: '#fff',
-                                border: 'none',
-                                borderRadius: '8px',
-                                padding: '9px 18px',
-                                fontSize: '13px',
-                                fontWeight: '800',
-                                cursor: 'pointer',
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                                gap: '6px'
-                              }}
-                            >
-                              <Plus size={16} /> Nạp Báo Giá Sỉ Cho "{selectedCompareProduct}" Ngay
-                            </button>
-                          </div>
+                        <td colSpan={6} style={{ padding: '30px', textAlign: 'center', color: '#64748b', fontStyle: 'italic' }}>
+                          Chưa có nhà cung cấp nào cập nhật giá sỉ hôm nay cho sản phẩm này. Hãy vào trang chi tiết Hồ Sơ Nhà Cung Cấp để lưu giá sỉ!
                         </td>
                       </tr>
                     ) : (
@@ -477,90 +398,6 @@ export default function Suppliers() {
             );
           })()}
         </div>
-      )}
-
-      {/* Modal Quick Add Supplier Price */}
-      {showPriceModal && createPortal(
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999, padding: '20px' }} onClick={() => setShowPriceModal(false)}>
-          <div style={{ background: '#111528', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '16px', padding: '24px', width: '100%', maxWidth: '480px' }} onClick={e => e.stopPropagation()}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '18px' }}>
-              <h3 style={{ fontSize: '17px', fontWeight: '800', color: '#10b981', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
-                📋 Cập Nhật Báo Giá Sỉ Hôm Nay
-              </h3>
-              <button onClick={() => setShowPriceModal(false)} style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer' }}><X size={18} /></button>
-            </div>
-
-            <form onSubmit={handleSavePriceModal} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-              <div>
-                <label className="form-label">1. Chọn Nhà Cung Cấp (NCC) *</label>
-                <select
-                  className="glass-input" required
-                  value={priceFormData.supplierId}
-                  onChange={e => setPriceFormData({ ...priceFormData, supplierId: e.target.value })}
-                >
-                  <option value="">-- Chọn Nhà Cung Cấp --</option>
-                  {suppliers.map(s => (
-                    <option key={s.id} value={s.id}>{s.name} ({s.phone || 'N/A'})</option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="form-label">2. Chọn Sản Phẩm Sỉ *</label>
-                <select
-                  className="glass-input" required
-                  value={priceFormData.productName}
-                  onChange={e => setPriceFormData({ ...priceFormData, productName: e.target.value })}
-                >
-                  <option value="">-- Chọn Sản Phẩm --</option>
-                  {products.map(p => (
-                    <option key={p.id} value={p.name}>{p.name}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="form-label">3. Giá Nhập Sỉ Hôm Nay (VNĐ) *</label>
-                <input
-                  type="number" required min="1" className="glass-input"
-                  placeholder="VD: 45000"
-                  value={priceFormData.price}
-                  onChange={e => setPriceFormData({ ...priceFormData, price: e.target.value })}
-                />
-              </div>
-
-              <div>
-                <label className="form-label">4. Ghi Chú Báo Giá (Tùy chọn)</label>
-                <input
-                  type="text" className="glass-input"
-                  placeholder="VD: Đang khuyến mãi xả kho 10%"
-                  value={priceFormData.notes}
-                  onChange={e => setPriceFormData({ ...priceFormData, notes: e.target.value })}
-                />
-              </div>
-
-              <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12.5px', color: '#38bdf8', cursor: 'pointer', background: 'rgba(56,189,248,0.08)', padding: '10px 12px', borderRadius: '8px', border: '1px solid rgba(56,189,248,0.2)' }}>
-                <input
-                  type="checkbox"
-                  checked={priceFormData.syncToProduct}
-                  onChange={e => setPriceFormData({ ...priceFormData, syncToProduct: e.target.checked })}
-                  style={{ accentColor: '#38bdf8', cursor: 'pointer' }}
-                />
-                <span>⚡ Đồng bộ làm Giá vốn mặc định cho POS</span>
-              </label>
-
-              <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
-                <button type="button" className="glass-button" onClick={() => setShowPriceModal(false)} style={{ flex: 1, padding: '10px' }}>
-                  Hủy
-                </button>
-                <button type="submit" className="glass-button" style={{ flex: 1.5, background: 'linear-gradient(135deg, #10b981, #059669)', color: '#fff', fontWeight: '800', padding: '10px' }}>
-                  💾 Lưu Báo Giá Sỉ
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>,
-        document.body
       )}
 
       {/* Add / Edit Modal */}
