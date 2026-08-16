@@ -6,7 +6,7 @@ import { useToast } from '../components/Toast';
 import ConfirmDialog from '../components/ConfirmDialog';
 import {
   Package, Plus, Edit2, Trash2, X, Search, ChevronLeft, ChevronRight,
-  LayoutGrid, Table, TrendingUp, AlertTriangle, CheckCircle, Zap, RefreshCw, Layers
+  LayoutGrid, Table, TrendingUp, FileText, AlertTriangle, CheckCircle, Zap, RefreshCw, Layers
 } from 'lucide-react';
 
 const PAGE_SIZE = 12;
@@ -40,8 +40,9 @@ export default function Products() {
     priceCtv: 110000,
     priceSi: 80000,
     defaultCost: 50000,
-  productType: 'SUBSCRIPTION',
-    maxSlots: 5
+    productType: 'SUBSCRIPTION',
+    maxSlots: 5,
+    description: ''
   };
 
   const [formData, setFormData] = useState(emptyForm);
@@ -341,6 +342,14 @@ export default function Products() {
                       <span className="badge badge-info" style={{ fontSize: '10px' }}>{prod.category}</span>
                       <h3 style={{ fontSize: '16.5px', fontWeight: '800', color: '#fff', marginTop: '4px', margin: 0 }}>{prod.name}</h3>
                       <p style={{ fontSize: '11px', color: '#64748b', margin: '2px 0 0 0' }}>Hạn dùng chuẩn: {durDays} ngày • Max slots: {prod.max_slots || prod.maxSlots || 1}</p>
+                      {prod.description && (
+                        <div style={{ fontSize: '11.5px', color: '#94a3b8', background: 'rgba(255,255,255,0.03)', padding: '6px 10px', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.05)', marginTop: '6px', display: 'flex', alignItems: 'flex-start', gap: '6px' }}>
+                          <FileText size={13} color="#38bdf8" style={{ marginTop: '2px', flexShrink: 0 }} />
+                          <span style={{ lineClamp: 2, WebkitLineClamp: 2, display: '-webkit-box', WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                            {prod.description}
+                          </span>
+                        </div>
+                      )}
                     </div>
                     <div style={{ display: 'flex', gap: '4px' }}>
                       <button onClick={() => handleOpenEditModal(prod)} title="Chỉnh sửa sản phẩm" style={{ background: 'none', border: 'none', color: '#f59e0b', cursor: 'pointer', padding: '4px' }}>
@@ -594,10 +603,23 @@ export default function Products() {
             <form onSubmit={handleSaveProduct} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
               {/* Product Name */}
               <div>
-                <label className="form-label">Tên Sản Phẩm / Dịch Vụ</label>
+                <label className="form-label">Tên Sản Phẩm / Dịch Vụ *</label>
                 <input
                   type="text" required className="glass-input" placeholder="VD: Canva Pro (1 năm)"
                   value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })}
+                />
+              </div>
+
+              {/* Product Description */}
+              <div>
+                <label className="form-label">Mô Tả Sản Phẩm / Quy Cách Dịch Vụ & Bảo Hành</label>
+                <textarea
+                  className="glass-input"
+                  rows={2}
+                  placeholder="VD: Kích hoạt qua Email cá nhân. Bảo hành 1 đổi 1 trong 365 ngày..."
+                  value={formData.description || ''}
+                  onChange={e => setFormData({ ...formData, description: e.target.value })}
+                  style={{ resize: 'vertical', fontSize: '13px' }}
                 />
               </div>
 
