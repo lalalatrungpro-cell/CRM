@@ -4,7 +4,7 @@ import { CustomerService, OrderService, SupplierService, VietQRService, CashTran
 import { getVietQRUrl } from '../utils/storage';
 import { useToast } from '../components/Toast';
 import DateFilterBar from '../components/DateFilterBar';
-import { Wallet, ArrowDownLeft, ArrowUpRight, FileText, Printer, Copy, X } from 'lucide-react';
+import { Wallet, ArrowDownLeft, ArrowUpRight, FileText, Printer, Copy, QrCode, X } from 'lucide-react';
 
 function numberToVietnameseWords(amount) {
   if (!amount || isNaN(amount) || amount === 0) return "Không đồng chẵn.";
@@ -211,38 +211,59 @@ export default function Debt() {
     }
   };
 
-  const handleCopyCustomerInvoiceText = (c) => {
+  const handleCopyQRImageOnly = async (c) => {
     const vqr = vietqr || {};
     const memo = `${vqr.memo_prefix || vqr.memoPrefix || 'DON'} NO KH ${c.id}`;
     const qrUrl = getVietQRUrl ? getVietQRUrl(vqr.bank_id || vqr.bankId, vqr.account_no || vqr.accountNo, vqr.account_name || vqr.accountName, c.debt || 0, memo) : '';
 
-    let t = '📄 BẢNG KÊ CÔNG NỢ & HÓA ĐƠN CHỐT SỔ\n';
-    t += '🏢 Bên Bán: DROPSHIP CRM - DỊCH VỤ TÀI KHOẢN SỐ\n';
-    t += '------------------------------------------\n';
-    t += `👤 Khách Hàng: ${c.name} (SĐT: ${c.phone || 'N/A'})\n`;
-    t += `🗓️ Ngày chốt: ${new Date().toLocaleDateString('vi-VN')}\n\n`;
-    t += '📦 DANH SÁCH ĐƠN HÀNG CHƯA THANH TOÁN:\n';
+    if (!qrUrl) {
+      return toast.error('Chưa cấu hình tài khoản ngân hàng VietQR trong Cài Đặt!');
+    }
 
-    (c.unpaidOrdersList || []).forEach((o, index) => {
-      const pName = o.product_name || o.productName;
-      const sPrice = o.sell_price || o.sellPrice || 0;
-      t += ` ${index + 1}. Đơn #${o.id} - ${pName}: ${sPrice.toLocaleString()}đ\n`;
-    });
+    try {
+      const response = await fetch(qrUrl);
+      const blob = await response.blob();
 
-    t += '------------------------------------------\n';
-    t += `💰 TỔNG CỘNG CÔNG NỢ: ${(c.debt || 0).toLocaleString()} VNĐ\n`;
-    t += `✍️ Bằng chữ: ${numberToVietnameseWords(c.debt)}\n\n`;
-    t += '💳 THÔNG TIN CHUYỂN KHOẢN THANH TOÁN:\n';
-    t += ` 🏦 Ngân hàng: ${vqr.bank_id || vqr.bankId || 'MB'}\n`;
-    t += ` 🔢 Số tài khoản: ${vqr.account_no || vqr.accountNo || ''}\n`;
-    t += ` 👤 Chủ tài khoản: ${vqr.account_name || vqr.accountName || ''}\n`;
-    t += ` 📝 Nội dung CK: ${memo}\n`;
-    if (qrUrl) t += ` 📲 Link quét QR: ${qrUrl}\n`;
-    t += '------------------------------------------\n';
-    t += 'Cảm ơn Quý khách đã tin tưởng và ủng hộ Dịch Vụ!';
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.src = URL.createObjectURL(blob);
 
-    navigator.clipboard.writeText(t);
-    toast.success('Đã copy bảng kê công nợ kèm QR chuyển khoản!');
+      await new Promise((resolve, reject) => {
+        img.onload = resolve;
+        img.onerror = reject;
+      });
+
+      const canvas = document.createElement('canvas');
+      canvas.width = img.width || 400;
+      canvas.height = img.height || 400;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0);
+
+      canvas.toBlob(async (pngBlob) => {
+        if (pngBlob && navigator.clipboard && window.ClipboardItem) {
+          try {
+            await navigator.clipboard.write([
+              new ClipboardItem({ 'image/png': pngBlob })
+            ]);
+            toast.success(`Đã copy hình ảnh VietQR thu nợ ${c.name}! Dán (Ctrl+V) gửi Zalo/FB.`);
+          } catch (e1) {
+            await navigator.clipboard.writeText(qrUrl);
+            toast.success(`Đã copy link ảnh QR VietQR (${(c.debt || 0).toLocaleString()}đ)!`);
+          }
+        } else {
+          await navigator.clipboard.writeText(qrUrl);
+          toast.success(`Đã copy link ảnh QR VietQR (${(c.debt || 0).toLocaleString()}đ)!`);
+        }
+      }, 'image/png');
+    } catch (err) {
+      console.error('Lỗi copy ảnh QR:', err);
+      try {
+        await navigator.clipboard.writeText(qrUrl);
+        toast.success(`Đã copy link ảnh QR VietQR (${(c.debt || 0).toLocaleString()}đ)!`);
+      } catch (e2) {
+        toast.error('Không thể copy hình ảnh QR.');
+      }
+    }
   };
 
   const handlePrint = () => {
@@ -341,10 +362,11 @@ export default function Debt() {
                         </button>
                         <button
                           className="glass-button"
-                          onClick={() => handleCopyCustomerInvoiceText(c)}
+                          onClick={() => handleCopyQRImageOnly(c)}
                           style={{ padding: '5px 10px', fontSize: '11px', background: 'rgba(59,130,246,0.18)', border: '1px solid rgba(59,130,246,0.25)', color: '#60a5fa', display: 'flex', alignItems: 'center', gap: '4px' }}
+                          title="Copy thẳng hình ảnh mã VietQR vào bộ nhớ tạm (dán Ctrl+V gửi Zalo/FB)"
                         >
-                          <Copy size={12} /> Bảng Kê & QR
+                          <QrCode size={12} /> Copy Mã QR
                         </button>
                         <button
                           className="glass-button"
