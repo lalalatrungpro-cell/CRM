@@ -248,7 +248,7 @@ export default function Inventory() {
       const updated = await TeamService.update(team.id, { status: newStatus });
       setTeams(prev => prev.map(t => t.id === team.id ? { ...t, ...updated, status: newStatus } : t));
       if (newStatus === 'FAULTY_DIE') {
-        toast.error('Đã đánh dấu Team "' + team.name + '" BỊ DIE (LỖI)!');
+        toast.warning('⚠️ Đã đánh dấu Team "' + team.name + '" BỊ DIE (LỖI)! Bấm "Đổi Team BH" để chuyển slot cho khách.');
       } else {
         toast.success('Đã khôi phục Team "' + team.name + '" về Đang hoạt động!');
       }
