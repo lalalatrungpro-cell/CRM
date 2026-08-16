@@ -412,7 +412,7 @@ export default function Teams() {
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                 <div>
-                  <label className="form-label">Loại Dịch Vụ</label>
+                  <label className="form-label">Loại Dịch Vụ *</label>
                   <select
                     className="glass-input"
                     value={formData.category} onChange={e => handleCategoryChange(e.target.value)}
@@ -434,7 +434,7 @@ export default function Teams() {
               {/* Total Purchase Cost & Live Unit Cost */}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                 <div>
-                  <label className="form-label" style={{ color: '#f59e0b' }}>Tổng Tiền Vốn Mua Team (VNĐ)</label>
+                  <label className="form-label" style={{ color: '#f59e0b' }}>Tổng Tiền Vốn Mua Team (VNĐ) *</label>
                   <input
                     type="number" className="glass-input" placeholder="2000000"
                     value={formData.importCost} onChange={e => setFormData({ ...formData, importCost: e.target.value })}
@@ -449,7 +449,7 @@ export default function Teams() {
               </div>
 
               <div>
-                <label className="form-label">Thông Tin Tài Khoản Gốc (Email | Pass | 2FA)</label>
+                <label className="form-label">Thông Tin Tài Khoản Gốc (Email | Pass | 2FA) *</label>
                 <textarea
                   className="glass-input" style={{ minHeight: '65px', fontFamily: 'monospace', fontSize: '12.5px' }} placeholder="VD: master_canva@gmail.com | pass123 | 2FA_KEY"
                   value={formData.infor} onChange={e => setFormData({ ...formData, infor: e.target.value })}
@@ -458,7 +458,7 @@ export default function Teams() {
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                 <div>
-                  <label className="form-label">Nhà Cung Cấp / Nguồn Sỉ</label>
+                  <label className="form-label">Nhà Cung Cấp / Nguồn Sỉ *</label>
                   <select
                     className="glass-input"
                     value={formData.supplierId} onChange={e => setFormData({ ...formData, supplierId: e.target.value })}
@@ -470,7 +470,7 @@ export default function Teams() {
                   </select>
                 </div>
                 <div>
-                  <label className="form-label">Ngày Hết Hạn Nguồn Sỉ</label>
+                  <label className="form-label">Ngày Hết Hạn Nguồn Sỉ *</label>
                   <input
                     type="date" className="glass-input"
                     value={formData.expireDate} onChange={e => setFormData({ ...formData, expireDate: e.target.value })}

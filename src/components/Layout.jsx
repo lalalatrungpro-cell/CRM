@@ -35,7 +35,7 @@ export default function Layout() {
       items: [
         { to: '/customers', label: 'Quản Lý Khách Hàng', icon: <Users size={17} /> },
         { to: '/suppliers', label: 'Nhà Cung Cấp & Sỉ', icon: <Truck size={17} /> },
-        { to: '/debt', label: 'Công Nợ 2 Chiều', icon: <Landmark size={17} /> }
+        { to: '/debt', label: 'Quản Lý Công Nợ', icon: <Landmark size={17} /> }
       ]
     },
     {
