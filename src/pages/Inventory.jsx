@@ -1324,7 +1324,99 @@ export default function Inventory() {
           )}
 
           {/* Credentials View Modal */}
-          {showCredentialsModal && createPortal(
+          {/* Modal Xem Danh Sách Khách Hàng Thuộc Team */}
+      {showTeamMembersModal && createPortal(
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999, padding: '20px' }} onClick={() => setShowTeamMembersModal(null)}>
+          <div style={{ background: '#111528', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '16px', padding: '24px', width: '100%', maxWidth: '720px', maxHeight: '85vh', overflowY: 'auto' }} onClick={e => e.stopPropagation()}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+              <h3 style={{ fontSize: '17px', fontWeight: '800', color: '#fff', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Users size={18} color="#38bdf8" /> Khách Hàng Thuộc Kho Team: "{showTeamMembersModal.name}"
+              </h3>
+              <button onClick={() => setShowTeamMembersModal(null)} style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer' }}><X size={18} /></button>
+            </div>
+
+            {(() => {
+              const teamOrders = orders.filter(o => String(o.team_id || o.teamId) === String(showTeamMembersModal.id));
+              if (teamOrders.length === 0) {
+                return (
+                  <div style={{ padding: '30px', textAlign: 'center', color: '#64748b', fontSize: '14px' }}>
+                    Kho Team này chưa có đơn hàng/khách hàng nào được gán.
+                  </div>
+                );
+              }
+
+              return (
+                <div style={{ overflowX: 'auto' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+                    <thead>
+                      <tr style={{ background: 'rgba(255,255,255,0.04)', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
+                        <th style={{ padding: '10px 12px', textAlign: 'left', color: '#64748b' }}>#</th>
+                        <th style={{ padding: '10px 12px', textAlign: 'left', color: '#64748b' }}>Khách Hàng</th>
+                        <th style={{ padding: '10px 12px', textAlign: 'left', color: '#64748b' }}>SĐT / Zalo</th>
+                        <th style={{ padding: '10px 12px', textAlign: 'left', color: '#64748b' }}>Hạn Sử Dụng</th>
+                        <th style={{ padding: '10px 12px', textAlign: 'center', color: '#64748b' }}>Trạng Thái</th>
+                        <th style={{ padding: '10px 12px', textAlign: 'center', color: '#64748b' }}>Thao Tác</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {teamOrders.map((o, idx) => {
+                        const phone = o.phone || o.customer_phone || '';
+                        const cleanPhone = phone.replace(/[^0-9]/g, '');
+                        const zaloUrl = cleanPhone ? `https://zalo.me/${cleanPhone}` : null;
+                        return (
+                          <tr key={o.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+                            <td style={{ padding: '10px 12px', color: '#64748b' }}>{idx + 1}</td>
+                            <td style={{ padding: '10px 12px', fontWeight: '700', color: '#fff' }}>
+                              {o.customer_name || o.customerName || 'Khách Lẻ'}
+                              <div style={{ fontSize: '11px', color: '#64748b', fontWeight: '500' }}>Đơn #{o.id}</div>
+                            </td>
+                            <td style={{ padding: '10px 12px', color: '#38bdf8' }}>{phone || '—'}</td>
+                            <td style={{ padding: '10px 12px', color: '#94a3b8' }}>{o.expire_date || o.expireDate || '—'}</td>
+                            <td style={{ padding: '10px 12px', textAlign: 'center' }}>
+                              <span style={{
+                                fontSize: '11px', fontWeight: '700', padding: '2px 8px', borderRadius: '4px',
+                                background: o.status === 'Đã thanh toán' ? 'rgba(16,185,129,0.15)' : 'rgba(239,68,68,0.15)',
+                                color: o.status === 'Đã thanh toán' ? '#10b981' : '#ef4444'
+                              }}>
+                                {o.status || 'Đã thanh toán'}
+                              </span>
+                            </td>
+                            <td style={{ padding: '10px 12px', textAlign: 'center' }}>
+                              {zaloUrl && (
+                                <a
+                                  href={zaloUrl}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  style={{
+                                    padding: '4px 10px', fontSize: '11px', fontWeight: '700', borderRadius: '6px',
+                                    background: '#0068ff', color: '#fff', textDecoration: 'none', display: 'inline-flex',
+                                    alignItems: 'center', gap: '4px'
+                                  }}
+                                >
+                                  💬 Nhắn Zalo
+                                </a>
+                              )}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              );
+            })()}
+
+            <div style={{ marginTop: '16px', display: 'flex', justifyContent: 'flex-end' }}>
+              <button className="glass-button" onClick={() => setShowTeamMembersModal(null)} style={{ padding: '8px 16px', fontSize: '13px' }}>
+                Đóng
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {showCredentialsModal && createPortal(
             <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 99999, padding: '20px' }} onClick={() => setShowCredentialsModal(null)}>
               <div style={{ background: '#111528', border: '1px solid rgba(56,189,248,0.3)', borderRadius: '16px', padding: '24px', width: '100%', maxWidth: '520px' }} onClick={e => e.stopPropagation()}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', borderBottom: '1px solid rgba(255,255,255,0.08)', paddingBottom: '12px' }}>
