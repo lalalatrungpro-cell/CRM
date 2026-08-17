@@ -129,6 +129,8 @@ export default function Inventory() {
     purchaseDate: todayStr, notes: ''
   };
   const [purchases, setPurchases] = useState([]);
+  const [inventoryLogs, setInventoryLogs] = useState([]);
+  const [logFilterAction, setLogFilterAction] = useState('ALL');
   const [showPurchaseModal, setShowPurchaseModal] = useState(false);
   const [confirmDeletePurchaseId, setConfirmDeletePurchaseId] = useState(null);
   const [purchaseSearchTerm, setPurchaseSearchTerm] = useState('');
@@ -139,7 +141,7 @@ export default function Inventory() {
     if (!shopId) return;
     setLoading(true);
     try {
-      const [itemList, sumData, prodList, suppList, teamList, ordList, nxtData, alertData, purList] = await Promise.all([
+      const [itemList, sumData, prodList, suppList, teamList, ordList, nxtData, alertData, purList, logList] = await Promise.all([
         InventoryService.list(shopId),
         InventoryService.getSummary(shopId),
         ProductService.list(shopId),
@@ -148,7 +150,8 @@ export default function Inventory() {
         OrderService.list(shopId),
         InventoryService.getNxtReport(shopId),
         InventoryService.getLowStockAlerts(shopId),
-        PurchaseService.list(shopId)
+        PurchaseService.list(shopId),
+        InventoryLogService.list(shopId)
       ]);
 
       setItems(itemList || []);
@@ -160,6 +163,7 @@ export default function Inventory() {
       setNxtReport(nxtData || []);
       setAlerts(alertData || { lowStockAlerts: [], shelfLifeAlerts: [] });
       setPurchases(purList || []);
+      setInventoryLogs(logList || []);
     } catch (err) {
       console.error(err);
       toast.error('Lỗi khi tải dữ liệu tồn kho!');
