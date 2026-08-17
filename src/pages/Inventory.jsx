@@ -1709,6 +1709,122 @@ export default function Inventory() {
         </div>
       )}
 
+      {/* ==================== TAB 6: AUDIT LOGS & RESTOCK HISTORY ==================== */}
+      {activeTab === 'inventory_logs' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <div className="glass-panel" style={{ padding: '16px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
+            <div>
+              <h3 style={{ fontSize: '16px', fontWeight: '800', margin: 0, color: '#38bdf8', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Clock size={18} color="#38bdf8" /> Nhật Ký Nhập Kho, Xuất Bán & Lịch Sử Thu Hồi Key
+              </h3>
+              <p style={{ color: '#64748b', fontSize: '12.5px', margin: '2px 0 0 0' }}>
+                Theo dõi dấu vết tự động của từng thao tác Thu Hồi, Xuất Bán POS và Nhập Hàng theo thời gian thực.
+              </p>
+            </div>
+
+            {/* Sub-filters for Log Actions */}
+            <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+              {[
+                { key: 'ALL', label: 'Tất Cả' },
+                { key: 'RESTOCK', label: '🔄 Thu Hồi Key' },
+                { key: 'IMPORT', label: '📥 Nhập Kho' },
+                { key: 'EXPORT', label: '📤 Bán POS' },
+                { key: 'FAULTY', label: '🔴 Báo Lỗi' }
+              ].map(sub => (
+                <button
+                  key={sub.key}
+                  onClick={() => setLogFilterAction(sub.key)}
+                  style={{
+                    padding: '5px 12px', borderRadius: '6px', fontSize: '11.5px', fontWeight: '700', cursor: 'pointer',
+                    background: logFilterAction === sub.key ? 'rgba(56,189,248,0.2)' : 'rgba(255,255,255,0.03)',
+                    color: logFilterAction === sub.key ? '#38bdf8' : '#64748b',
+                    border: logFilterAction === sub.key ? '1px solid rgba(56,189,248,0.4)' : '1px solid rgba(255,255,255,0.06)'
+                  }}
+                >
+                  {sub.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Logs Table */}
+          <div className="glass-panel" style={{ padding: 0, overflow: 'hidden' }}>
+            {(() => {
+              const filteredLogs = inventoryLogs.filter(l => {
+                if (logFilterAction === 'ALL') return true;
+                return (l.action_type || l.actionType || '') === logFilterAction;
+              });
+
+              if (filteredLogs.length === 0) {
+                return (
+                  <div style={{ padding: '40px', textAlign: 'center', color: '#64748b', fontSize: '13.5px' }}>
+                    Chưa có nhật ký giao dịch kho nào ghi nhận.
+                  </div>
+                );
+              }
+
+              return (
+                <div style={{ overflowX: 'auto' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+                    <thead>
+                      <tr style={{ background: 'rgba(255,255,255,0.04)', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+                        <th style={{ padding: '12px 16px', textAlign: 'left', color: '#64748b', fontSize: '11px', textTransform: 'uppercase', fontWeight: '700' }}>Thời Gian</th>
+                        <th style={{ padding: '12px 16px', textAlign: 'left', color: '#64748b', fontSize: '11px', textTransform: 'uppercase', fontWeight: '700' }}>Loại Thao Tác</th>
+                        <th style={{ padding: '12px 16px', textAlign: 'left', color: '#64748b', fontSize: '11px', textTransform: 'uppercase', fontWeight: '700' }}>Sản Phẩm Dịch Vụ</th>
+                        <th style={{ padding: '12px 16px', textAlign: 'center', color: '#64748b', fontSize: '11px', textTransform: 'uppercase', fontWeight: '700' }}>Số Lượng</th>
+                        <th style={{ padding: '12px 16px', textAlign: 'right', color: '#64748b', fontSize: '11px', textTransform: 'uppercase', fontWeight: '700' }}>Giá Vốn</th>
+                        <th style={{ padding: '12px 16px', textAlign: 'left', color: '#64748b', fontSize: '11px', textTransform: 'uppercase', fontWeight: '700' }}>Chi Tiết Ghi Chú</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filteredLogs.map((log, idx) => {
+                        const act = log.action_type || log.actionType || 'INFO';
+                        const cfg = act === 'RESTOCK'
+                          ? { label: '🔄 Thu Hồi Về Kho', color: '#38bdf8', bg: 'rgba(56,189,248,0.18)', border: 'rgba(56,189,248,0.35)' }
+                          : act === 'IMPORT'
+                          ? { label: '📥 Nhập Kho Mới', color: '#10b981', bg: 'rgba(16,185,129,0.18)', border: 'rgba(16,185,129,0.35)' }
+                          : act === 'EXPORT'
+                          ? { label: '📤 Xuất Bán POS', color: '#a855f7', bg: 'rgba(168,85,247,0.18)', border: 'rgba(168,85,247,0.35)' }
+                          : { label: '🔴 Báo Lỗi / Die', color: '#ef4444', bg: 'rgba(239,68,68,0.18)', border: 'rgba(239,68,68,0.35)' };
+
+                        const dateStr = log.created_at
+                          ? new Date(log.created_at).toLocaleString('vi-VN')
+                          : '—';
+
+                        return (
+                          <tr key={log.id || idx} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+                            <td style={{ padding: '12px 16px', color: '#94a3b8', fontSize: '12px' }}>
+                              {dateStr}
+                            </td>
+                            <td style={{ padding: '12px 16px' }}>
+                              <span style={{ fontSize: '11px', fontWeight: '800', padding: '3px 8px', borderRadius: '5px', background: cfg.bg, color: cfg.color, border: `1px solid ${cfg.border}` }}>
+                                {cfg.label}
+                              </span>
+                            </td>
+                            <td style={{ padding: '12px 16px', fontWeight: '700', color: '#fff' }}>
+                              {log.product_name || log.productName || 'Sản phẩm'}
+                            </td>
+                            <td style={{ padding: '12px 16px', textAlign: 'center', color: '#38bdf8', fontWeight: '700' }}>
+                              {log.quantity || 1}
+                            </td>
+                            <td style={{ padding: '12px 16px', textAlign: 'right', color: '#f59e0b', fontWeight: '700' }}>
+                              {Number(log.unit_cost || log.unitCost || 0).toLocaleString()}đ
+                            </td>
+                            <td style={{ padding: '12px 16px', color: '#cbd5e1', fontSize: '12px' }}>
+                              {log.notes || '—'}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              );
+            })()}
+          </div>
+        </div>
+      )}
+
       {/* ==================== TAB 4: ĐÒI BẢO HÀNH NCC & CẢNH BÁO ==================== */}
       {activeTab === 'rma_alerts' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
