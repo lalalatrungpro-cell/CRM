@@ -770,6 +770,21 @@ export default function Inventory() {
         </button>
 
         <button
+          onClick={() => setActiveTab('inventory_logs')}
+          className="glass-button"
+          style={{
+            background: activeTab === 'inventory_logs' ? '#38bdf8' : 'rgba(255,255,255,0.04)',
+            color: activeTab === 'inventory_logs' ? '#fff' : '#94a3b8',
+            fontWeight: activeTab === 'inventory_logs' ? '700' : '500',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '6px'
+          }}
+        >
+          <Clock size={16} /> Nhật Ký Kho & Thu Hồi ({inventoryLogs.length})
+        </button>
+
+        <button
           onClick={() => setActiveTab('rma_alerts')}
           className="glass-button"
           style={{
