@@ -242,7 +242,23 @@ export default function Suppliers() {
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                       <div>
                         <h3 style={{ fontSize: '17px', fontWeight: '700', color: '#fff' }}>{s.name}</h3>
-                        <p style={{ fontSize: '12.5px', color: '#94a3b8', marginTop: '2px' }}>SĐT: {s.phone || 'Chưa cập nhật'}</p>
+                        <p style={{ fontSize: '12.5px', color: '#94a3b8', marginTop: '2px' }}>
+                          SĐT:{' '}
+                          {s.phone ? (
+                            <span
+                              onClick={() => {
+                                navigator.clipboard.writeText(s.phone);
+                                toast.success(`✅ Đã copy SĐT NCC ${s.phone}!`);
+                              }}
+                              title="Click 1-click copy SĐT NCC"
+                              style={{ color: '#f59e0b', cursor: 'pointer', fontWeight: '700', textDecoration: 'underline decoration-dotted' }}
+                            >
+                              {s.phone}
+                            </span>
+                          ) : (
+                            'Chưa cập nhật'
+                          )}
+                        </p>
                       </div>
                       <div style={{ display: 'flex', gap: '4px' }}>
                         <button onClick={() => handleOpenEditModal(s)} style={{ background: 'none', border: 'none', color: '#f59e0b', cursor: 'pointer', padding: '4px' }}>

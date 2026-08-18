@@ -914,7 +914,18 @@ export default function Inventory() {
                           </div>
                           {item.order_id && (
                             <div style={{ fontSize: '11px', color: '#818cf8', marginTop: '4px' }}>
-                              ⚡ Gán đơn POS <strong>#{item.order_id}</strong> ({item.customer_name || 'Khách'})
+                              ⚡ Gán đơn POS{' '}
+                              <strong
+                                onClick={() => {
+                                  navigator.clipboard.writeText(`#${item.order_id}`);
+                                  toast.success(`✅ Đã copy mã đơn #${item.order_id}!`);
+                                }}
+                                title="Click 1-click copy mã đơn"
+                                style={{ cursor: 'pointer', textDecoration: 'underline' }}
+                              >
+                                #{item.order_id}
+                              </strong>{' '}
+                              ({item.customer_name || 'Khách'})
                             </div>
                           )}
                           {item.faulty_reason && (

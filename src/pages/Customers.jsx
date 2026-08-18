@@ -471,7 +471,22 @@ export default function Customers() {
                         <strong style={{ color: '#fff' }}>{customer.name}</strong>
                         {customer.email && <div style={{ fontSize: '11.5px', color: '#64748b' }}>{customer.email}</div>}
                       </td>
-                      <td style={{ padding: '14px 16px', color: '#94a3b8' }}>{customer.phone || 'Chưa có SĐT'}</td>
+                      <td style={{ padding: '14px 16px' }}>
+                        {customer.phone ? (
+                          <span
+                            onClick={() => {
+                              navigator.clipboard.writeText(customer.phone);
+                              toast.success(`✅ Đã copy SĐT ${customer.phone}!`);
+                            }}
+                            title="Click 1-click copy SĐT"
+                            style={{ color: '#94a3b8', cursor: 'pointer', textDecoration: 'underline decoration-dotted' }}
+                          >
+                            {customer.phone}
+                          </span>
+                        ) : (
+                          <span style={{ color: '#64748b' }}>Chưa có SĐT</span>
+                        )}
+                      </td>
                       <td style={{ padding: '14px 16px' }}>
                         <span className="badge" style={{ background: 'rgba(255,255,255,0.05)', color: '#94a3b8' }}>
                           {customer.source || 'Facebook Page'}

@@ -1260,7 +1260,20 @@ export default function Orders() {
                       <td style={{ padding: '12px 10px', minWidth: '150px' }}>
                         <strong style={{ fontSize: '13.5px', color: '#fff', display: 'block', whiteSpace: 'nowrap' }}>{custName}</strong>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '3px', flexWrap: 'nowrap' }}>
-                          <span style={{ fontSize: '11px', color: '#94a3b8', whiteSpace: 'nowrap' }}>{order.phone || 'N/A'}</span>
+                          {order.phone ? (
+                          <span
+                            onClick={() => {
+                              navigator.clipboard.writeText(order.phone);
+                              toast.success(`✅ Đã copy SĐT ${order.phone}!`);
+                            }}
+                            title="Click 1-click copy SĐT"
+                            style={{ fontSize: '11px', color: '#94a3b8', cursor: 'pointer', whiteSpace: 'nowrap', textDecoration: 'underline decoration-dotted' }}
+                          >
+                            {order.phone}
+                          </span>
+                        ) : (
+                          <span style={{ fontSize: '11px', color: '#64748b' }}>N/A</span>
+                        )}
                           <span style={{ fontSize: '9.5px', padding: '1px 6px', borderRadius: '4px', background: tierCfg.bg, color: tierCfg.color, border: tierCfg.border, fontWeight: '600', whiteSpace: 'nowrap', display: 'inline-block' }}>
                             {tierCfg.label}
                           </span>
