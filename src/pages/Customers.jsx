@@ -7,7 +7,7 @@ import { useToast } from '../components/Toast';
 import ConfirmDialog from '../components/ConfirmDialog';
 import { parseAndImportCanvaExcel } from '../utils/canvaImporter';
 import {
-  Users, Plus, Download, Search, Eye, Edit2, Trash2, X, ChevronLeft, ChevronRight, Wallet, DollarSign, MapPin, Mail, MessageCircle, FileSpreadsheet
+  Users, Plus, Copy, Check, Download, Search, Eye, Edit2, Trash2, X, ChevronLeft, ChevronRight, Wallet, DollarSign, MapPin, Mail, MessageCircle, FileSpreadsheet
 } from 'lucide-react';
 
 const PAGE_SIZE = 15;
@@ -62,6 +62,7 @@ export default function Customers() {
   const [currentPage, setCurrentPage] = useState(1);
   const [showLeaderboard, setShowLeaderboard] = useState(false);
   const [copiedZaloMsg, setCopiedZaloMsg] = useState('');
+  const [copiedCustId, setCopiedCustId] = useState('');
 
   const loadData = async () => {
     if (!shopId) return;
@@ -466,7 +467,38 @@ export default function Customers() {
 
                   return (
                     <tr key={customer.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                      <td style={{ padding: '14px 16px' }}><strong>#{customer.id}</strong></td>
+                      <td style={{ padding: '14px 16px', whiteSpace: 'nowrap' }}>
+                        <div
+                          onClick={() => {
+                            const codeToCopy = String(customer.id).startsWith('#') ? String(customer.id) : `#${customer.id}`;
+                            navigator.clipboard.writeText(codeToCopy);
+                            setCopiedCustId(String(customer.id));
+                            toast.success(`✅ Đã copy Mã KH ${codeToCopy}!`);
+                            setTimeout(() => setCopiedCustId(''), 2000);
+                          }}
+                          title="Click 1-click copy Mã KH"
+                          style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '5px',
+                            cursor: 'pointer',
+                            padding: '3px 8px',
+                            borderRadius: '6px',
+                            background: copiedCustId === String(customer.id) ? 'rgba(16,185,129,0.15)' : 'rgba(255,255,255,0.04)',
+                            border: copiedCustId === String(customer.id) ? '1px solid rgba(16,185,129,0.3)' : '1px solid rgba(255,255,255,0.08)',
+                            transition: 'all 0.15s ease'
+                          }}
+                        >
+                          <strong style={{ color: copiedCustId === String(customer.id) ? '#10b981' : '#fff', fontSize: '13px', fontFamily: 'monospace' }}>
+                            {String(customer.id).startsWith('#') ? customer.id : `#${customer.id}`}
+                          </strong>
+                          {copiedCustId === String(customer.id) ? (
+                            <Check size={13} color="#10b981" />
+                          ) : (
+                            <Copy size={12} color="#64748b" />
+                          )}
+                        </div>
+                      </td>
                       <td style={{ padding: '14px 16px' }}>
                         <strong style={{ color: '#fff' }}>{customer.name}</strong>
                         {customer.email && <div style={{ fontSize: '11.5px', color: '#64748b' }}>{customer.email}</div>}
