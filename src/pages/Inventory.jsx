@@ -876,7 +876,7 @@ export default function Inventory() {
                     <th style={{ padding: '12px 16px', textAlign: 'left', color: '#475569', fontSize: '11px', textTransform: 'uppercase', fontWeight: '700' }}>Sản Phẩm & Loại</th>
                     <th style={{ padding: '12px 16px', textAlign: 'right', color: '#475569', fontSize: '11px', textTransform: 'uppercase', fontWeight: '700' }}>Giá Vốn</th>
                     <th style={{ padding: '12px 16px', textAlign: 'left', color: '#475569', fontSize: '11px', textTransform: 'uppercase', fontWeight: '700' }}>Nguồn Sỉ</th>
-                    <th style={{ padding: '12px 16px', textAlign: 'left', color: '#475569', fontSize: '11px', textTransform: 'uppercase', fontWeight: '700' }}>Ngày Nhập</th>
+                    <th style={{ padding: '12px 16px', textAlign: 'left', color: '#475569', fontSize: '11px', textTransform: 'uppercase', fontWeight: '700' }}>Hành Trình Key 360°</th>
                     <th style={{ padding: '12px 16px', textAlign: 'left', color: '#475569', fontSize: '11px', textTransform: 'uppercase', fontWeight: '700' }}>Trạng Thái</th>
                     <th style={{ padding: '12px 16px', textAlign: 'center', color: '#475569', fontSize: '11px', textTransform: 'uppercase', fontWeight: '700' }}>Thao Tác</th>
                   </tr>
@@ -929,7 +929,26 @@ export default function Inventory() {
                             </div>
                           )}
 
-                          {/* Proposal A: 0-Click Horizontal Stepper Timeline */}
+                          </td>
+
+                        <td style={{ padding: '12px 16px' }}>
+                          <strong style={{ color: '#fff' }}>{item.product_name}</strong>
+                          <div style={{ marginTop: '3px' }}>
+                            <span className="badge" style={{ background: typeCfg.bg, color: typeCfg.color, fontSize: '10px' }}>
+                              {typeCfg.label}
+                            </span>
+                          </div>
+                        </td>
+
+                        <td style={{ padding: '12px 16px', textAlign: 'right' }}>
+                          <strong style={{ color: '#f59e0b' }}>{Number(item.cost_price || 0).toLocaleString()}đ</strong>
+                        </td>
+
+                        <td style={{ padding: '12px 16px' }}>
+                          <span style={{ color: '#cbd5e1' }}>{item.supplier_name || 'Nguồn Nhập Sỉ'}</span>
+                        </td>
+
+                        <td style={{ padding: '12px 16px', minWidth: '220px' }}>
                           {(() => {
                             const events = [];
                             
@@ -953,7 +972,7 @@ export default function Inventory() {
                             const restockLog = inventoryLogs.find(l => String(l.inventory_item_id || l.inventoryItemId) === String(item.id) && l.action_type === 'RESTOCK');
                             if (restockLog) {
                               const dStr = restockLog.created_at ? new Date(restockLog.created_at).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: '2-digit' }) : 'Vừa thu hồi';
-                              events.push({ icon: '🔄', label: 'Thu hồi (Hủy đơn)', date: dStr, color: '#38bdf8' });
+                              events.push({ icon: '🔄', label: 'Thu hồi (Hủy)', date: dStr, color: '#38bdf8' });
                             }
 
                             // 4. Faulty / Warranty event
@@ -963,20 +982,19 @@ export default function Inventory() {
                               events.push({ icon: '🔴', label: 'Báo lỗi NCC', date: dStr, color: '#ef4444' });
                             }
 
-                            if (events.length === 0) return null;
+                            if (events.length === 0) return <span style={{ color: '#64748b', fontSize: '11px' }}>---</span>;
 
                             return (
-                              <div style={{ marginTop: '6px', fontSize: '10px', color: '#94a3b8', display: 'flex', alignItems: 'center', gap: '3px', flexWrap: 'wrap' }}>
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
                                 {events.map((ev, idx) => (
-                                  <React.Fragment key={idx}>
-                                    {idx > 0 && <span style={{ color: '#475569', fontSize: '9px', margin: '0 1px' }}>➔</span>}
+                                  <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '10.5px' }}>
                                     <span
                                       title={`${ev.date}: ${ev.label}`}
                                       style={{
                                         color: ev.color,
                                         fontWeight: '700',
                                         background: `${ev.color}15`,
-                                        padding: '1px 5px',
+                                        padding: '1px 6px',
                                         borderRadius: '4px',
                                         border: `1px solid ${ev.color}30`,
                                         whiteSpace: 'nowrap'
@@ -984,32 +1002,11 @@ export default function Inventory() {
                                     >
                                       {ev.icon} {ev.date}: {ev.label}
                                     </span>
-                                  </React.Fragment>
+                                  </div>
                                 ))}
                               </div>
                             );
                           })()}
-                        </td>
-
-                        <td style={{ padding: '12px 16px' }}>
-                          <strong style={{ color: '#fff' }}>{item.product_name}</strong>
-                          <div style={{ marginTop: '3px' }}>
-                            <span className="badge" style={{ background: typeCfg.bg, color: typeCfg.color, fontSize: '10px' }}>
-                              {typeCfg.label}
-                            </span>
-                          </div>
-                        </td>
-
-                        <td style={{ padding: '12px 16px', textAlign: 'right' }}>
-                          <strong style={{ color: '#f59e0b' }}>{Number(item.cost_price || 0).toLocaleString()}đ</strong>
-                        </td>
-
-                        <td style={{ padding: '12px 16px' }}>
-                          <span style={{ color: '#cbd5e1' }}>{item.supplier_name || 'Nguồn Nhập Sỉ'}</span>
-                        </td>
-
-                        <td style={{ padding: '12px 16px' }}>
-                          <span style={{ color: '#94a3b8', fontSize: '12px' }}>{item.import_date}</span>
                         </td>
 
                         <td style={{ padding: '12px 16px' }}>
