@@ -1222,10 +1222,38 @@ export default function Orders() {
 
                   return (
                     <tr key={order.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                      {/* 1. MÃ ĐƠN */}
+                      {/* 1. MÃ ĐƠN (1-Click Copy) */}
                       <td style={{ padding: '12px 10px', whiteSpace: 'nowrap' }}>
-                        <strong style={{ color: '#fff', fontSize: '13px' }}>#{order.id}</strong>
-                        <div style={{ fontSize: '10.5px', color: '#64748b', marginTop: '2px' }}>{createdStr}</div>
+                        <div
+                          onClick={() => {
+                            navigator.clipboard.writeText(`#${order.id}`);
+                            setCopiedId(`order-${order.id}`);
+                            toast.success(`✅ Đã copy mã đơn #${order.id}!`);
+                            setTimeout(() => setCopiedId(''), 2000);
+                          }}
+                          title="Click để copy mã đơn hàng"
+                          style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '5px',
+                            cursor: 'pointer',
+                            padding: '3px 7px',
+                            borderRadius: '6px',
+                            background: copiedId === `order-${order.id}` ? 'rgba(16,185,129,0.15)' : 'rgba(255,255,255,0.04)',
+                            border: copiedId === `order-${order.id}` ? '1px solid rgba(16,185,129,0.3)' : '1px solid rgba(255,255,255,0.08)',
+                            transition: 'all 0.15s ease'
+                          }}
+                        >
+                          <strong style={{ color: copiedId === `order-${order.id}` ? '#10b981' : '#fff', fontSize: '13px', fontFamily: 'monospace' }}>
+                            #{order.id}
+                          </strong>
+                          {copiedId === `order-${order.id}` ? (
+                            <Check size={13} color="#10b981" />
+                          ) : (
+                            <Copy size={12} color="#64748b" />
+                          )}
+                        </div>
+                        <div style={{ fontSize: '10.5px', color: '#64748b', marginTop: '3px' }}>{createdStr}</div>
                       </td>
 
                       {/* 2. KHÁCH HÀNG */}
