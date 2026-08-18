@@ -1186,6 +1186,15 @@ export default function Inventory() {
                         {isDie ? 'Khôi Phục' : 'Báo DIE'}
                       </button>
 
+                      <button
+                        onClick={() => setShowTeamMembersModal(team)}
+                        title="Xem danh sách khách đang dùng team"
+                        style={{ width: "30px", height: "30px", background: "rgba(56,189,248,0.12)", border: "1px solid rgba(56,189,248,0.25)", color: "#38bdf8", borderRadius: "8px", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
+                      >
+                        <Users size={13} />
+                      </button>
+                      
+
                       <button onClick={() => handleOpenEditTeamModal(team)} style={{ width: '30px', height: '30px', background: 'rgba(99,102,241,0.15)', border: '1px solid rgba(99,102,241,0.3)', borderRadius: '8px', color: '#818cf8', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }} title="Sửa team">
                         <Edit2 size={13} />
                       </button>
@@ -2255,7 +2264,70 @@ export default function Inventory() {
         onCancel={() => setConfirmDeleteId(null)}
       />
 
-      {/* Modal Replace Team */}
+      {/* ==================== MODAL LẬP PHIẾU NHẬP HÀNG ==================== */}
+      {showPurchaseModal && createPortal(
+        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.75)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 9999, padding: "20px" }}>
+          <div className="animate-scale-in" style={{ background: "#111528", border: "1px solid rgba(99,102,241,0.3)", borderRadius: "16px", padding: "28px", width: "100%", maxWidth: "520px", maxHeight: "90vh", overflowY: "auto" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
+              <h3 style={{ fontSize: "18px", fontWeight: "800", color: "#fff", margin: 0 }}>📦 Lập Phiếu Nhập Hàng Mới</h3>
+              <button className="modal-close-btn" onClick={() => setShowPurchaseModal(false)}><X size={18} /></button>
+            </div>
+            <form onSubmit={handleSavePurchase} style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
+              <div>
+                <label className="form-label">Nhà Cung Cấp *</label>
+                <select required className="glass-input" value={purchaseFormData.supplierId} onChange={e => setPurchaseFormData(f => ({ ...f, supplierId: e.target.value }))}>
+                  <option value="">-- Chọn NCC --</option>
+                  {suppliers.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="form-label">Tên Sản Phẩm / Dịch Vụ *</label>
+                <input required className="glass-input" placeholder="VD: Canva Pro, ChatGPT Plus..." value={purchaseFormData.productName} onChange={e => setPurchaseFormData(f => ({ ...f, productName: e.target.value }))} />
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+                <div>
+                  <label className="form-label">Tổng Tiền Vốn (đ) *</label>
+                  <input required type="number" min="0" className="glass-input" placeholder="0" value={purchaseFormData.importCost} onChange={e => setPurchaseFormData(f => ({ ...f, importCost: e.target.value }))} />
+                </div>
+                <div>
+                  <label className="form-label">Số Lượng</label>
+                  <input type="number" min="1" className="glass-input" value={purchaseFormData.quantity} onChange={e => setPurchaseFormData(f => ({ ...f, quantity: e.target.value }))} />
+                </div>
+              </div>
+              {purchaseLiveCost > 0 && purchaseLiveQty > 0 && (
+                <div style={{ background: "rgba(16,185,129,0.1)", border: "1px solid rgba(16,185,129,0.2)", borderRadius: "8px", padding: "10px 14px", fontSize: "12.5px", color: "#10b981" }}>
+                  Giá vốn TB: <strong>{(purchaseLiveCost / purchaseLiveQty).toLocaleString("vi-VN")}đ / unit</strong>
+                </div>
+              )}
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+                <div>
+                  <label className="form-label">Trạng Thái Thanh Toán</label>
+                  <select className="glass-input" value={purchaseFormData.paymentStatus} onChange={e => setPurchaseFormData(f => ({ ...f, paymentStatus: e.target.value }))}>
+                    <option value="Đã thanh toán">Đã thanh toán</option>
+                    <option value="Chưa thanh toán">Chưa thanh toán</option>
+                    <option value="Thanh toán một phần">Thanh toán một phần</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="form-label">Ngày Nhập *</label>
+                  <input required type="date" className="glass-input" value={purchaseFormData.purchaseDate} onChange={e => setPurchaseFormData(f => ({ ...f, purchaseDate: e.target.value }))} />
+                </div>
+              </div>
+              <div>
+                <label className="form-label">Ghi Chú</label>
+                <textarea rows={2} className="glass-input" placeholder="Ghi chú nội bộ (tùy chọn)..." value={purchaseFormData.notes} onChange={e => setPurchaseFormData(f => ({ ...f, notes: e.target.value }))} style={{ resize: "vertical" }} />
+              </div>
+              <div style={{ display: "flex", gap: "10px", marginTop: "4px" }}>
+                <button type="submit" className="glass-button" style={{ flex: 1, background: "#6366f1", color: "#fff", fontWeight: "800", padding: "10px" }}>✅ Lập Phiếu Nhập</button>
+                <button type="button" className="glass-button" onClick={() => setShowPurchaseModal(false)} style={{ padding: "10px 20px", color: "#94a3b8" }}>Hủy</button>
+              </div>
+            </form>
+          </div>
+        </div>,
+        document.body
+      )}
+
+            {/* Modal Replace Team */}
       {showReplaceTeamModal && createPortal(
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 99999, padding: '20px' }} onClick={() => setShowReplaceTeamModal(null)}>
           <div style={{ background: '#111528', border: '1px solid rgba(239,68,68,0.3)', borderRadius: '16px', padding: '26px', width: '100%', maxWidth: '580px', maxHeight: '90vh', overflowY: 'auto' }} onClick={e => e.stopPropagation()}>

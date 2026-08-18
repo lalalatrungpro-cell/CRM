@@ -133,7 +133,10 @@ export default function SupplierDetail() {
       zalo: supplier.zalo || '',
       telegram: supplier.telegram || '',
       bot_link: supplier.bot_link || supplier.botLink || '',
-      notes: supplier.notes || ''
+      notes: supplier.notes || '',
+      warranty_policy: supplier.warranty_policy || '',
+      warranty_duration_days: supplier.warranty_duration_days || 30,
+      warranty_note: supplier.warranty_note || ''
     });
     setShowEditSuppModal(true);
   };
