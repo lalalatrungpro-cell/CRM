@@ -123,9 +123,9 @@ export default function Customers() {
       email: formData.email.trim() || '',
       type: formData.type || 'Le',
       source: formData.source || 'Facebook Page',
-      sub_channel: formData.sub_channel.trim() || '',
-      address: formData.address.trim() || '',
-      notes: formData.notes.trim() || '',
+      sub_channel: (formData.sub_channel || '').trim() || '',
+      address: (formData.address || '').trim() || '',
+      notes: (formData.notes || '').trim() || '',
     };
 
     try {
@@ -443,7 +443,7 @@ export default function Customers() {
           </div>
         ) : (
           <>
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13.5px' }}>
+            <div style={{ overflowX: 'auto' }}><table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13.5px', minWidth: '950px' }}>
               <thead>
                 <tr style={{ background: 'rgba(255,255,255,0.04)', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
                   {['Mã KH', 'Tên Khách Hàng', 'SĐT / Zalo', 'Kênh Nguồn', 'Phân Loại', 'Chi Tiêu (LTV)', 'Công Nợ', 'Thao Tác 360°'].map(h => (
@@ -567,7 +567,7 @@ export default function Customers() {
                   );
                 })}
               </tbody>
-            </table>
+            </table></div>
 
             {/* Pagination Controls */}
             {totalPages > 1 && (

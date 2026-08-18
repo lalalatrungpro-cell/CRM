@@ -94,7 +94,7 @@ export default function Dashboard() {
       setSuppliers(sList || []);
       setCashSummary(cSum || { totalIncome: 0, totalExpense: 0, netBalance: 0, cashBalance: 0, bankBalance: 0 });
       // Bug #1 Fix: store raw expense list, computed filtered opex in computed section
-      setRawExpenses(rawExpenseList || []);
+      setRawExpenses(oSum || []);
       setPayrolls(pList || []);
       setPurchases(purList || []);
       setInventorySummary(invSum || { availableCount: 0, totalInventoryValue: 0 });
@@ -149,8 +149,8 @@ export default function Dashboard() {
     let totalFixed = 0, totalVariable = 0;
     rawExpenses.forEach(item => {
       const d = String(item.expense_date || item.created_at || '').split('T')[0];
-      if (dateRange.startDate && d < dateRange.startDate) return;
-      if (dateRange.endDate && d > dateRange.endDate) return;
+      if (startDate && d < startDate) return;
+      if (endDate && d > endDate) return;
       const amt = Number(item.amount || 0);
       if (item.expense_type === 'FIXED') totalFixed += amt;
       else totalVariable += amt;
@@ -346,7 +346,7 @@ export default function Dashboard() {
 
   const getInitials = (name) => (name || '?').split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2);
   const AVATAR_COLORS = ['#6366f1','#10b981','#f59e0b','#ec4899','#0ea5e9','#a855f7','#ef4444'];
-  const getAvatarColor = (name) => AVATAR_COLORS[(name||'').charCodeAt(0) % AVATAR_COLORS.length];
+  const getAvatarColor = (name) => AVATAR_COLORS[((name || '?').charCodeAt(0) || 0) % AVATAR_COLORS.length];
 
   const hasAlerts = deadTeamsAlert.length > 0 || expiringOrdersAlert.length > 0 || outOfStockProducts.length > 0 || debtorCustomersAlert.length > 0;
 

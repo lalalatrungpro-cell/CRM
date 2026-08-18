@@ -517,6 +517,7 @@ export default function Orders() {
         setShowDetailModal(null);
         setShowInvoiceModal(null);
         setShowWarrantyModal(null);
+        setShowEditModal(null);
       }
     };
     window.addEventListener('keydown', handler);
@@ -1714,15 +1715,15 @@ export default function Orders() {
                   <p style={{ fontSize: '12px', color: '#64748b', margin: 0 }}>Hotline / Zalo CSKH: 0901234567</p>
                 </div>
                 <div style={{ textAlign: 'right' }}>
-                  <p style={{ fontWeight: '700', fontSize: '14px', margin: 0 }}>MÃ HÓA ĐƠN: #${showInvoiceModal.order.id}</p>
-                  <p style={{ fontSize: '12px', color: '#64748b', margin: '2px 0' }}>Ngày: ${showInvoiceModal.order.purchase_date || showInvoiceModal.order.purchaseDate || todayStr}</p>
+                  <p style={{ fontWeight: '700', fontSize: '14px', margin: 0 }}>MÃ HÓA ĐƠN: #{showInvoiceModal.order.id}</p>
+                  <p style={{ fontSize: '12px', color: '#64748b', margin: '2px 0' }}>Ngày: {new Date(showInvoiceModal.order.purchase_date || showInvoiceModal.order.purchaseDate || todayStr).toLocaleDateString('vi-VN')}</p>
                 </div>
               </div>
 
               {/* Customer Info */}
               <div style={{ background: '#f8fafc', padding: '12px', borderRadius: '8px', marginBottom: '16px' }}>
-                <p style={{ margin: 0 }}><strong>Khách Hàng:</strong> ${showInvoiceModal.order.customer_name || showInvoiceModal.order.customerName}</p>
-                <p style={{ margin: '4px 0 0' }}><strong>Số Điện Thoại / Zalo:</strong> ${showInvoiceModal.order.phone || 'N/A'}</p>
+                <p style={{ margin: 0 }}><strong>Khách Hàng:</strong> {showInvoiceModal.order.customer_name || showInvoiceModal.order.customerName}</p>
+                <p style={{ margin: '4px 0 0' }}><strong>Số Điện Thoại / Zalo:</strong> {showInvoiceModal.order.phone || 'N/A'}</p>
               </div>
 
               {/* Items Table */}
@@ -2103,7 +2104,7 @@ export default function Orders() {
                     value={formData.subChannelName} onChange={e => setFormData({ ...formData, subChannelName: e.target.value })}
                   >
                     <option value="">-- Mặc định --</option>
-                    {(channels || []).filter(ch => !formData.channel || ch.main_channel === formData.channel).map(ch => (
+                    {(channels || []).filter(ch => !formData.source || ch.main_channel === formData.source).map(ch => (
                       <option key={ch.id} value={ch.sub_channel_name || ch.name}>{ch.sub_channel_name || ch.name}</option>
                     ))}
                   </select>
