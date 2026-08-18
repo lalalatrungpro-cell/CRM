@@ -125,7 +125,7 @@ export default function Dashboard() {
   const // Bug #5 Fix: Align with Customers.jsx — only count 'Đã thanh toán' as collected revenue
   paidOrders = filteredOrders.filter(o => {
     const s = String(o.status || '');
-    return s === 'Đã thanh toán' || (s.includes('Hoàn tiền') && !s.includes('100%'));
+    return s === 'Đã thanh toán' || s === 'Nợ' || (s.includes('Hoàn tiền') && !s.includes('100%'));
   });
   // Track Nợ (AR) separately for display in summary
   const debtOrders = filteredOrders.filter(o => String(o.status || '').toLowerCase().trim() === 'nợ');
@@ -143,7 +143,7 @@ export default function Dashboard() {
 
   // OPEX components
   const filteredPayrolls = payrolls.filter(p => isDateInRange(p.payment_date || p.created_at));
-  const totalPayrollPaid = filteredPayrolls.filter(p => p.status === 'PAID').reduce((sum, p) => sum + Number(p.net_salary || 0), 0);
+  const totalPayrollPaid = filteredPayrolls.reduce((sum, p) => sum + Number(p.net_salary || 0), 0);
   // Bug #1 Fix: Compute OPEX filtered by selected date range
   const filteredOpexSummary = (() => {
     let totalFixed = 0, totalVariable = 0;
@@ -239,7 +239,8 @@ export default function Dashboard() {
         const cat = t.category || '';
         if (p.name.toLowerCase().includes(cat.toLowerCase()) || cat.toLowerCase().includes(p.name.toLowerCase())) {
           const maxS = t.max_slots || t.maxSlots || 49;
-          const usedS = (orders || []).filter(o => String(o.team_id || o.teamId) === String(t.id)).length;
+          const todayStr = new Date().toISOString().split('T')[0];
+          const usedS = (orders || []).filter(o => String(o.team_id || o.teamId) === String(t.id) && !['Đã hủy', 'Hoàn tiền 100%'].includes(o.status) && (!o.expire_date || o.expire_date >= todayStr)).length;
           teamAvailSlots += Math.max(0, maxS - usedS);
         }
       }

@@ -1101,7 +1101,8 @@ export default function Inventory() {
           ) : (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(320px,1fr))', gap: '16px' }}>
               {filteredTeamCards.map(team => {
-                const usedSlots = orders.filter(o => String(o.team_id || o.teamId) === String(team.id)).length;
+                const todayStr = new Date().toISOString().split('T')[0];
+                const usedSlots = orders.filter(o => String(o.team_id || o.teamId) === String(team.id) && !['Đã hủy', 'Hoàn tiền 100%'].includes(o.status) && (!o.expire_date || o.expire_date >= todayStr)).length;
                 const maxSlots = team.max_slots || team.maxSlots || 1;
                 const availSlots = Math.max(0, maxSlots - usedSlots);
                 const usagePct = Math.min(100, Math.round((usedSlots / maxSlots) * 100));

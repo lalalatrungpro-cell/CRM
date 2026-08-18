@@ -1470,10 +1470,8 @@ export const PayrollService = {
                (o.staff_id && String(o.staff_id) === String(staff.id));
       });
 
-      const ordersCount = staffOrders.length > 0 ? staffOrders.length : (staff.role === 'Sale' ? 15 : 10);
-      const revenueGen = staffOrders.length > 0
-        ? staffOrders.reduce((sum, o) => sum + Number(o.sell_price || o.sellPrice || 0), 0)
-        : (ordersCount * 200000);
+      const ordersCount = staffOrders.length;
+      const revenueGen = staffOrders.reduce((sum, o) => sum + Number(o.sell_price || o.sellPrice || 0) - Number(o.refund_amount || 0), 0);
 
       let commAmt = 0;
       if (staff.commission_type === 'PERCENT' && staff.commission_rate > 0) {
@@ -1682,8 +1680,15 @@ export const InventoryService = {
 
     // Aggregate Kho Team slots into 360 Inventory Summary
     (teams || []).forEach(t => {
+      if (t.status === 'REPLACED') return; // Skip replaced/frozen teams to avoid double counting
+
       const maxSlots = t.max_slots || t.maxSlots || 1;
-      const teamOrders = (orders || []).filter(o => String(o.team_id || o.teamId) === String(t.id));
+      const todayStr = new Date().toISOString().split('T')[0];
+      const teamOrders = (orders || []).filter(o =>
+        String(o.team_id || o.teamId) === String(t.id) &&
+        !['Đã hủy', 'Hoàn tiền 100%'].includes(o.status) &&
+        (!o.expire_date || o.expire_date >= todayStr)
+      );
       const usedSlots = teamOrders.length;
       const unitCost = maxSlots > 0 ? Math.round(Number(t.import_cost || t.importCost || 0) / maxSlots) : 0;
 
@@ -1691,8 +1696,8 @@ export const InventoryService = {
       soldCount += usedSlots;
 
       if (t.status === 'FAULTY_DIE' && !t.replaced_by_team_id && !t.replaced_by_team_name) {
-        faultyCount += 1;
-      } else if (t.status === 'ACTIVE') {
+        faultyCount += maxSlots;
+      } else if (t.status === 'ACTIVE' || !t.status) {
         const availSlots = Math.max(0, maxSlots - usedSlots);
         availableCount += availSlots;
         totalInventoryValue += availSlots * unitCost;

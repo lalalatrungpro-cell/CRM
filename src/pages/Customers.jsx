@@ -169,7 +169,7 @@ export default function Customers() {
     const exportData = customers.map(c => {
       const custOrders = orders.filter(o => String(o.customer_id || o.customerId) === String(c.id));
       const totalSpent = custOrders
-        .filter(o => o.status === 'Đã thanh toán')
+        .filter(o => { const s = String(o.status || ''); return s === 'Đã thanh toán' || s === 'Nợ' || (s.includes('Hoàn tiền') && !s.includes('100%')); })
         .reduce((sum, o) => sum + (o.sell_price || o.sellPrice || 0), 0);
 
       return {
@@ -224,7 +224,7 @@ export default function Customers() {
   const totalSpentAll = orders
     .filter(o => {
       const s = String(o.status || '');
-      return s === 'Đã thanh toán' || (s.includes('Hoàn tiền') && !s.includes('100%'));
+      return s === 'Đã thanh toán' || s === 'Nợ' || (s.includes('Hoàn tiền') && !s.includes('100%'));
     })
     .reduce((sum, o) => {
       const sellP = Number(o.sell_price || o.sellPrice || 0);

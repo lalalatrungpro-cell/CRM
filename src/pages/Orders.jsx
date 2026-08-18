@@ -427,6 +427,29 @@ export default function Orders() {
     };
 
     try {
+      const oldOrder = orders.find(o => String(o.id) === String(editFormData.id));
+      if (oldOrder && oldOrder.status === 'Nợ' && editFormData.status === 'Đã thanh toán') {
+        const custId = oldOrder.customer_id || oldOrder.customerId;
+        const oldSellPrice = Number(oldOrder.sell_price || oldOrder.sellPrice || 0);
+        if (custId) {
+          const cust = customers.find(c => String(c.id) === String(custId));
+          if (cust) {
+            const currentDebt = Number(cust.debt || 0);
+            const newDebt = Math.max(0, currentDebt - oldSellPrice);
+            await CustomerService.update(cust.id, { debt: newDebt });
+            toast.success(`Đã tự động trừ công nợ KH ${cust.name}: ${oldSellPrice.toLocaleString('vi-VN')}đ!`);
+          }
+        }
+        await CashTransactionService.create(shopId, {
+          type: 'INCOME',
+          category: 'Doanh thu POS',
+          amount: Number(editFormData.sellPrice || oldSellPrice),
+          account_type: 'BANK',
+          reference_id: String(editFormData.id),
+          notes: `Thu tiền đơn nợ #${editFormData.id}`
+        });
+      }
+
       await OrderService.update(editFormData.id, payload);
       toast.success('Đã cập nhật thông tin tài khoản & đơn hàng!');
       setShowEditModal(null);
