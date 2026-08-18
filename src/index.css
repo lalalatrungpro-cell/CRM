@@ -380,3 +380,8 @@ option {
     display: none !important;
   }
 }
+
+/* Modal scale-in animation */
+.animate-scale-in {
+  animation: modalIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
