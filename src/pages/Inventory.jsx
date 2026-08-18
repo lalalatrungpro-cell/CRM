@@ -176,7 +176,17 @@ export default function Inventory() {
     loadData();
   }, [shopId]);
 
-  // ─── TEAM CRUD HANDLERS (GĐ1) ────────────────────────────────────
+  // ─── SUPPLIER DIE TEAM CLAIM HELPER ─────────────────────────────
+  const handleCopySupplierClaimMsg = (team) => {
+    const supp = suppliers.find(s => String(s.id) === String(team.supplier_id || team.supplierId)) || {};
+    const suppName = supp.name || team.supplier_name || 'NCC';
+    const pDate = team.created_at || team.purchase_date ? new Date(team.created_at || team.purchase_date).toLocaleDateString('vi-VN') : 'Mới mua';
+    const text = `Chào ${suppName}, bên mình cần hỗ trợ bảo hành Kho Team bị DIE:\n- Tên Kho Team: ${team.name} (${team.category || 'Canva Pro'})\n- Tài khoản Admin / Acc Gốc: ${team.infor || 'Chưa lưu acc gốc'}\n- Quy mô: ${team.max_slots || 49} slot\n- Ngày mua: ${pDate}\nNhờ bạn kiểm tra khôi phục hoặc đổi team mới giúp mình với nhé. Cảm ơn bạn!`;
+    navigator.clipboard.writeText(text);
+    toast.success(`✅ Đã copy tin nhắn đòi bảo hành gửi ${suppName}! Dán (Ctrl+V) sang Zalo ngay.`);
+  };
+
+    // ─── TEAM CRUD HANDLERS (GĐ1) ────────────────────────────────────
   const closeTeamModal = () => { setShowTeamModal(false); setEditingTeam(null); setTeamFormData(emptyTeamForm); };
   const handleOpenAddTeamModal = () => { setEditingTeam(null); setTeamFormData(emptyTeamForm); setShowTeamModal(true); };
   const handleOpenEditTeamModal = (team) => {
@@ -1848,8 +1858,13 @@ export default function Inventory() {
                   <tbody>
                     {teams.filter(t => (t.status === 'FAULTY_DIE' || t.status === 'DIE') && !t.replaced_by_team_id && !t.replaced_by_team_name).map(t => (
                       <tr key={t.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                        <td style={{ padding: '10px 14px', fontWeight: '700', color: '#fff' }}>
-                          {t.name}
+                        <td style={{ padding: '10px 14px' }}>
+                          <strong style={{ color: '#fff', fontSize: '13.5px', display: 'block' }}>{t.name}</strong>
+                          {t.infor && (
+                            <div style={{ fontSize: '11px', color: '#38bdf8', marginTop: '2px', fontFamily: 'monospace' }}>
+                              🔑 Acc: {t.infor}
+                            </div>
+                          )}
                           {t.replaced_by_team_name && (
                             <div style={{ fontSize: '11px', color: '#10b981', marginTop: '2px', fontWeight: '600' }}>
                               ⚡ Đã thay thế bởi: {t.replaced_by_team_name}
@@ -1860,11 +1875,38 @@ export default function Inventory() {
                         <td style={{ padding: '10px 14px', color: '#c084fc', fontWeight: '700' }}>🏭 {t.supplier_name || t.supplierName || '—'}</td>
                         <td style={{ padding: '10px 14px', textAlign: 'center', color: '#ef4444', fontWeight: '700' }}>{t.max_slots || t.maxSlots || 49} slot</td>
                         <td style={{ padding: '10px 14px', textAlign: 'center' }}>
-                          <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
+                          <div style={{ display: 'flex', gap: '6px', justifyContent: 'center', flexWrap: 'wrap' }}>
+                            <button
+                              className="glass-button"
+                              onClick={() => handleCopySupplierClaimMsg(t)}
+                              title="1-Click copy kịch bản nhắn Zalo đòi bảo hành cho NCC"
+                              style={{ padding: '5px 10px', fontSize: '11px', background: 'rgba(245,158,11,0.18)', color: '#f59e0b', border: '1px solid rgba(245,158,11,0.3)', fontWeight: '700' }}
+                            >
+                              📋 Copy Tin Đòi BH NCC
+                            </button>
+
+                            {(() => {
+                              const supp = suppliers.find(s => String(s.id) === String(t.supplier_id || t.supplierId));
+                              const suppZalo = (supp?.zalo || supp?.phone || '').split(',')[0]?.trim();
+                              if (!suppZalo) return null;
+                              return (
+                                <a
+                                  href={`https://zalo.me/${suppZalo.replace(/[^0-9]/g, '')}`}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="glass-button"
+                                  title="Click mở Zalo NCC"
+                                  style={{ padding: '5px 10px', fontSize: '11px', background: '#0068ff', color: '#fff', textDecoration: 'none', fontWeight: '700' }}
+                                >
+                                  💬 Zalo NCC
+                                </a>
+                              );
+                            })()}
+
                             <button
                               className="glass-button"
                               onClick={() => handleOpenReplaceTeamModal(t)}
-                              style={{ padding: '5px 12px', fontSize: '11.5px', background: 'linear-gradient(135deg, #10b981, #059669)', color: '#fff', fontWeight: '800' }}
+                              style={{ padding: '5px 10px', fontSize: '11px', background: 'linear-gradient(135deg, #10b981, #059669)', color: '#fff', fontWeight: '800' }}
                             >
                               ⚡ Tạo Team Thay Thế (Bảo Hành)
                             </button>
