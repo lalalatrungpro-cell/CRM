@@ -1222,37 +1222,26 @@ export default function Orders() {
 
                   return (
                     <tr key={order.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                      {/* 1. MÃ ĐƠN (1-Click Copy) */}
+                      {/* 1. MÃ ĐƠN (1-Click Copy Clean Text Style) */}
                       <td style={{ padding: '12px 10px', whiteSpace: 'nowrap' }}>
-                        <div
+                        <strong
                           onClick={() => {
                             navigator.clipboard.writeText(`#${order.id}`);
                             setCopiedId(`order-${order.id}`);
                             toast.success(`✅ Đã copy mã đơn #${order.id}!`);
-                            setTimeout(() => setCopiedId(''), 2000);
+                            setTimeout(() => setCopiedId(''), 1500);
                           }}
-                          title="Click để copy mã đơn hàng"
+                          title="Click 1-click copy mã đơn"
                           style={{
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: '5px',
+                            color: copiedId === `order-${order.id}` ? '#10b981' : '#fff',
+                            fontSize: '13px',
+                            fontFamily: 'monospace',
                             cursor: 'pointer',
-                            padding: '3px 7px',
-                            borderRadius: '6px',
-                            background: copiedId === `order-${order.id}` ? 'rgba(16,185,129,0.15)' : 'rgba(255,255,255,0.04)',
-                            border: copiedId === `order-${order.id}` ? '1px solid rgba(16,185,129,0.3)' : '1px solid rgba(255,255,255,0.08)',
-                            transition: 'all 0.15s ease'
+                            transition: 'color 0.15s ease'
                           }}
                         >
-                          <strong style={{ color: copiedId === `order-${order.id}` ? '#10b981' : '#fff', fontSize: '13px', fontFamily: 'monospace' }}>
-                            #{order.id}
-                          </strong>
-                          {copiedId === `order-${order.id}` ? (
-                            <Check size={13} color="#10b981" />
-                          ) : (
-                            <Copy size={12} color="#64748b" />
-                          )}
-                        </div>
+                          #{order.id}
+                        </strong>
                         <div style={{ fontSize: '10.5px', color: '#64748b', marginTop: '3px' }}>{createdStr}</div>
                       </td>
 

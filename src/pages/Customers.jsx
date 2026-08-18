@@ -468,36 +468,25 @@ export default function Customers() {
                   return (
                     <tr key={customer.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
                       <td style={{ padding: '14px 16px', whiteSpace: 'nowrap' }}>
-                        <div
+                        <strong
                           onClick={() => {
                             const codeToCopy = String(customer.id).startsWith('#') ? String(customer.id) : `#${customer.id}`;
                             navigator.clipboard.writeText(codeToCopy);
                             setCopiedCustId(String(customer.id));
                             toast.success(`✅ Đã copy Mã KH ${codeToCopy}!`);
-                            setTimeout(() => setCopiedCustId(''), 2000);
+                            setTimeout(() => setCopiedCustId(''), 1500);
                           }}
                           title="Click 1-click copy Mã KH"
                           style={{
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: '5px',
+                            color: copiedCustId === String(customer.id) ? '#10b981' : '#fff',
+                            fontSize: '13.5px',
+                            fontFamily: 'monospace',
                             cursor: 'pointer',
-                            padding: '3px 8px',
-                            borderRadius: '6px',
-                            background: copiedCustId === String(customer.id) ? 'rgba(16,185,129,0.15)' : 'rgba(255,255,255,0.04)',
-                            border: copiedCustId === String(customer.id) ? '1px solid rgba(16,185,129,0.3)' : '1px solid rgba(255,255,255,0.08)',
-                            transition: 'all 0.15s ease'
+                            transition: 'color 0.15s ease'
                           }}
                         >
-                          <strong style={{ color: copiedCustId === String(customer.id) ? '#10b981' : '#fff', fontSize: '13px', fontFamily: 'monospace' }}>
-                            {String(customer.id).startsWith('#') ? customer.id : `#${customer.id}`}
-                          </strong>
-                          {copiedCustId === String(customer.id) ? (
-                            <Check size={13} color="#10b981" />
-                          ) : (
-                            <Copy size={12} color="#64748b" />
-                          )}
-                        </div>
+                          {String(customer.id).startsWith('#') ? customer.id : `#${customer.id}`}
+                        </strong>
                       </td>
                       <td style={{ padding: '14px 16px' }}>
                         <strong style={{ color: '#fff' }}>{customer.name}</strong>
