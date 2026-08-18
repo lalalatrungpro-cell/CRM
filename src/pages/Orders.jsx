@@ -1064,12 +1064,25 @@ export default function Orders() {
     if (dateRange.startDate && ds < dateRange.startDate) return false;
     if (dateRange.endDate && ds > dateRange.endDate) return false;
 
-    const custName = o.customer_name || o.customerName || '';
-    const prodName = o.product_name || o.productName || '';
-    const matchesSearch = custName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          (o.phone || '').includes(searchTerm) ||
-                          prodName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          String(o.id).includes(searchTerm);
+    const term = (searchTerm || '').trim();
+    const cleanSearch = term.replace(/^#/, '').toLowerCase();
+    const rawSearch = term.toLowerCase();
+
+    const custName = (o.customer_name || o.customerName || '').toLowerCase();
+    const prodName = (o.product_name || o.productName || '').toLowerCase();
+    const phone = (o.phone || '').toLowerCase();
+    const infor = (o.infor || '').toLowerCase();
+    const orderIdStr = String(o.id || '').toLowerCase();
+    const hashOrderId = `#${orderIdStr}`;
+
+    const matchesSearch = !term ||
+                          custName.includes(rawSearch) ||
+                          custName.includes(cleanSearch) ||
+                          phone.includes(cleanSearch) ||
+                          prodName.includes(rawSearch) ||
+                          infor.includes(rawSearch) ||
+                          orderIdStr.includes(cleanSearch) ||
+                          hashOrderId.includes(rawSearch);
 
     const matchesStatus = filterStatus === 'ALL' || o.status === filterStatus;
     const matchesCategory = filterCategory === 'ALL' || prodName.toLowerCase().includes(filterCategory.toLowerCase());

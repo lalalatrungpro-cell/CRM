@@ -586,12 +586,16 @@ export default function Inventory() {
     if (filterProduct !== 'ALL' && item.product_name !== filterProduct) return false;
     if (filterSupplier !== 'ALL' && String(item.supplier_id) !== String(filterSupplier)) return false;
     if (searchTerm) {
-      const s = searchTerm.toLowerCase();
-      const matchCode = (item.item_code || '').toLowerCase().includes(s);
-      const matchProd = (item.product_name || '').toLowerCase().includes(s);
-      const matchCust = (item.customer_name || '').toLowerCase().includes(s);
-      const matchSupp = (item.supplier_name || '').toLowerCase().includes(s);
-      if (!matchCode && !matchProd && !matchCust && !matchSupp) return false;
+      const term = searchTerm.trim();
+      const cleanSearch = term.replace(/^#/, '').toLowerCase();
+      const rawSearch = term.toLowerCase();
+
+      const matchCode = (item.item_code || '').toLowerCase().includes(rawSearch);
+      const matchProd = (item.product_name || '').toLowerCase().includes(rawSearch);
+      const matchCust = (item.customer_name || '').toLowerCase().includes(rawSearch);
+      const matchSupp = (item.supplier_name || '').toLowerCase().includes(rawSearch);
+      const matchOrder = String(item.order_id || '').toLowerCase().includes(cleanSearch);
+      if (!matchCode && !matchProd && !matchCust && !matchSupp && !matchOrder) return false;
     }
     return true;
   });
