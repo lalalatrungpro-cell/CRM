@@ -1884,14 +1884,16 @@ export const InventoryService = {
 
     // Create log
     if (itemObj) {
+      const keyTag = itemObj.infor ? `[${itemObj.infor.length > 12 ? itemObj.infor.substring(0, 4) + '****' + itemObj.infor.slice(-4) : itemObj.infor}] ` : '';
       await InventoryLogService.create(shopId, {
         inventory_item_id: itemObj.id,
         action_type: 'EXPORT_POS',
         product_name: itemObj.product_name,
+        item_infor: itemObj.infor || '',
         quantity: 1,
         unit_cost: itemObj.cost_price,
         reference_id: String(orderId),
-        notes: `Xuất bán đơn hàng POS #${orderId} cho ${customerName}`
+        notes: `${keyTag}Xuất bán đơn hàng POS #${orderId} cho ${customerName}`
       });
     }
 
@@ -1921,14 +1923,16 @@ export const InventoryService = {
     setLocal('inventory_items', updated);
 
     if (faultyItem) {
+      const faultyKeyTag = faultyItem.infor ? `[${faultyItem.infor.length > 12 ? faultyItem.infor.substring(0, 4) + '****' + faultyItem.infor.slice(-4) : faultyItem.infor}] ` : '';
       await InventoryLogService.create(shopId, {
         inventory_item_id: faultyItem.id,
         action_type: 'WARRANTY_FAULTY',
         product_name: faultyItem.product_name,
+        item_infor: faultyItem.infor || '',
         quantity: 1,
         unit_cost: faultyItem.cost_price,
         reference_id: orderId ? String(orderId) : '',
-        notes: `Khách báo lỗi: ${reason}. Đưa vào danh sách đòi bảo hành NCC.`
+        notes: `${faultyKeyTag}Khách báo lỗi: ${reason}. Đưa vào danh sách đòi bảo hành NCC.`
       });
     }
 
@@ -1973,13 +1977,15 @@ export const InventoryService = {
     setLocal('inventory_items', updated);
 
     if (itemObj) {
+      const restockKeyTag = itemObj.infor ? `[${itemObj.infor.length > 12 ? itemObj.infor.substring(0, 4) + '****' + itemObj.infor.slice(-4) : itemObj.infor}] ` : '';
       await InventoryLogService.create(shopId, {
         inventory_item_id: itemObj.id,
         action_type: 'RESTOCK',
         product_name: itemObj.product_name,
+        item_infor: itemObj.infor || '',
         quantity: 1,
         unit_cost: itemObj.cost_price,
-        notes: `Thu hồi key về kho sẵn sàng bán: ${notes}`
+        notes: `${restockKeyTag}Thu hồi key về kho sẵn sàng bán (${notes})`
       });
     }
 

@@ -1801,8 +1801,23 @@ export default function Inventory() {
                                 {cfg.label}
                               </span>
                             </td>
-                            <td style={{ padding: '12px 16px', fontWeight: '700', color: '#fff' }}>
-                              {log.product_name || log.productName || 'Sản phẩm'}
+                            <td style={{ padding: '12px 16px' }}>
+                              <strong style={{ color: '#fff', fontSize: '13.5px', display: 'block' }}>
+                                {log.product_name || log.productName || 'Sản phẩm'}
+                              </strong>
+                              {(() => {
+                                const linkedItem = items.find(i => String(i.id) === String(log.inventory_item_id || log.inventoryItemId));
+                                const rawInfor = log.item_infor || log.itemInfor || linkedItem?.infor;
+                                if (!rawInfor) return null;
+                                const maskedKey = rawInfor.length > 14
+                                  ? `${rawInfor.substring(0, 4)}****${rawInfor.substring(rawInfor.length - 4)}`
+                                  : rawInfor;
+                                return (
+                                  <div style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', marginTop: '3px', background: 'rgba(56,189,248,0.1)', border: '1px solid rgba(56,189,248,0.25)', padding: '2px 7px', borderRadius: '4px', fontSize: '11px', color: '#38bdf8', fontFamily: 'monospace', fontWeight: '700' }}>
+                                    🔑 Key: {maskedKey}
+                                  </div>
+                                );
+                              })()}
                             </td>
                             <td style={{ padding: '12px 16px', textAlign: 'center', color: '#38bdf8', fontWeight: '700' }}>
                               {log.quantity || 1}
