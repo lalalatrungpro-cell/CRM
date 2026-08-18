@@ -928,6 +928,67 @@ export default function Inventory() {
                               ⚠️ Lỗi: {item.faulty_reason}
                             </div>
                           )}
+
+                          {/* Proposal A: 0-Click Horizontal Stepper Timeline */}
+                          {(() => {
+                            const events = [];
+                            
+                            // 1. Import event
+                            const importDate = item.created_at || item.import_date || item.purchase_date;
+                            if (importDate) {
+                              const dStr = new Date(importDate).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: '2-digit' });
+                              events.push({ icon: '📥', label: 'Nhập kho', date: dStr, color: '#10b981' });
+                            }
+
+                            // 2. Export POS sale event
+                            if (item.order_id || item.customer_name || item.status === 'SOLD') {
+                              const exportLog = inventoryLogs.find(l => String(l.inventory_item_id || l.inventoryItemId) === String(item.id) && (l.action_type === 'EXPORT_POS' || l.action_type === 'EXPORT'));
+                              const expDate = exportLog?.created_at || item.sold_date;
+                              const dStr = expDate ? new Date(expDate).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: '2-digit' }) : 'Đã bán';
+                              const orderRef = item.order_id ? `#${item.order_id}` : '';
+                              events.push({ icon: '📤', label: `Bán POS ${orderRef}`, date: dStr, color: '#a855f7' });
+                            }
+
+                            // 3. Restock / Revoke event
+                            const restockLog = inventoryLogs.find(l => String(l.inventory_item_id || l.inventoryItemId) === String(item.id) && l.action_type === 'RESTOCK');
+                            if (restockLog) {
+                              const dStr = restockLog.created_at ? new Date(restockLog.created_at).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: '2-digit' }) : 'Vừa thu hồi';
+                              events.push({ icon: '🔄', label: 'Thu hồi (Hủy đơn)', date: dStr, color: '#38bdf8' });
+                            }
+
+                            // 4. Faulty / Warranty event
+                            if (item.status === 'FAULTY' || item.faulty_reason) {
+                              const faultyLog = inventoryLogs.find(l => String(l.inventory_item_id || l.inventoryItemId) === String(item.id) && (l.action_type === 'WARRANTY_FAULTY' || l.action_type === 'FAULTY'));
+                              const dStr = faultyLog?.created_at ? new Date(faultyLog.created_at).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: '2-digit' }) : '';
+                              events.push({ icon: '🔴', label: 'Báo lỗi NCC', date: dStr, color: '#ef4444' });
+                            }
+
+                            if (events.length === 0) return null;
+
+                            return (
+                              <div style={{ marginTop: '6px', fontSize: '10px', color: '#94a3b8', display: 'flex', alignItems: 'center', gap: '3px', flexWrap: 'wrap' }}>
+                                {events.map((ev, idx) => (
+                                  <React.Fragment key={idx}>
+                                    {idx > 0 && <span style={{ color: '#475569', fontSize: '9px', margin: '0 1px' }}>➔</span>}
+                                    <span
+                                      title={`${ev.date}: ${ev.label}`}
+                                      style={{
+                                        color: ev.color,
+                                        fontWeight: '700',
+                                        background: `${ev.color}15`,
+                                        padding: '1px 5px',
+                                        borderRadius: '4px',
+                                        border: `1px solid ${ev.color}30`,
+                                        whiteSpace: 'nowrap'
+                                      }}
+                                    >
+                                      {ev.icon} {ev.date}: {ev.label}
+                                    </span>
+                                  </React.Fragment>
+                                ))}
+                              </div>
+                            );
+                          })()}
                         </td>
 
                         <td style={{ padding: '12px 16px' }}>
