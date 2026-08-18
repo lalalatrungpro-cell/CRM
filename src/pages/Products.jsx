@@ -104,6 +104,7 @@ export default function Products() {
       name: prod.name || '',
       category: isCustom ? 'CUSTOM_NEW' : (prod.category || 'Canva Pro'),
       customCategory: isCustom ? prod.category : '',
+      description: prod.description || prod.notes || '',
       defaultDurationDays: prod.default_duration_days || prod.defaultDurationDays || 30,
       defaultSell: prod.default_sell || prod.defaultSell || 150000,
       priceCtv: prod.price_ctv || prod.priceCtv || (prod.default_sell ? Math.round(prod.default_sell * 0.75) : 110000),
@@ -141,6 +142,7 @@ export default function Products() {
     const payload = {
       name: formData.name.trim(),
       category: finalCategory,
+      description: (formData.description || '').trim(),
       default_duration_days: parseInt(formData.defaultDurationDays) || 30,
       default_sell: sellVal,
       price_ctv: ctvVal,
@@ -342,12 +344,21 @@ export default function Products() {
                       <span className="badge badge-info" style={{ fontSize: '10px' }}>{prod.category}</span>
                       <h3 style={{ fontSize: '16.5px', fontWeight: '800', color: '#fff', marginTop: '4px', margin: 0 }}>{prod.name}</h3>
                       <p style={{ fontSize: '11px', color: '#64748b', margin: '2px 0 0 0' }}>Hạn dùng chuẩn: {durDays} ngày • Max slots: {prod.max_slots || prod.maxSlots || 1}</p>
-                      {prod.description && (
-                        <div style={{ fontSize: '11.5px', color: '#94a3b8', background: 'rgba(255,255,255,0.03)', padding: '6px 10px', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.05)', marginTop: '6px', display: 'flex', alignItems: 'flex-start', gap: '6px' }}>
+                      {prod.description ? (
+                        <div style={{ fontSize: '11.5px', color: '#cbd5e1', background: 'rgba(56,189,248,0.06)', padding: '6px 10px', borderRadius: '6px', border: '1px solid rgba(56,189,248,0.2)', marginTop: '6px', display: 'flex', alignItems: 'flex-start', gap: '6px' }}>
                           <FileText size={13} color="#38bdf8" style={{ marginTop: '2px', flexShrink: 0 }} />
-                          <span style={{ lineClamp: 2, WebkitLineClamp: 2, display: '-webkit-box', WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                          <span style={{ lineClamp: 2, WebkitLineClamp: 2, display: '-webkit-box', WebkitBoxOrient: 'vertical', overflow: 'hidden', wordBreak: 'break-word' }}>
                             {prod.description}
                           </span>
+                        </div>
+                      ) : (
+                        <div
+                          onClick={() => handleOpenEditModal(prod)}
+                          title="Click để thêm mô tả & hướng dẫn sử dụng sản phẩm này"
+                          style={{ fontSize: '11px', color: '#64748b', background: 'rgba(255,255,255,0.02)', padding: '5px 8px', borderRadius: '6px', border: '1px dashed rgba(255,255,255,0.08)', marginTop: '6px', display: 'flex', alignItems: 'center', gap: '5px', cursor: 'pointer' }}
+                        >
+                          <FileText size={12} color="#64748b" />
+                          <span>📝 Chưa có mô tả (Bấm ✏️ để thêm quy cách & bảo hành)</span>
                         </div>
                       )}
                     </div>
