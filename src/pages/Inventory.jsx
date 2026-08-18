@@ -1858,10 +1858,19 @@ export default function Inventory() {
                   <tbody>
                     {teams.filter(t => (t.status === 'FAULTY_DIE' || t.status === 'DIE') && !t.replaced_by_team_id && !t.replaced_by_team_name).map(t => (
                       <tr key={t.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                        <td style={{ padding: '10px 14px' }}>
-                          <strong style={{ color: '#fff', fontSize: '13.5px', display: 'block' }}>{t.name}</strong>
+                        <td style={{ padding: '10px 14px', maxWidth: '320px' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            <strong style={{ color: '#fff', fontSize: '13.5px' }}>{t.name}</strong>
+                          </div>
                           {t.infor && (
-                            <div style={{ fontSize: '11px', color: '#38bdf8', marginTop: '2px', fontFamily: 'monospace' }}>
+                            <div
+                              onClick={() => {
+                                navigator.clipboard.writeText(t.infor);
+                                toast.success('✅ Đã copy thông tin tài khoản gốc!');
+                              }}
+                              title="Click 1-click copy nick/mật khẩu gốc"
+                              style={{ fontSize: '11px', color: '#38bdf8', marginTop: '3px', fontFamily: 'monospace', cursor: 'pointer', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+                            >
                               🔑 Acc: {t.infor}
                             </div>
                           )}
@@ -1875,14 +1884,14 @@ export default function Inventory() {
                         <td style={{ padding: '10px 14px', color: '#c084fc', fontWeight: '700' }}>🏭 {t.supplier_name || t.supplierName || '—'}</td>
                         <td style={{ padding: '10px 14px', textAlign: 'center', color: '#ef4444', fontWeight: '700' }}>{t.max_slots || t.maxSlots || 49} slot</td>
                         <td style={{ padding: '10px 14px', textAlign: 'center' }}>
-                          <div style={{ display: 'flex', gap: '6px', justifyContent: 'center', flexWrap: 'wrap' }}>
+                          <div style={{ display: 'flex', gap: '5px', justifyContent: 'center', alignItems: 'center', flexWrap: 'nowrap' }}>
                             <button
                               className="glass-button"
                               onClick={() => handleCopySupplierClaimMsg(t)}
                               title="1-Click copy kịch bản nhắn Zalo đòi bảo hành cho NCC"
-                              style={{ padding: '5px 10px', fontSize: '11px', background: 'rgba(245,158,11,0.18)', color: '#f59e0b', border: '1px solid rgba(245,158,11,0.3)', fontWeight: '700' }}
+                              style={{ padding: '4px 9px', fontSize: '11px', whiteSpace: 'nowrap', background: 'rgba(245,158,11,0.18)', color: '#f59e0b', border: '1px solid rgba(245,158,11,0.3)', fontWeight: '700' }}
                             >
-                              📋 Copy Tin Đòi BH NCC
+                              📋 Copy Tin Đòi BH
                             </button>
 
                             {(() => {
@@ -1896,7 +1905,7 @@ export default function Inventory() {
                                   rel="noreferrer"
                                   className="glass-button"
                                   title="Click mở Zalo NCC"
-                                  style={{ padding: '5px 10px', fontSize: '11px', background: '#0068ff', color: '#fff', textDecoration: 'none', fontWeight: '700' }}
+                                  style={{ padding: '4px 9px', fontSize: '11px', whiteSpace: 'nowrap', background: '#0068ff', color: '#fff', textDecoration: 'none', fontWeight: '700' }}
                                 >
                                   💬 Zalo NCC
                                 </a>
@@ -1906,10 +1915,12 @@ export default function Inventory() {
                             <button
                               className="glass-button"
                               onClick={() => handleOpenReplaceTeamModal(t)}
-                              style={{ padding: '5px 10px', fontSize: '11px', background: 'linear-gradient(135deg, #10b981, #059669)', color: '#fff', fontWeight: '800' }}
+                              title="Tạo team mới thay thế để đổi bảo hành cho khách"
+                              style={{ padding: '4px 9px', fontSize: '11px', whiteSpace: 'nowrap', background: 'linear-gradient(135deg, #10b981, #059669)', color: '#fff', fontWeight: '800' }}
                             >
-                              ⚡ Tạo Team Thay Thế (Bảo Hành)
+                              ⚡ Đổi Team Mới
                             </button>
+
                             <button
                               className="glass-button"
                               onClick={async () => {
@@ -1917,9 +1928,10 @@ export default function Inventory() {
                                 toast.success(`Đã khôi phục Team "${t.name}" về Active!`);
                                 loadData();
                               }}
-                              style={{ padding: '5px 10px', fontSize: '11.5px', background: 'rgba(255,255,255,0.06)', color: '#cbd5e1' }}
+                              title="Khôi phục team cũ về trạng thái Hoạt động"
+                              style={{ padding: '4px 8px', fontSize: '11px', whiteSpace: 'nowrap', background: 'rgba(255,255,255,0.06)', color: '#cbd5e1', border: '1px solid rgba(255,255,255,0.1)' }}
                             >
-                              🟢 Khôi Phục Cũ
+                              🟢 Khôi Phục
                             </button>
                           </div>
                         </td>
