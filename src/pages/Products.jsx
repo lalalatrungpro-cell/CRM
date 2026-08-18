@@ -647,73 +647,126 @@ export default function Products() {
                 </div>
               )}
 
-              {/* Cost Price */}
-              <div>
-                <label className="form-label" style={{ color: '#f59e0b' }}>Giá Vốn Mặc Định Nhập Hàng (VNĐ)</label>
-                <input
-                  type="number" required className="glass-input" placeholder="VD: 50000"
-                  value={formData.defaultCost} onChange={e => setFormData({ ...formData, defaultCost: e.target.value })}
-                />
+              {/* Row: Giá Vốn & Loại Sản Phẩm */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                <div>
+                  <label className="form-label" style={{ color: '#f59e0b', fontWeight: '700' }}>Giá Vốn Mặc Định Nhập Hàng (VNĐ)</label>
+                  <input
+                    type="number" required className="glass-input" placeholder="VD: 50000"
+                    value={formData.defaultCost} onChange={e => setFormData({ ...formData, defaultCost: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <label className="form-label" style={{ fontWeight: '700' }}>Loại Sản Phẩm</label>
+                  <select
+                    className="glass-input"
+                    value={formData.productType || 'SUBSCRIPTION'}
+                    onChange={e => setFormData({ ...formData, productType: e.target.value })}
+                  >
+                    <option value="SUBSCRIPTION">📅 Có thời hạn (Subscription)</option>
+                    <option value="TEAM_SLOT">👥 Team Slot (Dùng chung)</option>
+                    <option value="ONE_TIME">🔑 Mua 1 lần (License)</option>
+                    <option value="EVERGREEN">♾️ Vĩnh Viễn (Khóa học, Template)</option>
+                  </select>
+                </div>
               </div>
 
-              {/* 3-Tier Selling Prices */}
-              <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '10px', padding: '12px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                <span style={{ fontSize: '12px', fontWeight: '700', color: '#38bdf8', textTransform: 'uppercase' }}>
-                  🏷️ Thiết Lập Giá Bán 3 Tầng (Lẻ - CTV - Sỉ)
-                </span>
+              {/* 3-Tier Selling Prices Container */}
+              <div style={{
+                background: 'linear-gradient(145deg, rgba(17, 24, 39, 0.8), rgba(30, 41, 59, 0.6))',
+                border: '1px solid rgba(56, 189, 248, 0.25)',
+                borderRadius: '12px',
+                padding: '14px',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '12px',
+                boxShadow: '0 4px 16px rgba(0,0,0,0.2)'
+              }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ fontSize: '12px', fontWeight: '800', color: '#38bdf8', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    🏷️ THIẾT LẬP GIÁ BÁN 3 TẦNG (LẺ - CTV - SỈ)
+                  </span>
+                  <span style={{ fontSize: '11px', color: '#94a3b8', fontStyle: 'italic' }}>
+                    Tự động tính biên lãi
+                  </span>
+                </div>
 
+                {/* 3 Price Inputs Side-By-Side */}
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px' }}>
-                  <div>
-                    <label className="form-label" style={{ color: '#10b981', fontSize: '11px' }}>1. Giá Bán Lẻ</label>
+                  <div style={{ background: 'rgba(16,185,129,0.06)', border: '1px solid rgba(16,185,129,0.2)', borderRadius: '8px', padding: '8px' }}>
+                    <label className="form-label" style={{ color: '#10b981', fontSize: '11.5px', fontWeight: '700', marginBottom: '4px', display: 'block' }}>
+                      1. GIÁ BÁN LẺ
+                    </label>
                     <input
-                      type="number" required className="glass-input" style={{ fontSize: '13px' }}
+                      type="number" required className="glass-input" style={{ fontSize: '13.5px', fontWeight: '700', color: '#10b981', background: 'rgba(0,0,0,0.25)' }}
+                      placeholder="0"
                       value={formData.defaultSell} onChange={e => setFormData({ ...formData, defaultSell: e.target.value })}
                     />
                   </div>
 
-              {/* [Phase 5] Loại Sản Phẩm */}
-              <div>
-                <label className="form-label">Loại Sản Phẩm</label>
-                <select
-                  className="glass-input"
-                  value={formData.productType || 'SUBSCRIPTION'}
-                  onChange={e => setFormData({ ...formData, productType: e.target.value })}
-                >
-                  <option value="SUBSCRIPTION">📅 Có thời hạn (Subscription)</option>
-                  <option value="TEAM_SLOT">👥 Team Slot (Dùng chung)</option>
-                  <option value="ONE_TIME">🔑 Mua 1 lần (License)</option>
-                  <option value="EVERGREEN">♾️ Vĩnh Viễn (Khóa học, Template)</option>
-                </select>
-              </div>
-                  <div>
-                    <label className="form-label" style={{ color: '#f59e0b', fontSize: '11px' }}>2. Giá Bán CTV</label>
+                  <div style={{ background: 'rgba(245,158,11,0.06)', border: '1px solid rgba(245,158,11,0.2)', borderRadius: '8px', padding: '8px' }}>
+                    <label className="form-label" style={{ color: '#f59e0b', fontSize: '11.5px', fontWeight: '700', marginBottom: '4px', display: 'block' }}>
+                      2. GIÁ BÁN CTV
+                    </label>
                     <input
-                      type="number" required className="glass-input" style={{ fontSize: '13px' }}
+                      type="number" required className="glass-input" style={{ fontSize: '13.5px', fontWeight: '700', color: '#f59e0b', background: 'rgba(0,0,0,0.25)' }}
+                      placeholder="0"
                       value={formData.priceCtv} onChange={e => setFormData({ ...formData, priceCtv: e.target.value })}
                     />
                   </div>
-                  <div>
-                    <label className="form-label" style={{ color: '#a855f7', fontSize: '11px' }}>3. Giá Bán Sỉ</label>
+
+                  <div style={{ background: 'rgba(168,85,247,0.06)', border: '1px solid rgba(168,85,247,0.2)', borderRadius: '8px', padding: '8px' }}>
+                    <label className="form-label" style={{ color: '#c084fc', fontSize: '11.5px', fontWeight: '700', marginBottom: '4px', display: 'block' }}>
+                      3. GIÁ BÁN SỈ
+                    </label>
                     <input
-                      type="number" required className="glass-input" style={{ fontSize: '13px' }}
+                      type="number" required className="glass-input" style={{ fontSize: '13.5px', fontWeight: '700', color: '#c084fc', background: 'rgba(0,0,0,0.25)' }}
+                      placeholder="0"
                       value={formData.priceSi} onChange={e => setFormData({ ...formData, priceSi: e.target.value })}
                     />
                   </div>
                 </div>
 
-                {/* Live Margin Calculator Widget */}
-                <div style={{ background: 'rgba(0,0,0,0.3)', padding: '10px', borderRadius: '8px', fontSize: '11.5px', display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px', textAlign: 'center' }}>
-                  <div>
-                    <span style={{ color: '#94a3b8' }}>Lãi Lẻ: </span>
-                    <strong style={{ color: previewProfitLe > 0 ? '#10b981' : '#ef4444' }}>+{previewProfitLe.toLocaleString()}đ ({previewMarginLe}%)</strong>
+                {/* Live Profit & Margin Widget */}
+                <div style={{
+                  background: 'rgba(0, 0, 0, 0.4)',
+                  padding: '10px 12px',
+                  borderRadius: '8px',
+                  border: '1px solid rgba(255, 255, 255, 0.05)',
+                  fontSize: '11.5px',
+                  display: 'grid',
+                  gridTemplateColumns: '1fr 1fr 1fr',
+                  gap: '10px',
+                  textAlign: 'center'
+                }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px' }}>
+                    <span style={{ color: '#64748b', fontSize: '10.5px', fontWeight: '600' }}>LÃI LẺ PROMISE</span>
+                    <strong style={{ color: previewProfitLe > 0 ? '#10b981' : '#ef4444', fontSize: '12.5px' }}>
+                      {previewProfitLe > 0 ? '+' : ''}{previewProfitLe.toLocaleString('vi-VN')}đ
+                    </strong>
+                    <span style={{ fontSize: '10px', padding: '1px 6px', borderRadius: '4px', background: previewProfitLe > 0 ? 'rgba(16,185,129,0.15)' : 'rgba(239,68,68,0.15)', color: previewProfitLe > 0 ? '#10b981' : '#ef4444', fontWeight: '700' }}>
+                      {previewMarginLe}% Margin
+                    </span>
                   </div>
-                  <div>
-                    <span style={{ color: '#94a3b8' }}>Lãi CTV: </span>
-                    <strong style={{ color: previewProfitCtv > 0 ? '#f59e0b' : '#ef4444' }}>+{previewProfitCtv.toLocaleString()}đ ({previewMarginCtv}%)</strong>
+
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px', borderLeft: '1px solid rgba(255,255,255,0.06)', borderRight: '1px solid rgba(255,255,255,0.06)' }}>
+                    <span style={{ color: '#64748b', fontSize: '10.5px', fontWeight: '600' }}>LÃI CTV PROMISE</span>
+                    <strong style={{ color: previewProfitCtv > 0 ? '#f59e0b' : '#ef4444', fontSize: '12.5px' }}>
+                      {previewProfitCtv > 0 ? '+' : ''}{previewProfitCtv.toLocaleString('vi-VN')}đ
+                    </strong>
+                    <span style={{ fontSize: '10px', padding: '1px 6px', borderRadius: '4px', background: previewProfitCtv > 0 ? 'rgba(245,158,11,0.15)' : 'rgba(239,68,68,0.15)', color: previewProfitCtv > 0 ? '#f59e0b' : '#ef4444', fontWeight: '700' }}>
+                      {previewMarginCtv}% Margin
+                    </span>
                   </div>
-                  <div>
-                    <span style={{ color: '#94a3b8' }}>Lãi Sỉ: </span>
-                    <strong style={{ color: previewProfitSi > 0 ? '#a855f7' : '#ef4444' }}>{previewProfitSi <= 0 ? '⚠️ LỖ ' : '+'}{previewProfitSi.toLocaleString()}đ ({previewMarginSi}%)</strong>
+
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px' }}>
+                    <span style={{ color: '#64748b', fontSize: '10.5px', fontWeight: '600' }}>LÃI SỈ PROMISE</span>
+                    <strong style={{ color: previewProfitSi > 0 ? '#c084fc' : '#ef4444', fontSize: '12.5px' }}>
+                      {previewProfitSi <= 0 ? '⚠️ LỖ ' : '+'}{previewProfitSi.toLocaleString('vi-VN')}đ
+                    </strong>
+                    <span style={{ fontSize: '10px', padding: '1px 6px', borderRadius: '4px', background: previewProfitSi > 0 ? 'rgba(168,85,247,0.15)' : 'rgba(239,68,68,0.15)', color: previewProfitSi > 0 ? '#c084fc' : '#ef4444', fontWeight: '700' }}>
+                      {previewMarginSi}% Margin
+                    </span>
                   </div>
                 </div>
               </div>
