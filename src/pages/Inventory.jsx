@@ -719,73 +719,78 @@ export default function Inventory() {
       {/* Date Filter Bar */}
       <DateFilterBar onFilterChange={setDateRange} label="Kỳ Báo Cáo Kho:" />
 
-      {/* Navigation Tabs */}
-      <div style={{ display: 'flex', gap: '8px', borderBottom: '1px solid rgba(255,255,255,0.08)', paddingBottom: '12px', flexWrap: 'wrap' }}>
+      {/* Navigation Tabs (Guaranteed Single Row) */}
+      <div style={{ display: 'flex', gap: '6px', borderBottom: '1px solid rgba(255,255,255,0.08)', paddingBottom: '12px', flexWrap: 'nowrap', overflowX: 'auto' }}>
         <button
           onClick={() => setActiveTab('single_keys')}
           className="glass-button"
           style={{
+            padding: '8px 12px', fontSize: '12px', whiteSpace: 'nowrap', flex: 1, justifyContent: 'center',
             background: activeTab === 'single_keys' ? '#6366f1' : 'rgba(255,255,255,0.04)',
             color: activeTab === 'single_keys' ? '#fff' : '#94a3b8',
             fontWeight: activeTab === 'single_keys' ? '700' : '500'
           }}
         >
-          <Boxes size={16} /> Kho Key & Account Rời ({summary.totalItems})
+          <Boxes size={15} /> Kho Key & Acc Rời ({summary.totalItems})
         </button>
 
         <button
           onClick={() => setActiveTab('teams_pool')}
           className="glass-button"
           style={{
+            padding: '8px 12px', fontSize: '12px', whiteSpace: 'nowrap', flex: 1, justifyContent: 'center',
             background: activeTab === 'teams_pool' ? '#6366f1' : 'rgba(255,255,255,0.04)',
             color: activeTab === 'teams_pool' ? '#fff' : '#94a3b8',
             fontWeight: activeTab === 'teams_pool' ? '700' : '500'
           }}
         >
-          <ShieldCheck size={16} /> Kho Team & Gói Slot ({teams.length} teams)
+          <ShieldCheck size={15} /> Kho Team Slot ({teams.length})
         </button>
 
         <button
           onClick={() => setActiveTab('purchases')}
           className="glass-button"
           style={{
+            padding: '8px 12px', fontSize: '12px', whiteSpace: 'nowrap', flex: 1, justifyContent: 'center',
             background: activeTab === 'purchases' ? '#10b981' : 'rgba(255,255,255,0.04)',
             color: activeTab === 'purchases' ? '#fff' : '#94a3b8',
             fontWeight: activeTab === 'purchases' ? '700' : '500'
           }}
         >
-          <PackagePlus size={16} /> Phiếu Nhập Hàng ({purchases.length})
+          <PackagePlus size={15} /> Phiếu Nhập Hàng ({purchases.length})
         </button>
 
         <button
           onClick={() => setActiveTab('nxt_report')}
           className="glass-button"
           style={{
+            padding: '8px 12px', fontSize: '12px', whiteSpace: 'nowrap', flex: 1, justifyContent: 'center',
             background: activeTab === 'nxt_report' ? '#6366f1' : 'rgba(255,255,255,0.04)',
             color: activeTab === 'nxt_report' ? '#fff' : '#94a3b8',
             fontWeight: activeTab === 'nxt_report' ? '700' : '500'
           }}
         >
-          <FileSpreadsheet size={16} /> Báo Cáo Nhập - Xuất - Tồn (N-X-T)
+          <FileSpreadsheet size={15} /> Báo Cáo N-X-T
         </button>
 
         <button
           onClick={() => setActiveTab('rma_alerts')}
           className="glass-button"
           style={{
+            padding: '8px 12px', fontSize: '12px', whiteSpace: 'nowrap', flex: 1, justifyContent: 'center',
             background: activeTab === 'rma_alerts' ? '#ef4444' : 'rgba(255,255,255,0.04)',
             color: activeTab === 'rma_alerts' ? '#fff' : '#94a3b8',
             fontWeight: activeTab === 'rma_alerts' ? '700' : '500',
             display: 'inline-flex',
             alignItems: 'center',
-            gap: '6px'
+            gap: '5px'
           }}
         >
-          <AlertTriangle size={16} /> Đòi Bảo Hành NCC & Cảnh Báo
+          <AlertTriangle size={15} /> Đòi BH NCC & Cảnh Báo
           {(summary.faultyCount > 0 || alerts.lowStockAlerts.length > 0) && (
             <span style={{
               background: '#ef4444', color: '#fff',
-              fontSize: '11px', fontWeight: '800', padding: '1px 7px', borderRadius: '10px',
+              fontSize: '10.5px', fontWeight: '800', padding: '1px 5px', borderRadius: '10px',
               display: 'inline-flex', alignItems: 'center', justifyContent: 'center'
             }}>
               {summary.faultyCount + alerts.lowStockAlerts.length}
