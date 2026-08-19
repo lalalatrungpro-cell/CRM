@@ -133,14 +133,7 @@ export default function Login() {
         </form>
 
         <div style={{ marginTop: '16px', display: 'flex', flexDirection: 'column', gap: '10px', textAlign: 'center' }}>
-          <button
-            type="button"
-            className="glass-button"
-            onClick={handleDemoClick}
-            style={{ width: '100%', background: 'rgba(16,185,129,0.18)', border: '1px solid rgba(16,185,129,0.3)', color: '#10b981', fontWeight: '700', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
-          >
-            <Sparkles size={16} /> Đăng Nhập Chế Độ Demo / Dùng Thử (Offline)
-          </button>
+
 
           <div style={{ fontSize: '13px', marginTop: '6px' }}>
             <span style={{ color: '#94a3b8' }}>
