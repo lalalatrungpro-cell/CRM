@@ -113,6 +113,10 @@ export default function Inventory() {
   const [teamCopiedId, setTeamCopiedId] = useState('');
   const [teamSearchTerm, setTeamSearchTerm] = useState('');
   const [teamFilterCategory, setTeamFilterCategory] = useState('ALL');
+  const [teamFilterStatus, setTeamFilterStatus] = useState('ALL');
+  const [teamFilterSupplier, setTeamFilterSupplier] = useState('ALL');
+  const [purchaseFilterSupplier, setPurchaseFilterSupplier] = useState('ALL');
+  const [logSearchTerm, setLogSearchTerm] = useState('');
   const [teamFormData, setTeamFormData] = useState(emptyTeamForm);
 
   // ── Replace Team State ──
@@ -405,9 +409,26 @@ export default function Inventory() {
   const teamLiveUnitCost = teamLiveSlots > 0 ? Math.round(teamLiveCost / teamLiveSlots) : 0;
   const filteredTeamCards = teams.filter(t => {
     const matchSearch = (t.name || '').toLowerCase().includes(teamSearchTerm.toLowerCase()) ||
-                        (t.category || '').toLowerCase().includes(teamSearchTerm.toLowerCase());
+                        (t.category || '').toLowerCase().includes(teamSearchTerm.toLowerCase()) ||
+                        (t.infor || '').toLowerCase().includes(teamSearchTerm.toLowerCase());
     const matchCat = teamFilterCategory === 'ALL' || t.category === teamFilterCategory;
-    return matchSearch && matchCat;
+    const matchSupp = teamFilterSupplier === 'ALL' || String(t.supplier_id || t.supplierId) === String(teamFilterSupplier);
+
+    // Compute status
+    const expireDate = t.expire_date || t.expireDate || '';
+    const daysLeft = expireDate ? Math.ceil((new Date(expireDate) - new Date()) / 86400000) : null;
+    const isReplaced = t.status === 'REPLACED' || Boolean(t.replaced_by_team_name || t.replaced_by_team_id);
+    const isDie = (t.status === 'FAULTY_DIE' || t.status === 'DIE') && !isReplaced;
+    const isExpired = daysLeft !== null && daysLeft <= 0 && !isReplaced && !isDie;
+    const isActive = !isDie && !isReplaced && !isExpired;
+
+    let matchStatus = true;
+    if (teamFilterStatus === 'ACTIVE') matchStatus = isActive;
+    else if (teamFilterStatus === 'FAULTY_DIE') matchStatus = isDie;
+    else if (teamFilterStatus === 'EXPIRED') matchStatus = isExpired;
+    else if (teamFilterStatus === 'REPLACED') matchStatus = isReplaced;
+
+    return matchSearch && matchCat && matchSupp && matchStatus;
   });
   const purchaseLiveCost = Number(purchaseFormData.importCost || 0);
   const purchaseLiveQty = parseInt(purchaseFormData.quantity || 1) || 1;
@@ -417,7 +438,16 @@ export default function Inventory() {
     const ds = d ? String(d).split('T')[0] : '';
     if (dateRange.startDate && ds < dateRange.startDate) return false;
     if (dateRange.endDate && ds > dateRange.endDate) return false;
-    return true;
+
+    const matchSearch = !purchaseSearchTerm ||
+      (p.product_name || p.productName || '').toLowerCase().includes(purchaseSearchTerm.toLowerCase()) ||
+      (p.supplier_name || p.supplierName || '').toLowerCase().includes(purchaseSearchTerm.toLowerCase()) ||
+      (p.notes || '').toLowerCase().includes(purchaseSearchTerm.toLowerCase());
+
+    const matchPayment = filterPayment === 'ALL' || (p.payment_status || p.paymentStatus || 'PAID') === filterPayment;
+    const matchSupp = purchaseFilterSupplier === 'ALL' || String(p.supplier_id || p.supplierId) === String(purchaseFilterSupplier);
+
+    return matchSearch && matchPayment && matchSupp;
   });
 
   const totalImportCost = periodPurchases.reduce((s, p) => s + Number(p.import_cost || 0), 0);
@@ -427,8 +457,9 @@ export default function Inventory() {
   const filteredPurchases = periodPurchases.filter(p => {
     const matchSearch = (p.product_name || '').toLowerCase().includes(purchaseSearchTerm.toLowerCase()) ||
                         (p.supplier_name || '').toLowerCase().includes(purchaseSearchTerm.toLowerCase());
-    const matchPay = filterPayment === 'ALL' || p.payment_status === filterPayment;
-    return matchSearch && matchPay;
+    const matchPay = filterPayment === 'ALL' || (p.payment_status || p.paymentStatus || 'PAID') === filterPayment;
+    const matchSupp = purchaseFilterSupplier === 'ALL' || String(p.supplier_id || p.supplierId) === String(purchaseFilterSupplier);
+    return matchSearch && matchPay && matchSupp;
   });
 
   const handleProductSelect = (pName) => {
@@ -1092,6 +1123,21 @@ export default function Inventory() {
                 <option value="ALL">Tất cả dịch vụ</option>
                 {Object.keys(CATEGORY_SLOTS).map(cat => <option key={cat} value={cat}>{cat}</option>)}
               </select>
+
+              <select value={teamFilterStatus} onChange={e => setTeamFilterStatus(e.target.value)}
+                style={{ background: 'rgba(255,255,255,0.04)', border: teamFilterStatus !== 'ALL' ? '1.5px solid #6366f1' : '1px solid rgba(255,255,255,0.08)', borderRadius: '10px', padding: '8px 12px', color: teamFilterStatus !== 'ALL' ? '#818cf8' : '#fff', fontSize: '13px', cursor: 'pointer', fontWeight: teamFilterStatus !== 'ALL' ? '700' : '400' }}>
+                <option value="ALL">Tất cả trạng thái</option>
+                <option value="ACTIVE">🟢 Đang hoạt động</option>
+                <option value="FAULTY_DIE">🔴 Team bị DIE (Lỗi)</option>
+                <option value="EXPIRED">⚪ Đã hết hạn</option>
+                <option value="REPLACED">🔒 Đã đổi bảo hành</option>
+              </select>
+
+              <select value={teamFilterSupplier} onChange={e => setTeamFilterSupplier(e.target.value)}
+                style={{ background: 'rgba(255,255,255,0.04)', border: teamFilterSupplier !== 'ALL' ? '1.5px solid #a855f7' : '1px solid rgba(255,255,255,0.08)', borderRadius: '10px', padding: '8px 12px', color: teamFilterSupplier !== 'ALL' ? '#c084fc' : '#fff', fontSize: '13px', cursor: 'pointer', fontWeight: teamFilterSupplier !== 'ALL' ? '700' : '400' }}>
+                <option value="ALL">Tất cả nhà cung cấp</option>
+                {suppliers.map(s => <option key={s.id} value={s.id}>🏭 {s.name}</option>)}
+              </select>
             </div>
           </div>
 
@@ -1667,8 +1713,20 @@ export default function Inventory() {
               }}
             >
               <option value="ALL">Tất cả thanh toán</option>
-              <option value="PAID">Đã thanh toán (PAID)</option>
-              <option value="DEBT">Còn nợ NCC (DEBT)</option>
+              <option value="PAID">🟢 Đã thanh toán (PAID)</option>
+              <option value="DEBT">🔴 Còn nợ NCC (DEBT)</option>
+            </select>
+
+            <select
+              value={purchaseFilterSupplier}
+              onChange={e => setPurchaseFilterSupplier(e.target.value)}
+              style={{
+                padding: '10px 14px', background: 'rgba(255,255,255,0.05)', border: purchaseFilterSupplier !== 'ALL' ? '1.5px solid #a855f7' : '1px solid rgba(255,255,255,0.1)',
+                borderRadius: '10px', color: purchaseFilterSupplier !== 'ALL' ? '#c084fc' : '#fff', fontSize: '13px', cursor: 'pointer'
+              }}
+            >
+              <option value="ALL">Tất cả nhà cung cấp</option>
+              {suppliers.map(s => <option key={s.id} value={s.id}>🏭 {s.name}</option>)}
             </select>
           </div>
 
