@@ -2073,12 +2073,12 @@ export default function Orders() {
                         type="button"
                         onClick={() => handleNewCustomerTypeChange('Le')}
                         style={{
-                          padding: '12px 8px', borderRadius: '10px', cursor: 'pointer', textAlign: 'center',
-                          background: formData.newCustomerType === 'Le' ? 'rgba(6,182,212,0.2)' : 'rgba(255,255,255,0.03)',
-                          border: formData.newCustomerType === 'Le' ? '1.5px solid #06b6d4' : '1px solid rgba(255,255,255,0.1)',
+                          padding: '7px 6px', borderRadius: '8px', cursor: 'pointer', textAlign: 'center',
+                          background: formData.newCustomerType === 'Le' ? 'rgba(6,182,212,0.18)' : 'rgba(255,255,255,0.03)',
+                          border: formData.newCustomerType === 'Le' ? '1.5px solid #06b6d4' : '1px solid rgba(255,255,255,0.08)',
                           color: formData.newCustomerType === 'Le' ? '#06b6d4' : '#94a3b8',
-                          boxShadow: formData.newCustomerType === 'Le' ? '0 0 12px rgba(6,182,212,0.25)' : 'none',
-                          fontSize: '13.5px', fontWeight: '800', transition: 'all 0.15s ease'
+                          boxShadow: formData.newCustomerType === 'Le' ? '0 0 10px rgba(6,182,212,0.2)' : 'none',
+                          fontSize: '12px', fontWeight: '700', letterSpacing: '0.02em', transition: 'all 0.15s ease'
                         }}
                       >
                         🔵 Khách Lẻ
@@ -2088,12 +2088,12 @@ export default function Orders() {
                         type="button"
                         onClick={() => handleNewCustomerTypeChange('CTV')}
                         style={{
-                          padding: '12px 8px', borderRadius: '10px', cursor: 'pointer', textAlign: 'center',
-                          background: formData.newCustomerType === 'CTV' ? 'rgba(245,158,11,0.2)' : 'rgba(255,255,255,0.03)',
-                          border: formData.newCustomerType === 'CTV' ? '1.5px solid #f59e0b' : '1px solid rgba(255,255,255,0.1)',
+                          padding: '7px 6px', borderRadius: '8px', cursor: 'pointer', textAlign: 'center',
+                          background: formData.newCustomerType === 'CTV' ? 'rgba(245,158,11,0.18)' : 'rgba(255,255,255,0.03)',
+                          border: formData.newCustomerType === 'CTV' ? '1.5px solid #f59e0b' : '1px solid rgba(255,255,255,0.08)',
                           color: formData.newCustomerType === 'CTV' ? '#f59e0b' : '#94a3b8',
-                          boxShadow: formData.newCustomerType === 'CTV' ? '0 0 12px rgba(245,158,11,0.25)' : 'none',
-                          fontSize: '13.5px', fontWeight: '800', transition: 'all 0.15s ease'
+                          boxShadow: formData.newCustomerType === 'CTV' ? '0 0 10px rgba(245,158,11,0.2)' : 'none',
+                          fontSize: '12px', fontWeight: '700', letterSpacing: '0.02em', transition: 'all 0.15s ease'
                         }}
                       >
                         🟡 CTV
@@ -2103,12 +2103,12 @@ export default function Orders() {
                         type="button"
                         onClick={() => handleNewCustomerTypeChange('Si')}
                         style={{
-                          padding: '12px 8px', borderRadius: '10px', cursor: 'pointer', textAlign: 'center',
-                          background: formData.newCustomerType === 'Si' ? 'rgba(168,85,247,0.2)' : 'rgba(255,255,255,0.03)',
-                          border: formData.newCustomerType === 'Si' ? '1.5px solid #a855f7' : '1px solid rgba(255,255,255,0.1)',
+                          padding: '7px 6px', borderRadius: '8px', cursor: 'pointer', textAlign: 'center',
+                          background: formData.newCustomerType === 'Si' ? 'rgba(168,85,247,0.18)' : 'rgba(255,255,255,0.03)',
+                          border: formData.newCustomerType === 'Si' ? '1.5px solid #a855f7' : '1px solid rgba(255,255,255,0.08)',
                           color: formData.newCustomerType === 'Si' ? '#a855f7' : '#94a3b8',
-                          boxShadow: formData.newCustomerType === 'Si' ? '0 0 12px rgba(168,85,247,0.25)' : 'none',
-                          fontSize: '13.5px', fontWeight: '800', transition: 'all 0.15s ease'
+                          boxShadow: formData.newCustomerType === 'Si' ? '0 0 10px rgba(168,85,247,0.2)' : 'none',
+                          fontSize: '12px', fontWeight: '700', letterSpacing: '0.02em', transition: 'all 0.15s ease'
                         }}
                       >
                         🟣 Khách Sỉ / ĐL

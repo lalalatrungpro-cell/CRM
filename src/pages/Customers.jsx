@@ -668,12 +668,12 @@ export default function Customers() {
                       type="button"
                       onClick={() => setFormData({ ...formData, type: 'Le' })}
                       style={{
-                        padding: '12px 8px', borderRadius: '10px', cursor: 'pointer', textAlign: 'center',
-                        background: formData.type === 'Le' ? 'rgba(6,182,212,0.2)' : 'rgba(255,255,255,0.03)',
-                        border: formData.type === 'Le' ? '1.5px solid #06b6d4' : '1px solid rgba(255,255,255,0.1)',
+                        padding: '7px 6px', borderRadius: '8px', cursor: 'pointer', textAlign: 'center',
+                        background: formData.type === 'Le' ? 'rgba(6,182,212,0.18)' : 'rgba(255,255,255,0.03)',
+                        border: formData.type === 'Le' ? '1.5px solid #06b6d4' : '1px solid rgba(255,255,255,0.08)',
                         color: formData.type === 'Le' ? '#06b6d4' : '#94a3b8',
-                        boxShadow: formData.type === 'Le' ? '0 0 12px rgba(6,182,212,0.25)' : 'none',
-                        fontSize: '13.5px', fontWeight: '800', transition: 'all 0.15s ease'
+                        boxShadow: formData.type === 'Le' ? '0 0 10px rgba(6,182,212,0.2)' : 'none',
+                        fontSize: '12px', fontWeight: '700', letterSpacing: '0.02em', transition: 'all 0.15s ease'
                       }}
                     >
                       🔵 Khách Lẻ
@@ -683,12 +683,12 @@ export default function Customers() {
                       type="button"
                       onClick={() => setFormData({ ...formData, type: 'CTV' })}
                       style={{
-                        padding: '12px 8px', borderRadius: '10px', cursor: 'pointer', textAlign: 'center',
-                        background: formData.type === 'CTV' ? 'rgba(245,158,11,0.2)' : 'rgba(255,255,255,0.03)',
-                        border: formData.type === 'CTV' ? '1.5px solid #f59e0b' : '1px solid rgba(255,255,255,0.1)',
+                        padding: '7px 6px', borderRadius: '8px', cursor: 'pointer', textAlign: 'center',
+                        background: formData.type === 'CTV' ? 'rgba(245,158,11,0.18)' : 'rgba(255,255,255,0.03)',
+                        border: formData.type === 'CTV' ? '1.5px solid #f59e0b' : '1px solid rgba(255,255,255,0.08)',
                         color: formData.type === 'CTV' ? '#f59e0b' : '#94a3b8',
-                        boxShadow: formData.type === 'CTV' ? '0 0 12px rgba(245,158,11,0.25)' : 'none',
-                        fontSize: '13.5px', fontWeight: '800', transition: 'all 0.15s ease'
+                        boxShadow: formData.type === 'CTV' ? '0 0 10px rgba(245,158,11,0.2)' : 'none',
+                        fontSize: '12px', fontWeight: '700', letterSpacing: '0.02em', transition: 'all 0.15s ease'
                       }}
                     >
                       🟡 CTV
@@ -698,12 +698,12 @@ export default function Customers() {
                       type="button"
                       onClick={() => setFormData({ ...formData, type: 'Si' })}
                       style={{
-                        padding: '12px 8px', borderRadius: '10px', cursor: 'pointer', textAlign: 'center',
-                        background: formData.type === 'Si' ? 'rgba(168,85,247,0.2)' : 'rgba(255,255,255,0.03)',
-                        border: formData.type === 'Si' ? '1.5px solid #a855f7' : '1px solid rgba(255,255,255,0.1)',
+                        padding: '7px 6px', borderRadius: '8px', cursor: 'pointer', textAlign: 'center',
+                        background: formData.type === 'Si' ? 'rgba(168,85,247,0.18)' : 'rgba(255,255,255,0.03)',
+                        border: formData.type === 'Si' ? '1.5px solid #a855f7' : '1px solid rgba(255,255,255,0.08)',
                         color: formData.type === 'Si' ? '#a855f7' : '#94a3b8',
-                        boxShadow: formData.type === 'Si' ? '0 0 12px rgba(168,85,247,0.25)' : 'none',
-                        fontSize: '13.5px', fontWeight: '800', transition: 'all 0.15s ease'
+                        boxShadow: formData.type === 'Si' ? '0 0 10px rgba(168,85,247,0.2)' : 'none',
+                        fontSize: '12px', fontWeight: '700', letterSpacing: '0.02em', transition: 'all 0.15s ease'
                       }}
                     >
                       🟣 Khách Sỉ / ĐL
