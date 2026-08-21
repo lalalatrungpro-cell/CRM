@@ -668,48 +668,45 @@ export default function Customers() {
                       type="button"
                       onClick={() => setFormData({ ...formData, type: 'Le' })}
                       style={{
-                        padding: '10px 8px', borderRadius: '10px', cursor: 'pointer', textAlign: 'center',
+                        padding: '12px 8px', borderRadius: '10px', cursor: 'pointer', textAlign: 'center',
                         background: formData.type === 'Le' ? 'rgba(6,182,212,0.2)' : 'rgba(255,255,255,0.03)',
                         border: formData.type === 'Le' ? '1.5px solid #06b6d4' : '1px solid rgba(255,255,255,0.1)',
                         color: formData.type === 'Le' ? '#06b6d4' : '#94a3b8',
                         boxShadow: formData.type === 'Le' ? '0 0 12px rgba(6,182,212,0.25)' : 'none',
-                        transition: 'all 0.15s ease'
+                        fontSize: '13.5px', fontWeight: '800', transition: 'all 0.15s ease'
                       }}
                     >
-                      <div style={{ fontSize: '13px', fontWeight: '800' }}>🔵 Khách Lẻ</div>
-                      <div style={{ fontSize: '10.5px', marginTop: '2px', opacity: 0.85 }}>Áp giá bán lẻ chuẩn</div>
+                      🔵 Khách Lẻ
                     </button>
 
                     <button
                       type="button"
                       onClick={() => setFormData({ ...formData, type: 'CTV' })}
                       style={{
-                        padding: '10px 8px', borderRadius: '10px', cursor: 'pointer', textAlign: 'center',
+                        padding: '12px 8px', borderRadius: '10px', cursor: 'pointer', textAlign: 'center',
                         background: formData.type === 'CTV' ? 'rgba(245,158,11,0.2)' : 'rgba(255,255,255,0.03)',
                         border: formData.type === 'CTV' ? '1.5px solid #f59e0b' : '1px solid rgba(255,255,255,0.1)',
                         color: formData.type === 'CTV' ? '#f59e0b' : '#94a3b8',
                         boxShadow: formData.type === 'CTV' ? '0 0 12px rgba(245,158,11,0.25)' : 'none',
-                        transition: 'all 0.15s ease'
+                        fontSize: '13.5px', fontWeight: '800', transition: 'all 0.15s ease'
                       }}
                     >
-                      <div style={{ fontSize: '13px', fontWeight: '800' }}>🟡 CTV</div>
-                      <div style={{ fontSize: '10.5px', marginTop: '2px', opacity: 0.85 }}>Áp giá chiết khấu CTV</div>
+                      🟡 CTV
                     </button>
 
                     <button
                       type="button"
                       onClick={() => setFormData({ ...formData, type: 'Si' })}
                       style={{
-                        padding: '10px 8px', borderRadius: '10px', cursor: 'pointer', textAlign: 'center',
+                        padding: '12px 8px', borderRadius: '10px', cursor: 'pointer', textAlign: 'center',
                         background: formData.type === 'Si' ? 'rgba(168,85,247,0.2)' : 'rgba(255,255,255,0.03)',
                         border: formData.type === 'Si' ? '1.5px solid #a855f7' : '1px solid rgba(255,255,255,0.1)',
                         color: formData.type === 'Si' ? '#a855f7' : '#94a3b8',
                         boxShadow: formData.type === 'Si' ? '0 0 12px rgba(168,85,247,0.25)' : 'none',
-                        transition: 'all 0.15s ease'
+                        fontSize: '13.5px', fontWeight: '800', transition: 'all 0.15s ease'
                       }}
                     >
-                      <div style={{ fontSize: '13px', fontWeight: '800' }}>🟣 Khách Sỉ / ĐL</div>
-                      <div style={{ fontSize: '10.5px', marginTop: '2px', opacity: 0.85 }}>Áp giá sỉ ưu đãi cao</div>
+                      🟣 Khách Sỉ / ĐL
                     </button>
                   </div>
                 </div>

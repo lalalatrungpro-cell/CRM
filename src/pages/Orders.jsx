@@ -2073,48 +2073,45 @@ export default function Orders() {
                         type="button"
                         onClick={() => handleNewCustomerTypeChange('Le')}
                         style={{
-                          padding: '10px 8px', borderRadius: '10px', cursor: 'pointer', textAlign: 'center',
+                          padding: '12px 8px', borderRadius: '10px', cursor: 'pointer', textAlign: 'center',
                           background: formData.newCustomerType === 'Le' ? 'rgba(6,182,212,0.2)' : 'rgba(255,255,255,0.03)',
                           border: formData.newCustomerType === 'Le' ? '1.5px solid #06b6d4' : '1px solid rgba(255,255,255,0.1)',
                           color: formData.newCustomerType === 'Le' ? '#06b6d4' : '#94a3b8',
                           boxShadow: formData.newCustomerType === 'Le' ? '0 0 12px rgba(6,182,212,0.25)' : 'none',
-                          transition: 'all 0.15s ease'
+                          fontSize: '13.5px', fontWeight: '800', transition: 'all 0.15s ease'
                         }}
                       >
-                        <div style={{ fontSize: '13px', fontWeight: '800' }}>🔵 Khách Lẻ</div>
-                        <div style={{ fontSize: '10.5px', marginTop: '2px', opacity: 0.85 }}>Áp giá bán lẻ chuẩn</div>
+                        🔵 Khách Lẻ
                       </button>
 
                       <button
                         type="button"
                         onClick={() => handleNewCustomerTypeChange('CTV')}
                         style={{
-                          padding: '10px 8px', borderRadius: '10px', cursor: 'pointer', textAlign: 'center',
+                          padding: '12px 8px', borderRadius: '10px', cursor: 'pointer', textAlign: 'center',
                           background: formData.newCustomerType === 'CTV' ? 'rgba(245,158,11,0.2)' : 'rgba(255,255,255,0.03)',
                           border: formData.newCustomerType === 'CTV' ? '1.5px solid #f59e0b' : '1px solid rgba(255,255,255,0.1)',
                           color: formData.newCustomerType === 'CTV' ? '#f59e0b' : '#94a3b8',
                           boxShadow: formData.newCustomerType === 'CTV' ? '0 0 12px rgba(245,158,11,0.25)' : 'none',
-                          transition: 'all 0.15s ease'
+                          fontSize: '13.5px', fontWeight: '800', transition: 'all 0.15s ease'
                         }}
                       >
-                        <div style={{ fontSize: '13px', fontWeight: '800' }}>🟡 CTV</div>
-                        <div style={{ fontSize: '10.5px', marginTop: '2px', opacity: 0.85 }}>Áp giá chiết khấu CTV</div>
+                        🟡 CTV
                       </button>
 
                       <button
                         type="button"
                         onClick={() => handleNewCustomerTypeChange('Si')}
                         style={{
-                          padding: '10px 8px', borderRadius: '10px', cursor: 'pointer', textAlign: 'center',
+                          padding: '12px 8px', borderRadius: '10px', cursor: 'pointer', textAlign: 'center',
                           background: formData.newCustomerType === 'Si' ? 'rgba(168,85,247,0.2)' : 'rgba(255,255,255,0.03)',
                           border: formData.newCustomerType === 'Si' ? '1.5px solid #a855f7' : '1px solid rgba(255,255,255,0.1)',
                           color: formData.newCustomerType === 'Si' ? '#a855f7' : '#94a3b8',
                           boxShadow: formData.newCustomerType === 'Si' ? '0 0 12px rgba(168,85,247,0.25)' : 'none',
-                          transition: 'all 0.15s ease'
+                          fontSize: '13.5px', fontWeight: '800', transition: 'all 0.15s ease'
                         }}
                       >
-                        <div style={{ fontSize: '13px', fontWeight: '800' }}>🟣 Khách Sỉ / ĐL</div>
-                        <div style={{ fontSize: '10.5px', marginTop: '2px', opacity: 0.85 }}>Áp giá sỉ ưu đãi cao</div>
+                        🟣 Khách Sỉ / ĐL
                       </button>
                     </div>
                   </div>
