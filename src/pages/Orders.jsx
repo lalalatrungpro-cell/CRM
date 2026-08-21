@@ -1150,40 +1150,35 @@ export default function Orders() {
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-      {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
-        <div>
-          <h1 style={{ fontSize: '24px', fontWeight: '800' }}>Quản Lý Đơn Hàng & POS Bán Hàng 360°</h1>
-          <p style={{ color: '#64748b', marginTop: '4px', fontSize: '13px' }}>
-            Tạo đơn nhanh, tự động gán slot team, xuất hóa đơn in ấn, bảo hành và tạo mã VietQR Zalo.
-          </p>
-        </div>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+      {/* Compact Header */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+        <h1 style={{ fontSize: '20px', fontWeight: '800', margin: 0 }}>Quản Lý Đơn Hàng & POS Bán Hàng 360°</h1>
 
-        <button className="glass-button" onClick={() => setShowModal(true)}>
-          <Plus size={18} /> Tạo Đơn POS Mới
+        <button className="glass-button" onClick={() => setShowModal(true)} style={{ padding: '6px 14px', fontSize: '13px' }}>
+          <Plus size={16} /> Tạo Đơn POS Mới
         </button>
       </div>
 
-      {/* Date Filter Bar */}
+      {/* Compact Date Filter Bar */}
       <DateFilterBar onFilterChange={setDateRange} label="Kỳ Đơn Hàng:" />
 
-      {/* Filters Bar */}
-      <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'center' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: '280px', flex: 1, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '10px', padding: '8px 14px' }}>
-          <Search size={16} color="#475569" />
+      {/* Compact Filters Bar */}
+      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: '240px', flex: 1, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '8px', padding: '6px 12px' }}>
+          <Search size={15} color="#475569" />
           <input
             type="text"
             placeholder="Tìm tên KH, SĐT, Tên sản phẩm hoặc Mã đơn..."
             value={searchTerm}
             onChange={e => { setSearchTerm(e.target.value); setCurrentPage(1); }}
-            style={{ background: 'none', border: 'none', color: '#fff', outline: 'none', width: '100%', fontSize: '13.5px' }}
+            style={{ background: 'none', border: 'none', color: '#fff', outline: 'none', width: '100%', fontSize: '12.5px' }}
           />
           {searchTerm && <button onClick={() => setSearchTerm('')} style={{ background: 'none', border: 'none', color: '#475569', cursor: 'pointer' }}><X size={14} /></button>}
         </div>
 
         <select
-          className="glass-input" style={{ width: 'auto' }}
+          className="glass-input" style={{ width: 'auto', padding: '6px 10px', fontSize: '12.5px', borderRadius: '8px' }}
           value={filterStatus} onChange={e => { setFilterStatus(e.target.value); setCurrentPage(1); }}
         >
           <option value="ALL">Tất cả trạng thái</option>
@@ -1192,7 +1187,7 @@ export default function Orders() {
         </select>
 
         <select
-          className="glass-input" style={{ width: 'auto', border: filterTeamId !== 'ALL' ? '1.5px solid #38bdf8' : '1px solid rgba(255,255,255,0.12)', color: filterTeamId !== 'ALL' ? '#38bdf8' : '#fff', fontWeight: filterTeamId !== 'ALL' ? '700' : '400' }}
+          className="glass-input" style={{ width: 'auto', padding: '6px 10px', fontSize: '12.5px', borderRadius: '8px', border: filterTeamId !== 'ALL' ? '1.5px solid #38bdf8' : '1px solid rgba(255,255,255,0.12)', color: filterTeamId !== 'ALL' ? '#38bdf8' : '#fff', fontWeight: filterTeamId !== 'ALL' ? '700' : '400' }}
           value={filterTeamId} onChange={e => { setFilterTeamId(e.target.value); setCurrentPage(1); }}
         >
           <option value="ALL">📦 Tất cả kho team</option>
@@ -1202,7 +1197,7 @@ export default function Orders() {
         </select>
 
         <select
-          className="glass-input" style={{ width: 'auto', border: filterCustomerType !== 'ALL' ? '1.5px solid #a855f7' : '1px solid rgba(255,255,255,0.12)', color: filterCustomerType !== 'ALL' ? '#c084fc' : '#fff', fontWeight: filterCustomerType !== 'ALL' ? '700' : '400' }}
+          className="glass-input" style={{ width: 'auto', padding: '6px 10px', fontSize: '12.5px', borderRadius: '8px', border: filterCustomerType !== 'ALL' ? '1.5px solid #a855f7' : '1px solid rgba(255,255,255,0.12)', color: filterCustomerType !== 'ALL' ? '#c084fc' : '#fff', fontWeight: filterCustomerType !== 'ALL' ? '700' : '400' }}
           value={filterCustomerType} onChange={e => { setFilterCustomerType(e.target.value); setCurrentPage(1); }}
         >
           <option value="ALL">👤 Tất cả loại khách</option>
@@ -1212,7 +1207,7 @@ export default function Orders() {
         </select>
 
         <select
-          className="glass-input" style={{ width: 'auto', border: filterSupplierId !== 'ALL' ? '1.5px solid #10b981' : '1px solid rgba(255,255,255,0.12)', color: filterSupplierId !== 'ALL' ? '#10b981' : '#fff', fontWeight: filterSupplierId !== 'ALL' ? '700' : '400' }}
+          className="glass-input" style={{ width: 'auto', padding: '6px 10px', fontSize: '12.5px', borderRadius: '8px', border: filterSupplierId !== 'ALL' ? '1.5px solid #10b981' : '1px solid rgba(255,255,255,0.12)', color: filterSupplierId !== 'ALL' ? '#10b981' : '#fff', fontWeight: filterSupplierId !== 'ALL' ? '700' : '400' }}
           value={filterSupplierId} onChange={e => { setFilterSupplierId(e.target.value); setCurrentPage(1); }}
         >
           <option value="ALL">🏭 Tất cả NCC</option>

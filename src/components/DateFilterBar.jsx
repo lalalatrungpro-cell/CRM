@@ -55,7 +55,7 @@ export default function DateFilterBar({ onFilterChange, initialPreset = 'ALL', l
   };
 
   return (
-    <div className="glass-panel" style={{ padding: '12px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px', background: 'rgba(17,21,40,0.6)', border: '1px solid rgba(255,255,255,0.08)' }}>
+    <div className="glass-panel" style={{ padding: '7px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px', background: 'rgba(17,21,40,0.6)', border: '1px solid rgba(255,255,255,0.08)' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
         <span style={{ fontSize: '12px', color: '#94a3b8', fontWeight: '700', textTransform: 'uppercase', marginRight: '4px', display: 'flex', alignItems: 'center', gap: '6px' }}>
           <Calendar size={15} color="#818cf8" /> {label}
