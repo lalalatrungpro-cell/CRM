@@ -698,8 +698,8 @@ export default function Orders() {
           phone: formData.newCustomerPhone.trim() || '',
           email: (formData.newCustomerEmail || '').trim(),
           type: formData.newCustomerType || 'Le',
-          source: formData.newCustomerSource || formData.source || 'Facebook Page',
-          sub_channel: (formData.newCustomerSubChannel || '').trim(),
+          source: formData.source || 'Facebook Page',
+          sub_channel: (formData.subChannel || formData.newCustomerSubChannel || '').trim(),
           notes: (formData.newCustomerNotes || '').trim(),
           debt: 0
         });
@@ -2129,31 +2129,6 @@ export default function Orders() {
                       <input
                         type="text" required className="glass-input" placeholder="0987654321"
                         value={formData.newCustomerPhone} onChange={e => setFormData({ ...formData, newCustomerPhone: e.target.value })}
-                      />
-                    </div>
-                  </div>
-
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-                    <div>
-                      <label className="form-label">Kênh Nguồn Khách</label>
-                      <select
-                        className="glass-input"
-                        value={formData.newCustomerSource || 'Facebook Page'} onChange={e => setFormData({ ...formData, newCustomerSource: e.target.value })}
-                      >
-                        <option value="Facebook Page">Facebook Page</option>
-                        <option value="Zalo">Zalo</option>
-                        <option value="TikTok Shop">TikTok Shop</option>
-                        <option value="Telegram">Telegram</option>
-                        <option value="Giới Thiệu">Giới Thiệu</option>
-                        <option value="Website">Website</option>
-                        <option value="Khác">Khác</option>
-                      </select>
-                    </div>
-                    <div>
-                      <label className="form-label">Sub-Channel / Trang Phụ</label>
-                      <input
-                        type="text" className="glass-input" placeholder="VD: Page Canva Sỉ #01"
-                        value={formData.newCustomerSubChannel || ''} onChange={e => setFormData({ ...formData, newCustomerSubChannel: e.target.value })}
                       />
                     </div>
                   </div>
