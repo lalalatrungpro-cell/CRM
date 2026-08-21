@@ -1235,60 +1235,57 @@ export default function Inventory() {
                       </div>
                     </div>
 
-                    {/* BOTTOM RED BOX: Single Row, Equal Size Grid (NCC Badge, Acc Gốc Button, Bảo Hành Button) */}
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: '6px', width: '100%', alignItems: 'center' }}>
+                    {/* BOTTOM ROW: Dynamic Flex layout dividing visible buttons 100% evenly */}
+                    <div style={{ display: 'flex', gap: '6px', width: '100%', alignItems: 'center' }}>
                       {/* NCC Badge */}
                       <div style={{
-                        height: '32px', background: 'rgba(168, 85, 247, 0.15)', color: '#c084fc',
-                        border: '1px solid rgba(168, 85, 247, 0.35)', borderRadius: '8px', fontSize: '10.5px', fontWeight: '700',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px', padding: '0 4px', whiteSpace: 'nowrap', overflow: 'hidden'
+                        flex: 1, minWidth: 0, height: '34px', background: 'rgba(168, 85, 247, 0.15)', color: '#c084fc',
+                        border: '1px solid rgba(168, 85, 247, 0.35)', borderRadius: '8px', fontSize: '11px', fontWeight: '700',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px', padding: '0 6px', whiteSpace: 'nowrap', overflow: 'hidden'
                       }}>
-                        <span style={{ fontSize: '11px' }}>🏭</span>
+                        <span style={{ fontSize: '12px' }}>🏭</span>
                         <strong style={{ color: '#fff', fontWeight: '800', textOverflow: 'ellipsis', overflow: 'hidden' }}>{team.supplier_name || team.supplierName || '—'}</strong>
                       </div>
 
                       {/* Acc Gốc Button */}
-                      {team.infor ? (
+                      {team.infor && (
                         <button
                           onClick={() => setShowCredentialsModal(team)}
                           style={{
-                            height: '32px', padding: '0 4px', fontSize: '10.5px', fontWeight: '700', borderRadius: '8px', cursor: 'pointer',
+                            flex: 1, minWidth: 0, height: '34px', padding: '0 6px', fontSize: '11px', fontWeight: '700', borderRadius: '8px', cursor: 'pointer',
                             color: '#38bdf8', background: 'rgba(56,189,248,0.15)', border: '1px solid rgba(56,189,248,0.3)',
                             display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px', whiteSpace: 'nowrap'
                           }}
                         >
-                          <Eye size={11} /> 🔑 Acc Gốc
+                          <Eye size={12} /> 🔑 Acc Gốc
                         </button>
-                      ) : (
-                        <div style={{ height: '32px' }} />
                       )}
 
                       {/* Bảo Hành Button */}
-                      {(team.warranty_policy || team.warrantyPolicy) ? (
+                      {(team.warranty_policy || team.warrantyPolicy) && (
                         <button
                           onClick={() => setShowWarrantyModal(team)}
                           style={{
-                            height: '32px', padding: '0 4px', fontSize: '10.5px', fontWeight: '700', borderRadius: '8px', cursor: 'pointer',
+                            flex: 1, minWidth: 0, height: '34px', padding: '0 6px', fontSize: '11px', fontWeight: '700', borderRadius: '8px', cursor: 'pointer',
                             color: '#818cf8', background: 'rgba(99,102,241,0.15)', border: '1px solid rgba(99,102,241,0.3)',
                             display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px', whiteSpace: 'nowrap'
                           }}
                         >
-                          <ShieldCheck size={11} /> 📜 Bảo Hành
+                          <ShieldCheck size={12} /> 📜 Bảo Hành
                         </button>
-                      ) : (
-                        <div style={{ height: '32px' }} />
                       )}
+
                       {/* Xem Khách button */}
                       <button
                         onClick={() => setShowTeamMembersModal(team)}
                         title="Xem danh sách khách đang dùng team"
                         style={{
-                          height: '32px', padding: '0 4px', fontSize: '10.5px', fontWeight: '700', borderRadius: '8px', cursor: 'pointer',
-                          color: '#38bdf8', background: 'rgba(56,189,248,0.12)', border: '1px solid rgba(56,189,248,0.25)',
-                          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px', whiteSpace: 'nowrap'
+                          flex: 1, minWidth: 0, height: '34px', padding: '0 6px', fontSize: '11px', fontWeight: '700', borderRadius: '8px', cursor: 'pointer',
+                          color: '#38bdf8', background: 'rgba(56,189,248,0.15)', border: '1px solid rgba(56,189,248,0.3)',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px', whiteSpace: 'nowrap'
                         }}
                       >
-                        <Users size={11} /> 👥 {orders.filter(o => String(o.team_id || o.teamId) === String(team.id)).length} Khách
+                        <Users size={13} /> {orders.filter(o => String(o.team_id || o.teamId) === String(team.id)).length} Khách
                       </button>
                     </div>
                   </div>
