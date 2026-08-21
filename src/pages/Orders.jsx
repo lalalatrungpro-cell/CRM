@@ -692,6 +692,7 @@ export default function Orders() {
     try {
       if (formData.customerId === 'NEW') {
         if (!formData.newCustomerName.trim()) return toast.error('Vui lòng nhập tên khách hàng mới!');
+        if (!formData.newCustomerType) return toast.error('Vui lòng chọn Phân loại khách hàng!');
         const createdCust = await CustomerService.create(shopId, {
           name: formData.newCustomerName.trim(),
           phone: formData.newCustomerPhone.trim() || '',
@@ -2063,19 +2064,58 @@ export default function Orders() {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', background: 'rgba(99,102,241,0.06)', padding: '14px', borderRadius: '12px', border: '1px solid rgba(99,102,241,0.25)' }}>
                   <span style={{ fontSize: '12px', fontWeight: '700', color: '#818cf8', textTransform: 'uppercase', letterSpacing: '0.04em' }}>👤 Hồ Sơ Khách Hàng Mới Chi Tiết 360°</span>
                   
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-                    <div>
-                      <label className="form-label" style={{ color: '#c084fc', fontWeight: '700' }}>🏷️ Phân Loại Khách Hàng *</label>
-                      <select
-                        className="glass-input"
-                        value={formData.newCustomerType || 'Le'}
-                        onChange={e => handleNewCustomerTypeChange(e.target.value)}
-                        style={{ borderColor: 'rgba(192,132,252,0.4)', color: '#fff' }}
+                  <div style={{ width: '100%' }}>
+                    <label className="form-label" style={{ color: '#c084fc', fontWeight: '700', marginBottom: '8px', display: 'block' }}>
+                      🏷️ PHÂN LOẠI KHÁCH HÀNG (BẮT BUỘC CHỌN) *
+                    </label>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px' }}>
+                      <button
+                        type="button"
+                        onClick={() => handleNewCustomerTypeChange('Le')}
+                        style={{
+                          padding: '10px 8px', borderRadius: '10px', cursor: 'pointer', textAlign: 'center',
+                          background: (formData.newCustomerType || 'Le') === 'Le' ? 'rgba(6,182,212,0.2)' : 'rgba(255,255,255,0.03)',
+                          border: (formData.newCustomerType || 'Le') === 'Le' ? '1.5px solid #06b6d4' : '1px solid rgba(255,255,255,0.1)',
+                          color: (formData.newCustomerType || 'Le') === 'Le' ? '#06b6d4' : '#94a3b8',
+                          boxShadow: (formData.newCustomerType || 'Le') === 'Le' ? '0 0 12px rgba(6,182,212,0.25)' : 'none',
+                          transition: 'all 0.15s ease'
+                        }}
                       >
-                        <option value="Le">Khách Lẻ (Áp giá bán lẻ chuẩn)</option>
-                        <option value="CTV">Cộng Tác Viên (Áp giá chiết khấu CTV)</option>
-                        <option value="Si">🟣 Khách Sỉ / Đại Lý (Áp giá sỉ ưu đãi cao)</option>
-                      </select>
+                        <div style={{ fontSize: '13px', fontWeight: '800' }}>🔵 Khách Lẻ</div>
+                        <div style={{ fontSize: '10.5px', marginTop: '2px', opacity: 0.85 }}>Áp giá bán lẻ chuẩn</div>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => handleNewCustomerTypeChange('CTV')}
+                        style={{
+                          padding: '10px 8px', borderRadius: '10px', cursor: 'pointer', textAlign: 'center',
+                          background: formData.newCustomerType === 'CTV' ? 'rgba(245,158,11,0.2)' : 'rgba(255,255,255,0.03)',
+                          border: formData.newCustomerType === 'CTV' ? '1.5px solid #f59e0b' : '1px solid rgba(255,255,255,0.1)',
+                          color: formData.newCustomerType === 'CTV' ? '#f59e0b' : '#94a3b8',
+                          boxShadow: formData.newCustomerType === 'CTV' ? '0 0 12px rgba(245,158,11,0.25)' : 'none',
+                          transition: 'all 0.15s ease'
+                        }}
+                      >
+                        <div style={{ fontSize: '13px', fontWeight: '800' }}>🟡 CTV</div>
+                        <div style={{ fontSize: '10.5px', marginTop: '2px', opacity: 0.85 }}>Áp giá chiết khấu CTV</div>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => handleNewCustomerTypeChange('Si')}
+                        style={{
+                          padding: '10px 8px', borderRadius: '10px', cursor: 'pointer', textAlign: 'center',
+                          background: formData.newCustomerType === 'Si' ? 'rgba(168,85,247,0.2)' : 'rgba(255,255,255,0.03)',
+                          border: formData.newCustomerType === 'Si' ? '1.5px solid #a855f7' : '1px solid rgba(255,255,255,0.1)',
+                          color: formData.newCustomerType === 'Si' ? '#a855f7' : '#94a3b8',
+                          boxShadow: formData.newCustomerType === 'Si' ? '0 0 12px rgba(168,85,247,0.25)' : 'none',
+                          transition: 'all 0.15s ease'
+                        }}
+                      >
+                        <div style={{ fontSize: '13px', fontWeight: '800' }}>🟣 Khách Sỉ / ĐL</div>
+                        <div style={{ fontSize: '10.5px', marginTop: '2px', opacity: 0.85 }}>Áp giá sỉ ưu đãi cao</div>
+                      </button>
                     </div>
                   </div>
 
