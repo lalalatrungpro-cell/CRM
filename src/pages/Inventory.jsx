@@ -101,7 +101,7 @@ export default function Inventory() {
     name: '', category: 'Canva Pro', infor: '', maxSlots: 49,
     importCost: 0, purchaseDate: todayStr, expireDate: nextYearStr,
     supplierId: '', notes: '', warrantyPolicy: '', status: 'ACTIVE',
-    paymentStatus: ''
+    paymentStatus: 'PAID'
   };
   const [showTeamModal, setShowTeamModal] = useState(false);
   const [showWarrantyModal, setShowWarrantyModal] = useState(null);
@@ -199,7 +199,8 @@ export default function Inventory() {
       expireDate: team.expire_date || team.expireDate || nextYearStr,
       supplierId: team.supplier_id || team.supplierId || '', notes: team.notes || '',
       warrantyPolicy: team.warranty_policy || team.warrantyPolicy || '',
-      status: team.status || 'ACTIVE'
+      status: team.status || 'ACTIVE',
+      paymentStatus: team.payment_status || team.paymentStatus || 'PAID'
     });
     setShowTeamModal(true);
   };
@@ -231,7 +232,8 @@ export default function Inventory() {
       supplier_id: teamFormData.supplierId ? parseInt(teamFormData.supplierId) : null,
       supplier_name: suppName, notes: teamFormData.notes.trim(),
       warranty_policy: (teamFormData.warrantyPolicy || '').trim(),
-      status: teamFormData.status || 'ACTIVE'
+      status: teamFormData.status || 'ACTIVE',
+      payment_status: teamFormData.paymentStatus || 'PAID'
     };
     try {
       if (editingTeam) {
