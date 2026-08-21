@@ -1118,13 +1118,13 @@ export default function Inventory() {
                 const isReplaced = team.status === 'REPLACED' || Boolean(team.replaced_by_team_name || team.replaced_by_team_id);
                 const isDie = (team.status === 'FAULTY_DIE' || team.status === 'DIE') && !isReplaced;
 
-                let statusBadge = { label: '🟢 ĐANG HOẠT ĐỘNG', color: '#10b981', bg: 'rgba(16,185,129,0.15)' };
+                let statusBadge = { label: '🟢 HOẠT ĐỘNG', color: '#10b981', bg: 'rgba(16,185,129,0.15)' };
                 if (isReplaced) {
-                  statusBadge = { label: '🔒 ĐÃ BẢO HÀNH (ĐÃ ĐỔI)', color: '#a855f7', bg: 'rgba(168,85,247,0.2)' };
+                  statusBadge = { label: '🔒 ĐÃ ĐỔI BH', color: '#a855f7', bg: 'rgba(168,85,247,0.2)' };
                 } else if (isDie) {
-                  statusBadge = { label: '🔴 TEAM BỊ DIE (LỖI)', color: '#ef4444', bg: 'rgba(239,68,68,0.2)' };
+                  statusBadge = { label: '🔴 TEAM DIE', color: '#ef4444', bg: 'rgba(239,68,68,0.2)' };
                 } else if (daysLeft !== null && daysLeft <= 0) {
-                  statusBadge = { label: '⚪ ĐÃ HẾT HẠN', color: '#64748b', bg: 'rgba(100,116,139,0.2)' };
+                  statusBadge = { label: '⚪ HẾT HẠN', color: '#64748b', bg: 'rgba(100,116,139,0.2)' };
                 } else if (daysLeft !== null && daysLeft <= 7) {
                   statusBadge = { label: '🟡 SẮP HẾT HẠN', color: '#f59e0b', bg: 'rgba(245,158,11,0.2)' };
                 }
@@ -1132,27 +1132,31 @@ export default function Inventory() {
                 return (
                   <div key={team.id} className="glass-panel" style={{ display: 'flex', flexDirection: 'column', gap: '12px', padding: '16px', border: isDie ? '2px solid #ef4444' : '1px solid ' + catColor + '30', position: 'relative' }}>
                     {/* Team Name & Category Header */}
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <div>
-                        <div style={{ fontSize: '15px', fontWeight: '800', color: '#fff' }}>{team.name}</div>
-                        {team.replaced_by_team_name && (
-                          <div style={{ fontSize: '11px', color: '#ef4444', fontWeight: '700', marginTop: '2px' }}>
-                            🔒 Đã đóng băng — Thay bởi: {team.replaced_by_team_name}
-                          </div>
-                        )}
-                        {team.replaces_team_name && (
-                          <div style={{ fontSize: '11px', color: '#10b981', fontWeight: '700', marginTop: '2px' }}>
-                            🛡️ Bảo hành thay thế cho: {team.replaces_team_name}
-                          </div>
-                        )}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                      <div style={{ fontSize: '15px', fontWeight: '800', color: '#fff', wordBreak: 'break-word' }}>
+                        {team.name}
                       </div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                        <div style={{ background: catColor + '20', color: catColor, fontSize: '10.5px', fontWeight: '700', padding: '2px 8px', borderRadius: '12px', border: '1px solid ' + catColor + '40' }}>
+
+                      <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '6px' }}>
+                        <div style={{ background: catColor + '20', color: catColor, fontSize: '10.5px', fontWeight: '700', padding: '2px 8px', borderRadius: '12px', border: '1px solid ' + catColor + '40', whiteSpace: 'nowrap' }}>
                           {team.category}
                         </div>
-                        <div style={{ background: statusBadge.bg, color: statusBadge.color, fontSize: '10.5px', fontWeight: '800', padding: '2px 8px', borderRadius: '12px', border: '1px solid ' + statusBadge.color + '40' }}>
+
+                        <div style={{ background: statusBadge.bg, color: statusBadge.color, fontSize: '10.5px', fontWeight: '800', padding: '2px 8px', borderRadius: '12px', border: '1px solid ' + statusBadge.color + '40', whiteSpace: 'nowrap' }}>
                           {statusBadge.label}
                         </div>
+
+                        {team.replaced_by_team_name && (
+                          <div style={{ background: 'rgba(239,68,68,0.15)', color: '#ef4444', fontSize: '10.5px', fontWeight: '700', padding: '2px 8px', borderRadius: '12px', border: '1px solid rgba(239,68,68,0.3)', whiteSpace: 'nowrap' }}>
+                            🔒 Thay bởi: {team.replaced_by_team_name}
+                          </div>
+                        )}
+
+                        {team.replaces_team_name && (
+                          <div style={{ background: 'rgba(16,185,129,0.15)', color: '#10b981', fontSize: '10.5px', fontWeight: '700', padding: '2px 8px', borderRadius: '12px', border: '1px solid rgba(16,185,129,0.3)', whiteSpace: 'nowrap' }}>
+                            🛡️ Thay cho: {team.replaces_team_name}
+                          </div>
+                        )}
                       </div>
                     </div>
 
