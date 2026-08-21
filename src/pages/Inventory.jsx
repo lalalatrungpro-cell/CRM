@@ -13,7 +13,7 @@ import {
   Trash2, RefreshCw, AlertTriangle, ShieldAlert, ArrowDownLeft,
   ArrowUpRight, Download, Layers, ShieldCheck, Clock, CheckCircle2,
   FileSpreadsheet, Tag, Truck, ExternalLink, X, HelpCircle,
-  PackagePlus, Edit2, DollarSign, Wallet, Building2, Key
+  PackagePlus, Edit2, DollarSign, Wallet, Building2, Key, Users
 } from 'lucide-react';
 
 const STATUS_CONFIG = {
