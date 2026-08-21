@@ -231,6 +231,9 @@ export default function Orders() {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('ALL');
   const [filterCategory, setFilterCategory] = useState('ALL');
+  const [filterTeamId, setFilterTeamId] = useState('ALL');
+  const [filterCustomerType, setFilterCustomerType] = useState('ALL');
+  const [filterSupplierId, setFilterSupplierId] = useState('ALL');
   const [currentPage, setCurrentPage] = useState(1);
   const [copiedId, setCopiedId] = useState('');
   const [revealedInfors, setRevealedInfors] = useState({});
@@ -1110,8 +1113,15 @@ export default function Orders() {
 
     const matchesStatus = filterStatus === 'ALL' || o.status === filterStatus;
     const matchesCategory = filterCategory === 'ALL' || prodName.toLowerCase().includes(filterCategory.toLowerCase());
+    const matchesTeam = filterTeamId === 'ALL' || String(o.team_id || o.teamId) === String(filterTeamId);
+    
+    const custObj = customers.find(c => String(c.id) === String(o.customer_id || o.customerId));
+    const custType = custObj?.type || 'Le';
+    const matchesCustType = filterCustomerType === 'ALL' || custType === filterCustomerType;
 
-    return matchesSearch && matchesStatus && matchesCategory;
+    const matchesSupplier = filterSupplierId === 'ALL' || String(o.supplier_id || o.supplierId) === String(filterSupplierId);
+
+    return matchesSearch && matchesStatus && matchesCategory && matchesTeam && matchesCustType && matchesSupplier;
   });
 
   const totalPages = Math.ceil(filteredOrders.length / PAGE_SIZE) || 1;
@@ -1176,8 +1186,38 @@ export default function Orders() {
           value={filterStatus} onChange={e => { setFilterStatus(e.target.value); setCurrentPage(1); }}
         >
           <option value="ALL">Tất cả trạng thái</option>
-          <option value="Đã thanh toán">Đã thanh toán</option>
-          <option value="Nợ">Nợ</option>
+          <option value="Đã thanh toán">🟢 Đã thanh toán</option>
+          <option value="Nợ">🔴 Đơn còn nợ</option>
+        </select>
+
+        <select
+          className="glass-input" style={{ width: 'auto', border: filterTeamId !== 'ALL' ? '1.5px solid #38bdf8' : '1px solid rgba(255,255,255,0.12)', color: filterTeamId !== 'ALL' ? '#38bdf8' : '#fff', fontWeight: filterTeamId !== 'ALL' ? '700' : '400' }}
+          value={filterTeamId} onChange={e => { setFilterTeamId(e.target.value); setCurrentPage(1); }}
+        >
+          <option value="ALL">📦 Tất cả kho team</option>
+          {teams.map(t => (
+            <option key={t.id} value={t.id}>Team #{t.id} — {t.name}</option>
+          ))}
+        </select>
+
+        <select
+          className="glass-input" style={{ width: 'auto', border: filterCustomerType !== 'ALL' ? '1.5px solid #a855f7' : '1px solid rgba(255,255,255,0.12)', color: filterCustomerType !== 'ALL' ? '#c084fc' : '#fff', fontWeight: filterCustomerType !== 'ALL' ? '700' : '400' }}
+          value={filterCustomerType} onChange={e => { setFilterCustomerType(e.target.value); setCurrentPage(1); }}
+        >
+          <option value="ALL">👤 Tất cả loại khách</option>
+          <option value="Le">🔵 Khách Lẻ</option>
+          <option value="CTV">🟡 CTV</option>
+          <option value="Si">🟣 Khách Sỉ</option>
+        </select>
+
+        <select
+          className="glass-input" style={{ width: 'auto', border: filterSupplierId !== 'ALL' ? '1.5px solid #10b981' : '1px solid rgba(255,255,255,0.12)', color: filterSupplierId !== 'ALL' ? '#10b981' : '#fff', fontWeight: filterSupplierId !== 'ALL' ? '700' : '400' }}
+          value={filterSupplierId} onChange={e => { setFilterSupplierId(e.target.value); setCurrentPage(1); }}
+        >
+          <option value="ALL">🏭 Tất cả NCC</option>
+          {suppliers.map(s => (
+            <option key={s.id} value={s.id}>🏭 {s.name}</option>
+          ))}
         </select>
       </div>
 
