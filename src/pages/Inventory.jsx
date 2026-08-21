@@ -1144,42 +1144,39 @@ export default function Inventory() {
                           </div>
                         )}
                       </div>
-                      <div style={{ background: catColor + '20', color: catColor, fontSize: '10.5px', fontWeight: '700', padding: '2px 8px', borderRadius: '12px', border: '1px solid ' + catColor + '40' }}>
-                        {team.category}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <div style={{ background: catColor + '20', color: catColor, fontSize: '10.5px', fontWeight: '700', padding: '2px 8px', borderRadius: '12px', border: '1px solid ' + catColor + '40' }}>
+                          {team.category}
+                        </div>
+                        <div style={{ background: statusBadge.bg, color: statusBadge.color, fontSize: '10.5px', fontWeight: '800', padding: '2px 8px', borderRadius: '12px', border: '1px solid ' + statusBadge.color + '40' }}>
+                          {statusBadge.label}
+                        </div>
                       </div>
                     </div>
 
-                    {/* TOP RED BOX: Single Row, Equal Height Controls (Status Badge, Báo DIE / Thay Thế, Sửa, Xóa) */}
+                    {/* Row 2: Equal Width Action Buttons (4 buttons when DIE = 25% each, 3 buttons when Normal = 33.3% each) */}
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px', width: '100%' }}>
-                      <div style={{
-                        flex: '1.4', height: '30px', background: statusBadge.bg, color: statusBadge.color,
-                        fontSize: '10.5px', fontWeight: '800', borderRadius: '8px', border: '1px solid ' + statusBadge.color + '40',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 6px', textOverflow: 'ellipsis', whiteSpace: 'nowrap', overflow: 'hidden'
-                      }}>
-                        {statusBadge.label}
-                      </div>
-
                       {isDie && (
                         <button
                           onClick={() => handleOpenReplaceTeamModal(team)}
                           style={{
-                            flex: '1.2', height: '30px', background: 'linear-gradient(135deg, #10b981, #059669)',
-                            color: '#fff', border: 'none', borderRadius: '8px', fontSize: '10.5px', fontWeight: '800', cursor: 'pointer',
+                            flex: 1, minWidth: 0, height: '34px', background: 'linear-gradient(135deg, #10b981, #059669)',
+                            color: '#fff', border: 'none', borderRadius: '8px', fontSize: '11px', fontWeight: '700', cursor: 'pointer',
                             display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px', whiteSpace: 'nowrap'
                           }}
-                          title="Tạo team thay thế và tự động chuyển đơn hàng còn hạn sang team mới"
+                          title="Tạo team thay thế và chuyển đơn"
                         >
-                          ⚡ Đổi Team BH
+                          ⚡ Đổi BH
                         </button>
                       )}
 
                       <button
                         onClick={() => handleToggleTeamDieStatus(team)}
-                        title={isDie ? 'Khôi phục team về Active' : 'Đánh dấu Báo Team DIE'}
+                        title={isDie ? 'Khôi phục team về Active' : 'Báo Team Bị DIE (Lỗi)'}
                         style={{
-                          flex: '1.2', height: '30px', background: isDie ? 'rgba(16,185,129,0.15)' : 'rgba(239,68,68,0.15)',
+                          flex: 1, minWidth: 0, height: '34px', background: isDie ? 'rgba(16,185,129,0.15)' : 'rgba(239,68,68,0.15)',
                           color: isDie ? '#10b981' : '#ef4444', border: isDie ? '1px solid rgba(16,185,129,0.3)' : '1px solid rgba(239,68,68,0.3)',
-                          borderRadius: '8px', fontSize: '10.5px', fontWeight: '800', cursor: 'pointer',
+                          borderRadius: '8px', fontSize: '11px', fontWeight: '700', cursor: 'pointer',
                           display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px', whiteSpace: 'nowrap'
                         }}
                       >
@@ -1187,13 +1184,28 @@ export default function Inventory() {
                         {isDie ? 'Khôi Phục' : 'Báo DIE'}
                       </button>
 
-
-                      <button onClick={() => handleOpenEditTeamModal(team)} style={{ width: '30px', height: '30px', background: 'rgba(99,102,241,0.15)', border: '1px solid rgba(99,102,241,0.3)', borderRadius: '8px', color: '#818cf8', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }} title="Sửa team">
-                        <Edit2 size={13} />
+                      <button
+                        onClick={() => handleOpenEditTeamModal(team)}
+                        style={{
+                          flex: 1, minWidth: 0, height: '34px', background: 'rgba(99,102,241,0.15)', border: '1px solid rgba(99,102,241,0.3)',
+                          borderRadius: '8px', color: '#818cf8', fontSize: '11px', fontWeight: '700', cursor: 'pointer',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px', whiteSpace: 'nowrap'
+                        }}
+                        title="Sửa thông tin team"
+                      >
+                        <Edit2 size={12} /> Sửa Team
                       </button>
 
-                      <button onClick={() => setConfirmDeleteTeamId(team.id)} style={{ width: '30px', height: '30px', background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.25)', borderRadius: '8px', color: '#f87171', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }} title="Xóa team">
-                        <Trash2 size={13} />
+                      <button
+                        onClick={() => setConfirmDeleteTeamId(team.id)}
+                        style={{
+                          flex: 1, minWidth: 0, height: '34px', background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.25)',
+                          borderRadius: '8px', color: '#f87171', fontSize: '11px', fontWeight: '700', cursor: 'pointer',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px', whiteSpace: 'nowrap'
+                        }}
+                        title="Xóa team khỏi kho"
+                      >
+                        <Trash2 size={12} /> Xóa Team
                       </button>
                     </div>
 
