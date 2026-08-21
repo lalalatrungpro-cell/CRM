@@ -1187,14 +1187,6 @@ export default function Inventory() {
                         {isDie ? 'Khôi Phục' : 'Báo DIE'}
                       </button>
 
-                      <button
-                        onClick={() => setShowTeamMembersModal(team)}
-                        title="Xem danh sách khách đang dùng team"
-                        style={{ width: "30px", height: "30px", background: "rgba(56,189,248,0.12)", border: "1px solid rgba(56,189,248,0.25)", color: "#38bdf8", borderRadius: "8px", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
-                      >
-                        <Users size={13} />
-                      </button>
-                      
 
                       <button onClick={() => handleOpenEditTeamModal(team)} style={{ width: '30px', height: '30px', background: 'rgba(99,102,241,0.15)', border: '1px solid rgba(99,102,241,0.3)', borderRadius: '8px', color: '#818cf8', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }} title="Sửa team">
                         <Edit2 size={13} />
@@ -1244,7 +1236,7 @@ export default function Inventory() {
                     </div>
 
                     {/* BOTTOM RED BOX: Single Row, Equal Size Grid (NCC Badge, Acc Gốc Button, Bảo Hành Button) */}
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '6px', width: '100%', alignItems: 'center' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: '6px', width: '100%', alignItems: 'center' }}>
                       {/* NCC Badge */}
                       <div style={{
                         height: '32px', background: 'rgba(168, 85, 247, 0.15)', color: '#c084fc',
@@ -1286,6 +1278,18 @@ export default function Inventory() {
                       ) : (
                         <div style={{ height: '32px' }} />
                       )}
+                      {/* Xem Khách button */}
+                      <button
+                        onClick={() => setShowTeamMembersModal(team)}
+                        title="Xem danh sách khách đang dùng team"
+                        style={{
+                          height: '32px', padding: '0 4px', fontSize: '10.5px', fontWeight: '700', borderRadius: '8px', cursor: 'pointer',
+                          color: '#38bdf8', background: 'rgba(56,189,248,0.12)', border: '1px solid rgba(56,189,248,0.25)',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px', whiteSpace: 'nowrap'
+                        }}
+                      >
+                        <Users size={11} /> 👥 {orders.filter(o => String(o.team_id || o.teamId) === String(team.id)).length} Khách
+                      </button>
                     </div>
                   </div>
                 );
