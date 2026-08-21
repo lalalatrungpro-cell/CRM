@@ -506,7 +506,7 @@ export default function Orders() {
     newCustomerName: '',
     newCustomerPhone: '',
     newCustomerEmail: '',
-    newCustomerType: 'Le',
+    newCustomerType: '',
     newCustomerSource: 'Facebook Page',
     newCustomerSubChannel: '',
     newCustomerNotes: '',
@@ -556,7 +556,7 @@ export default function Orders() {
   };
 
   const getCustomerTypeFromState = (fData) => {
-    if (fData.customerId === 'NEW') return fData.newCustomerType || 'Le';
+    if (fData.customerId === 'NEW') return fData.newCustomerType || '';
     const c = customers.find(cust => String(cust.id) === String(fData.customerId));
     return c?.type || 'Le';
   };
@@ -574,7 +574,7 @@ export default function Orders() {
 
   const handleCustomerChange = (cId) => {
     setFormData(f => {
-      const nextCustType = cId === 'NEW' ? (f.newCustomerType || 'Le') : (customers.find(c => String(c.id) === String(cId))?.type || 'Le');
+      const nextCustType = cId === 'NEW' ? (f.newCustomerType || '') : (customers.find(c => String(c.id) === String(cId))?.type || 'Le');
       const prod = products.find(p => p.name === f.productName);
       const newSellPrice = prod ? getTierPriceForProduct(prod, nextCustType) : f.sellPrice;
 
@@ -692,7 +692,7 @@ export default function Orders() {
     try {
       if (formData.customerId === 'NEW') {
         if (!formData.newCustomerName.trim()) return toast.error('Vui lòng nhập tên khách hàng mới!');
-        if (!formData.newCustomerType) return toast.error('Vui lòng chọn Phân loại khách hàng!');
+        if (!formData.newCustomerType) return toast.error('Vui lòng chọn Phân loại khách hàng (Khách Lẻ / CTV / Khách Sỉ)!');
         const createdCust = await CustomerService.create(shopId, {
           name: formData.newCustomerName.trim(),
           phone: formData.newCustomerPhone.trim() || '',
@@ -2074,10 +2074,10 @@ export default function Orders() {
                         onClick={() => handleNewCustomerTypeChange('Le')}
                         style={{
                           padding: '10px 8px', borderRadius: '10px', cursor: 'pointer', textAlign: 'center',
-                          background: (formData.newCustomerType || 'Le') === 'Le' ? 'rgba(6,182,212,0.2)' : 'rgba(255,255,255,0.03)',
-                          border: (formData.newCustomerType || 'Le') === 'Le' ? '1.5px solid #06b6d4' : '1px solid rgba(255,255,255,0.1)',
-                          color: (formData.newCustomerType || 'Le') === 'Le' ? '#06b6d4' : '#94a3b8',
-                          boxShadow: (formData.newCustomerType || 'Le') === 'Le' ? '0 0 12px rgba(6,182,212,0.25)' : 'none',
+                          background: formData.newCustomerType === 'Le' ? 'rgba(6,182,212,0.2)' : 'rgba(255,255,255,0.03)',
+                          border: formData.newCustomerType === 'Le' ? '1.5px solid #06b6d4' : '1px solid rgba(255,255,255,0.1)',
+                          color: formData.newCustomerType === 'Le' ? '#06b6d4' : '#94a3b8',
+                          boxShadow: formData.newCustomerType === 'Le' ? '0 0 12px rgba(6,182,212,0.25)' : 'none',
                           transition: 'all 0.15s ease'
                         }}
                       >

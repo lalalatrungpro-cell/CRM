@@ -47,7 +47,7 @@ export default function Customers() {
     name: '',
     phone: '',
     email: '',
-    type: 'Le',
+    type: '',
     source: 'Facebook Page',
     sub_channel: '',
     address: '',
@@ -669,10 +669,10 @@ export default function Customers() {
                       onClick={() => setFormData({ ...formData, type: 'Le' })}
                       style={{
                         padding: '10px 8px', borderRadius: '10px', cursor: 'pointer', textAlign: 'center',
-                        background: (formData.type || 'Le') === 'Le' ? 'rgba(6,182,212,0.2)' : 'rgba(255,255,255,0.03)',
-                        border: (formData.type || 'Le') === 'Le' ? '1.5px solid #06b6d4' : '1px solid rgba(255,255,255,0.1)',
-                        color: (formData.type || 'Le') === 'Le' ? '#06b6d4' : '#94a3b8',
-                        boxShadow: (formData.type || 'Le') === 'Le' ? '0 0 12px rgba(6,182,212,0.25)' : 'none',
+                        background: formData.type === 'Le' ? 'rgba(6,182,212,0.2)' : 'rgba(255,255,255,0.03)',
+                        border: formData.type === 'Le' ? '1.5px solid #06b6d4' : '1px solid rgba(255,255,255,0.1)',
+                        color: formData.type === 'Le' ? '#06b6d4' : '#94a3b8',
+                        boxShadow: formData.type === 'Le' ? '0 0 12px rgba(6,182,212,0.25)' : 'none',
                         transition: 'all 0.15s ease'
                       }}
                     >
