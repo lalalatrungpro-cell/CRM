@@ -59,6 +59,7 @@ export default function Customers() {
   // Filters & Pagination
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState('ALL');
+  const [filterDebtStatus, setFilterDebtStatus] = useState('ALL');
   const [currentPage, setCurrentPage] = useState(1);
   const [showLeaderboard, setShowLeaderboard] = useState(false);
   const [copiedZaloMsg, setCopiedZaloMsg] = useState('');
@@ -215,7 +216,17 @@ export default function Customers() {
                           (c.email || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
                           String(c.id).includes(searchTerm);
     const matchesType = filterType === 'ALL' || (c.type || 'Le') === filterType;
-    return matchesSearch && matchesType;
+
+    const custOrders = orders.filter(o => String(o.customer_id || o.customerId) === String(c.id));
+    const unpaidOrders = custOrders.filter(o => o.status === 'Nợ' || o.status === 'DEBT');
+    const calculatedDebt = unpaidOrders.reduce((sum, o) => sum + Number(o.sell_price || o.sellPrice || 0), 0);
+    const actualDebt = calculatedDebt > 0 ? calculatedDebt : Number(c.debt || 0);
+
+    let matchesDebt = true;
+    if (filterDebtStatus === 'HAS_DEBT') matchesDebt = actualDebt > 0;
+    else if (filterDebtStatus === 'NO_DEBT') matchesDebt = actualDebt <= 0;
+
+    return matchesSearch && matchesType && matchesDebt;
   });
 
   const totalPages = Math.ceil(filteredCustomers.length / PAGE_SIZE) || 1;
@@ -313,6 +324,22 @@ export default function Customers() {
           />
           {searchTerm && <button onClick={() => setSearchTerm('')} style={{ background: 'none', border: 'none', color: '#475569', cursor: 'pointer' }}><X size={14} /></button>}
         </div>
+
+        <select
+          className="glass-input"
+          style={{
+            width: 'auto',
+            border: filterDebtStatus !== 'ALL' ? '1.5px solid #ef4444' : '1px solid rgba(255,255,255,0.12)',
+            color: filterDebtStatus !== 'ALL' ? '#f87171' : '#fff',
+            fontWeight: filterDebtStatus !== 'ALL' ? '700' : '400'
+          }}
+          value={filterDebtStatus}
+          onChange={e => { setFilterDebtStatus(e.target.value); setCurrentPage(1); }}
+        >
+          <option value="ALL">🔴 Tất cả trạng thái nợ</option>
+          <option value="HAS_DEBT">🔴 Chỉ khách đang NỢ</option>
+          <option value="NO_DEBT">🟢 Khách không có nợ</option>
+        </select>
 
         {/* Visual Tab Filters */}
         <div style={{ display: 'flex', gap: '6px' }}>
