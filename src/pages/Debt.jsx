@@ -4,7 +4,7 @@ import { CustomerService, OrderService, SupplierService, PurchaseService, VietQR
 import { getVietQRUrl } from '../utils/storage';
 import { useToast } from '../components/Toast';
 import DateFilterBar from '../components/DateFilterBar';
-import { Wallet, ArrowDownLeft, ArrowUpRight, FileText, Printer, Copy, QrCode, X } from 'lucide-react';
+import { Wallet, ArrowDownLeft, ArrowUpRight, FileText, Printer, Copy, QrCode, X, Search } from 'lucide-react';
 
 function numberToVietnameseWords(amount) {
   if (!amount || isNaN(amount) || amount === 0) return "Không đồng chẵn.";
@@ -93,6 +93,9 @@ export default function Debt() {
   const [vietqr, setVietqr] = useState(null);
   const [loading, setLoading] = useState(true);
   const [dateRange, setDateRange] = useState({ startDate: '', endDate: '', preset: 'ALL' });
+  const [searchTerm, setSearchTerm] = useState('');
+  const [debtCustomerTypeFilter, setDebtCustomerTypeFilter] = useState('ALL');
+  const [debtAmountRangeFilter, setDebtAmountRangeFilter] = useState('ALL');
 
   const [selectedInvoiceCust, setSelectedInvoiceCust] = useState(null);
   const [selectedInvoiceSupp, setSelectedInvoiceSupp] = useState(null);
@@ -163,6 +166,32 @@ export default function Debt() {
       unpaidOrdersCount: suppPurchases.length + unpaidSuppOrders.length
     };
   }).filter(s => s.debt > 0);
+
+  const filteredCustomerDebts = customerDebts.filter(c => {
+    const term = searchTerm.toLowerCase().trim();
+    const matchesSearch = !term ||
+      (c.name || '').toLowerCase().includes(term) ||
+      (c.phone || '').toLowerCase().includes(term) ||
+      String(c.id || '').toLowerCase().includes(term);
+
+    const matchesType = debtCustomerTypeFilter === 'ALL' || (c.type || 'Le') === debtCustomerTypeFilter;
+
+    let matchesAmount = true;
+    const debt = Number(c.debt || 0);
+    if (debtAmountRangeFilter === 'UNDER_1M') matchesAmount = debt < 1000000;
+    else if (debtAmountRangeFilter === '1M_5M') matchesAmount = debt >= 1000000 && debt <= 5000000;
+    else if (debtAmountRangeFilter === 'OVER_5M') matchesAmount = debt > 5000000;
+
+    return matchesSearch && matchesType && matchesAmount;
+  });
+
+  const filteredSupplierDebts = supplierDebts.filter(s => {
+    const term = searchTerm.toLowerCase().trim();
+    return !term ||
+      (s.name || '').toLowerCase().includes(term) ||
+      (s.phone || '').toLowerCase().includes(term) ||
+      (s.zalo || '').toLowerCase().includes(term);
+  });
 
   const totalCustomerDebt = customerDebts.reduce((sum, c) => sum + (c.debt || 0), 0);
   const totalSupplierDebt = supplierDebts.reduce((sum, s) => sum + (s.debt || 0), 0);
@@ -336,13 +365,48 @@ export default function Debt() {
         </div>
       </div>
 
+      {/* Search & Filter Bar for Debt */}
+      <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'center' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: '280px', flex: 1, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '10px', padding: '8px 14px' }}>
+          <Search size={16} color="#475569" />
+          <input
+            type="text"
+            placeholder="Tìm tên KH, SĐT, Mã KH hoặc Tên NCC..."
+            value={searchTerm}
+            onChange={e => setSearchTerm(e.target.value)}
+            style={{ background: 'none', border: 'none', color: '#fff', outline: 'none', width: '100%', fontSize: '13.5px' }}
+          />
+          {searchTerm && <button onClick={() => setSearchTerm('')} style={{ background: 'none', border: 'none', color: '#475569', cursor: 'pointer' }}><X size={14} /></button>}
+        </div>
+
+        <select
+          className="glass-input" style={{ width: 'auto', border: debtCustomerTypeFilter !== 'ALL' ? '1.5px solid #a855f7' : '1px solid rgba(255,255,255,0.12)', color: debtCustomerTypeFilter !== 'ALL' ? '#c084fc' : '#fff', fontWeight: debtCustomerTypeFilter !== 'ALL' ? '700' : '400' }}
+          value={debtCustomerTypeFilter} onChange={e => setDebtCustomerTypeFilter(e.target.value)}
+        >
+          <option value="ALL">👤 Tất cả loại khách</option>
+          <option value="Le">🔵 Khách Lẻ Nợ</option>
+          <option value="CTV">🟡 CTV Nợ</option>
+          <option value="Si">🟣 Khách Sỉ Nợ</option>
+        </select>
+
+        <select
+          className="glass-input" style={{ width: 'auto', border: debtAmountRangeFilter !== 'ALL' ? '1.5px solid #ef4444' : '1px solid rgba(255,255,255,0.12)', color: debtAmountRangeFilter !== 'ALL' ? '#f87171' : '#fff', fontWeight: debtAmountRangeFilter !== 'ALL' ? '700' : '400' }}
+          value={debtAmountRangeFilter} onChange={e => setDebtAmountRangeFilter(e.target.value)}
+        >
+          <option value="ALL">💰 Tất cả mức nợ</option>
+          <option value="UNDER_1M">🟢 Dưới 1 triệu</option>
+          <option value="1M_5M">🟡 Từ 1tr - 5 triệu</option>
+          <option value="OVER_5M">🔴 Trên 5 triệu</option>
+        </select>
+      </div>
+
       {/* Customer Debts List */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-        <h2 style={{ fontSize: '18px', fontWeight: '700' }}>🔴 Công Nợ Phải Thu Khách Hàng ({customerDebts.length})</h2>
+        <h2 style={{ fontSize: '18px', fontWeight: '700' }}>🔴 Công Nợ Phải Thu Khách Hàng ({filteredCustomerDebts.length})</h2>
         <div className="glass-panel" style={{ padding: 0, overflow: 'hidden' }}>
           {loading ? (
             <div style={{ padding: '30px', textAlign: 'center', color: '#94a3b8' }}>Đang kiểm tra công nợ từ đám mây...</div>
-          ) : customerDebts.length === 0 ? (
+          ) : filteredCustomerDebts.length === 0 ? (
             <div className="empty-state">
               <Wallet size={40} />
               <h3>Không có khách hàng nào đang nợ tiền</h3>
