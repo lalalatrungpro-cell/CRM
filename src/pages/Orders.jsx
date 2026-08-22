@@ -236,6 +236,8 @@ export default function Orders() {
   const [filterSupplierId, setFilterSupplierId] = useState('ALL');
   const [currentPage, setCurrentPage] = useState(1);
   const [copiedId, setCopiedId] = useState('');
+  const [posCustSearchTerm, setPosCustSearchTerm] = useState('');
+  const [showPosCustDropdown, setShowPosCustDropdown] = useState(false);
   const [revealedInfors, setRevealedInfors] = useState({});
 
   // Warranty form
@@ -558,6 +560,8 @@ export default function Orders() {
     setShowModal(false);
     setFormData(emptyForm);
     setBatchItems([]);
+    setPosCustSearchTerm('');
+    setShowPosCustDropdown(false);
     setSelectedAddProduct('');
   };
 
@@ -2106,18 +2110,173 @@ export default function Orders() {
             </div>
             <form onSubmit={handleCreateOrder} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
               <div>
-                <label className="form-label">Chọn Khách Hàng</label>
-                <select
-                  className="glass-input"
-                  value={formData.customerId} onChange={e => handleCustomerChange(e.target.value)}
-                  required
-                >
-                  <option value="">-- Chọn Khách Hàng --</option>
-                  <option value="NEW">+ Thêm Khách Hàng Mới...</option>
-                  {customers.map(c => (
-                    <option key={c.id} value={c.id}>{c.name} ({c.phone || 'N/A'})</option>
-                  ))}
-                </select>
+                <label className="form-label" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                  <span>CHỌN KHÁCH HÀNG (Tra cứu SĐT / Email / Tên) *</span>
+                  {formData.customerId && formData.customerId !== 'NEW' && (
+                    <span style={{ fontSize: '11px', color: '#10b981', fontWeight: '700' }}>
+                      ✅ Đã chọn khách cũ
+                    </span>
+                  )}
+                </label>
+
+                {/* Smart Search Bar + 1-Click Khách Vãng Lai Button */}
+                <div style={{ display: 'flex', gap: '8px', position: 'relative' }}>
+                  <div style={{ position: 'relative', flex: 1 }}>
+                    <input
+                      type="text"
+                      className="glass-input"
+                      placeholder="🔍 Nhập SĐT, Email hoặc Tên khách..."
+                      value={posCustSearchTerm}
+                      onChange={e => {
+                        const val = e.target.value;
+                        setPosCustSearchTerm(val);
+                        setShowPosCustDropdown(true);
+                        if (!val) {
+                          handleCustomerChange('');
+                        }
+                      }}
+                      onFocus={() => setShowPosCustDropdown(true)}
+                      style={{ paddingRight: posCustSearchTerm ? '30px' : '12px' }}
+                    />
+                    {posCustSearchTerm && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setPosCustSearchTerm('');
+                          setShowPosCustDropdown(false);
+                          handleCustomerChange('');
+                        }}
+                        style={{
+                          position: 'absolute', right: '8px', top: '50%', transform: 'translateY(-50%)',
+                          background: 'none', border: 'none', color: '#64748b', cursor: 'pointer', padding: '2px'
+                        }}
+                      >
+                        <X size={14} />
+                      </button>
+                    )}
+
+                    {/* Floating Auto-Suggest Dropdown */}
+                    {showPosCustDropdown && (
+                      <div
+                        style={{
+                          position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 1000,
+                          background: '#0f172a', border: '1px solid rgba(99,102,241,0.4)', borderRadius: '10px',
+                          marginTop: '4px', maxHeight: '240px', overflowY: 'auto', boxShadow: '0 10px 25px rgba(0,0,0,0.5)',
+                          display: 'flex', flexDirection: 'column', gap: '2px', padding: '6px'
+                        }}
+                      >
+                        {/* Top Quick Create Option if search term exists */}
+                        {posCustSearchTerm.trim() && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const term = posCustSearchTerm.trim();
+                              const isNumeric = /^[0-9\s+-]+$/.test(term);
+                              setFormData(f => ({
+                                ...f,
+                                customerId: 'NEW',
+                                newCustomerName: !isNumeric ? term : f.newCustomerName,
+                                newCustomerPhone: isNumeric ? term : f.newCustomerPhone
+                              }));
+                              handleCustomerChange('NEW');
+                              setShowPosCustDropdown(false);
+                            }}
+                            style={{
+                              textAlign: 'left', padding: '8px 10px', borderRadius: '6px', border: '1px dashed #6366f1',
+                              background: 'rgba(99,102,241,0.12)', color: '#818cf8', fontSize: '12px', fontWeight: '700',
+                              cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px'
+                            }}
+                          >
+                            <span>➕</span> Thêm mới Khách Hàng với SĐT/Tên "{posCustSearchTerm}"
+                          </button>
+                        )}
+
+                        {/* Filtered Customer List */}
+                        {(() => {
+                          const term = posCustSearchTerm.trim().toLowerCase();
+                          const matches = customers.filter(c => {
+                            if (!term) return true;
+                            return (
+                              (c.name && c.name.toLowerCase().includes(term)) ||
+                              (c.phone && c.phone.includes(term)) ||
+                              (c.email && c.email.toLowerCase().includes(term))
+                            );
+                          }).slice(0, 6);
+
+                          if (matches.length === 0 && !posCustSearchTerm.trim()) {
+                            return <div style={{ padding: '8px', color: '#64748b', fontSize: '12px', textAlign: 'center' }}>Nhập SĐT hoặc Tên để tìm...</div>;
+                          }
+
+                          return matches.map(c => {
+                            const typeCfg = c.type === 'Si' ? { label: 'Khách Sỉ', color: '#a855f7', bg: 'rgba(168,85,247,0.15)' }
+                              : (c.type === 'CTV' ? { label: 'CTV', color: '#f59e0b', bg: 'rgba(245,158,11,0.15)' }
+                              : { label: 'Khách Lẻ', color: '#06b6d4', bg: 'rgba(6,182,212,0.15)' });
+
+                            return (
+                              <div
+                                key={c.id}
+                                onClick={() => {
+                                  handleCustomerChange(c.id);
+                                  setPosCustSearchTerm(`${c.name} (${c.phone || c.email || 'N/A'})`);
+                                  setShowPosCustDropdown(false);
+                                }}
+                                style={{
+                                  padding: '8px 10px', borderRadius: '6px', cursor: 'pointer',
+                                  background: String(formData.customerId) === String(c.id) ? 'rgba(99,102,241,0.2)' : 'transparent',
+                                  display: 'flex', alignItems: 'center', justifyContent: 'space-between', transition: 'background 0.15s ease'
+                                }}
+                                onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.06)'}
+                                onMouseLeave={e => e.currentTarget.style.background = String(formData.customerId) === String(c.id) ? 'rgba(99,102,241,0.2)' : 'transparent'}
+                              >
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                                  <span style={{ fontSize: '13px', fontWeight: '700', color: '#fff' }}>{c.name}</span>
+                                  <span style={{ fontSize: '11px', color: '#94a3b8' }}>
+                                    📱 {c.phone || 'Chưa có SĐT'} {c.email ? `• 📧 ${c.email}` : ''}
+                                  </span>
+                                </div>
+                                <span style={{ fontSize: '10.5px', fontWeight: '700', padding: '2px 6px', borderRadius: '4px', background: typeCfg.bg, color: typeCfg.color }}>
+                                  {typeCfg.label}
+                                </span>
+                              </div>
+                            );
+                          });
+                        })()}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* 1-Click Khách Vãng Lai Button */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      let walkIn = customers.find(c => c.name && (c.name.includes('Vãng Lai') || c.name.includes('Khách Vãng Lai')));
+                      if (walkIn) {
+                        handleCustomerChange(walkIn.id);
+                        setPosCustSearchTerm(`${walkIn.name} (${walkIn.phone || 'Khách Vãng Lai'})`);
+                      } else {
+                        setFormData(f => ({
+                          ...f,
+                          customerId: 'NEW',
+                          newCustomerName: 'Khách Vãng Lai',
+                          newCustomerPhone: '0000000000',
+                          newCustomerType: 'Le'
+                        }));
+                        handleCustomerChange('NEW');
+                        setPosCustSearchTerm('Khách Vãng Lai');
+                      }
+                      setShowPosCustDropdown(false);
+                    }}
+                    className="glass-button"
+                    style={{
+                      padding: '0 12px', fontSize: '12px', fontWeight: '700', whiteSpace: 'nowrap',
+                      background: 'rgba(56,189,248,0.12)', color: '#38bdf8', border: '1px solid rgba(56,189,248,0.3)',
+                      display: 'flex', alignItems: 'center', gap: '5px'
+                    }}
+                    title="Bỏ qua chọn khách, bán hàng cho Khách Vãng Lai ngay lập tức"
+                  >
+                    👤 Khách Vãng Lai
+                  </button>
+                </div>
               </div>
 
               {formData.customerId === 'NEW' && (
