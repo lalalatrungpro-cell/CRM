@@ -1150,9 +1150,12 @@ export default function Inventory() {
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(320px,1fr))', gap: '16px' }}>
               {filteredTeamCards.map(team => {
                 const todayStr = new Date().toISOString().split('T')[0];
-                const usedSlots = orders.filter(o => String(o.team_id || o.teamId) === String(team.id) && !['Đã hủy', 'Hoàn tiền 100%'].includes(o.status) && (!o.expire_date || o.expire_date >= todayStr)).length;
+                const totalAssignedOrders = orders.filter(o => String(o.team_id || o.teamId) === String(team.id) && !['Đã hủy', 'Hoàn tiền 100%'].includes(o.status)).length;
+                const activeUsedSlots = orders.filter(o => String(o.team_id || o.teamId) === String(team.id) && !['Đã hủy', 'Hoàn tiền 100%'].includes(o.status) && (!o.expire_date || o.expire_date === '---' || o.expire_date >= todayStr)).length;
+                const expiredOrdersCount = Math.max(0, totalAssignedOrders - activeUsedSlots);
+                const usedSlots = activeUsedSlots;
                 const maxSlots = team.max_slots || team.maxSlots || 1;
-                const availSlots = Math.max(0, maxSlots - usedSlots);
+                const availSlots = Math.max(0, maxSlots - activeUsedSlots);
                 const usagePct = Math.min(100, Math.round((usedSlots / maxSlots) * 100));
                 const importCost = Number(team.import_cost || team.importCost || 0);
                 const unitCost = maxSlots > 0 ? Math.round(importCost / maxSlots) : 0;
@@ -1272,7 +1275,9 @@ export default function Inventory() {
                     {/* Slot Fill Rate */}
                     <div>
                       <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11.5px', color: '#94a3b8', marginBottom: '4px' }}>
-                        <span>Đã bán: <strong style={{ color: '#fff' }}>{usedSlots}/{maxSlots} slot</strong></span>
+                        <span title={`Tổng đơn đã gán vào team: ${totalAssignedOrders} đơn (${activeUsedSlots} đơn còn hạn, ${expiredOrdersCount} đơn đã hết hạn)`}>
+                          Đã gán: <strong style={{ color: '#fff' }}>{totalAssignedOrders}/{maxSlots}</strong> <span style={{ fontSize: '10.5px', color: '#94a3b8' }}>({activeUsedSlots} còn hạn)</span>
+                        </span>
                         <span style={{ color: availSlots === 0 ? '#ef4444' : availSlots <= 3 ? '#f59e0b' : '#10b981', fontWeight: '700' }}>{availSlots} slot trống</span>
                       </div>
                       <div style={{ height: '5px', background: 'rgba(255,255,255,0.08)', borderRadius: '3px', overflow: 'hidden' }}>
