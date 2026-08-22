@@ -444,3 +444,10 @@ CREATE POLICY "Shop isolation - inventory_logs" ON inventory_logs FOR ALL USING 
 
 -- Index for fast batch lookup
 CREATE INDEX IF NOT EXISTS idx_orders_batch_ref ON orders(shop_id, batch_ref);
+
+-- Team DIE & Warranty Replacement Columns
+ALTER TABLE teams ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'ACTIVE';
+ALTER TABLE teams ADD COLUMN IF NOT EXISTS replaced_by_team_id BIGINT;
+ALTER TABLE teams ADD COLUMN IF NOT EXISTS replaced_by_team_name TEXT DEFAULT '';
+ALTER TABLE teams ADD COLUMN IF NOT EXISTS replaces_team_id BIGINT;
+ALTER TABLE teams ADD COLUMN IF NOT EXISTS replaces_team_name TEXT DEFAULT '';

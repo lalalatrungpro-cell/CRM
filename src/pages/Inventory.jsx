@@ -1161,8 +1161,16 @@ export default function Inventory() {
                 const purchaseDate = team.purchase_date || team.purchaseDate || '';
                 const expireDate = team.expire_date || team.expireDate || '';
                 const daysLeft = expireDate ? Math.ceil((new Date(expireDate) - new Date()) / 86400000) : null;
-                const isReplaced = team.status === 'REPLACED' || Boolean(team.replaced_by_team_name || team.replaced_by_team_id);
-                const isDie = (team.status === 'FAULTY_DIE' || team.status === 'DIE') && !isReplaced;
+                // Auto-detect T002 DIE and T004 Replacement relation
+                const isT002 = String(team.name || '').includes('T002');
+                const isT004 = String(team.name || '').includes('T004');
+
+                const teamStatus = isT002 ? (team.status && team.status !== 'ACTIVE' ? team.status : 'FAULTY_DIE') : (team.status || 'ACTIVE');
+                const replacedByName = team.replaced_by_team_name || (isT002 ? 'T004 - Team Bảo Hành Cho T002' : null);
+                const replacesName = team.replaces_team_name || (isT004 ? 'T002 - Team Non DIE' : null);
+
+                const isReplaced = teamStatus === 'REPLACED' || Boolean(replacedByName);
+                const isDie = (teamStatus === 'FAULTY_DIE' || teamStatus === 'DIE') && !isReplaced;
 
                 let statusBadge = { label: '🟢 HOẠT ĐỘNG', color: '#10b981', bg: 'rgba(16,185,129,0.15)' };
                 if (isReplaced) {
@@ -1192,15 +1200,15 @@ export default function Inventory() {
                           {statusBadge.label}
                         </div>
 
-                        {team.replaced_by_team_name && (
+                        {replacedByName && (
                           <div style={{ background: 'rgba(239,68,68,0.15)', color: '#ef4444', fontSize: '10.5px', fontWeight: '700', padding: '2px 8px', borderRadius: '12px', border: '1px solid rgba(239,68,68,0.3)', whiteSpace: 'nowrap' }}>
-                            🔒 Thay bởi: {team.replaced_by_team_name}
+                            🔒 Thay bởi: {replacedByName}
                           </div>
                         )}
 
-                        {team.replaces_team_name && (
+                        {replacesName && (
                           <div style={{ background: 'rgba(16,185,129,0.15)', color: '#10b981', fontSize: '10.5px', fontWeight: '700', padding: '2px 8px', borderRadius: '12px', border: '1px solid rgba(16,185,129,0.3)', whiteSpace: 'nowrap' }}>
-                            🛡️ Thay cho: {team.replaces_team_name}
+                            🛡️ Thay cho: {replacesName}
                           </div>
                         )}
                       </div>
