@@ -41,7 +41,7 @@ export default function Layout() {
     {
       title: 'HỆ THỐNG',
       items: [
-        { to: '/settings', label: 'Cấu Hình VietQR', icon: <Settings size={17} /> }
+        { to: '/settings', label: 'Cài Đặt & Kênh Bán Hàng', icon: <Settings size={17} /> }
       ]
     }
   ];
