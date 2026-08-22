@@ -109,6 +109,7 @@ CREATE TABLE orders (
   renewed_from BIGINT REFERENCES orders(id) ON DELETE SET NULL,
   source TEXT DEFAULT '',
   channel TEXT DEFAULT '',
+  batch_ref TEXT DEFAULT NULL,
   created_by UUID REFERENCES auth.users(id),
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
@@ -440,3 +441,6 @@ CREATE POLICY "Shop isolation - inventory_items" ON inventory_items FOR ALL USIN
 CREATE POLICY "Shop isolation - inventory_logs" ON inventory_logs FOR ALL USING (shop_id = get_my_shop_id());
 
 
+
+-- Index for fast batch lookup
+CREATE INDEX IF NOT EXISTS idx_orders_batch_ref ON orders(shop_id, batch_ref);

@@ -1365,8 +1365,8 @@ export default function Orders() {
             <table style={{ width: '100%', minWidth: '1080px', borderCollapse: 'collapse', fontSize: '13px' }}>
               <thead>
                 <tr style={{ background: 'rgba(255,255,255,0.04)', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-                  {['Mã Đơn', 'Khách Hàng', 'Sản Phẩm & Acc', 'Nguồn / Kênh', 'Thời Hạn', 'Tài Chính', 'Bảo Hành', 'Trạng Thái', 'Thao Tác 360°'].map(h => (
-                    <th key={h} style={{ padding: '12px 10px', textAlign: 'left', color: '#475569', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: '700', whiteSpace: 'nowrap' }}>{h}</th>
+                  {['Mã Đơn & Khách Hàng', 'Sản Phẩm & Tài Khoản', 'Hạn Dùng & Kênh Bán', 'Tài Chính & Trạng Thái', 'Thao Tác 360°'].map(h => (
+                    <th key={h} style={{ padding: '10px 10px', textAlign: 'left', color: '#475569', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: '700', whiteSpace: 'nowrap' }}>{h}</th>
                   ))}
                 </tr>
               </thead>
@@ -1391,10 +1391,10 @@ export default function Orders() {
                   const custObj = customers.find(c => String(c.id) === String(order.customer_id || order.customerId));
                   const custType = custObj?.type || 'Le';
                   const tierCfg = custType === 'Si'
-                    ? { label: 'Khách Sỉ', bg: 'rgba(168,85,247,0.12)', color: '#a855f7', border: '1px solid rgba(168,85,247,0.25)' }
+                    ? { label: 'Sỉ', bg: 'rgba(168,85,247,0.12)', color: '#a855f7', border: '1px solid rgba(168,85,247,0.25)' }
                     : custType === 'CTV'
                     ? { label: 'CTV', bg: 'rgba(245,158,11,0.12)', color: '#f59e0b', border: '1px solid rgba(245,158,11,0.25)' }
-                    : { label: 'Khách Lẻ', bg: 'rgba(6,182,212,0.12)', color: '#06b6d4', border: '1px solid rgba(6,182,212,0.25)' };
+                    : { label: 'Lẻ', bg: 'rgba(6,182,212,0.12)', color: '#06b6d4', border: '1px solid rgba(6,182,212,0.25)' };
 
                   // Expiry Countdown Calculation
                   const linkedProd = products.find(p => p.name === prodName);
@@ -1407,312 +1407,231 @@ export default function Orders() {
                     daysLeft = Math.ceil((expMs - nowMs) / (1000 * 60 * 60 * 24));
                   }
 
-                  // Date Created Formatting
                   const createdStr = order.created_at
                     ? new Date(order.created_at).toLocaleDateString('vi-VN')
                     : '---';
 
-                  return (
-                    <tr key={order.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                      {/* 1. MÃ ĐƠN (1-Click Copy Clean Text Style) */}
-                      <td style={{ padding: '12px 10px', whiteSpace: 'nowrap' }}>
-                        <strong
-                          onClick={() => {
-                            navigator.clipboard.writeText(`#${order.id}`);
-                            setCopiedId(`order-${order.id}`);
-                            toast.success(`✅ Đã copy mã đơn #${order.id}!`);
-                            setTimeout(() => setCopiedId(''), 1500);
-                          }}
-                          title="Click 1-click copy mã đơn"
-                          style={{
-                            color: copiedId === `order-${order.id}` ? '#10b981' : '#fff',
-                            fontSize: '13px',
-                            fontFamily: 'monospace',
-                            cursor: 'pointer',
-                            transition: 'color 0.15s ease'
-                          }}
-                        >
-                          #{order.id}
-                        </strong>
-                        <div style={{ fontSize: '10.5px', color: '#64748b', marginTop: '3px' }}>{createdStr}</div>
-                      </td>
+                  const linkedSupp = suppliers.find(s => String(s.id) === String(order.supplier_id || order.supplierId));
+                  const suppDisplayName = linkedSupp ? linkedSupp.name : (order.supplier_name || order.supplierName || null);
 
-                      {/* 2. KHÁCH HÀNG */}
-                      <td style={{ padding: '12px 10px', minWidth: '150px' }}>
-                        <strong style={{ fontSize: '13.5px', color: '#fff', display: 'block', whiteSpace: 'nowrap' }}>{custName}</strong>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '3px', flexWrap: 'nowrap' }}>
-                          {order.phone ? (
-                          <span
+                  const linkedTeam = teams.find(t => String(t.id) === String(order.team_id || order.teamId));
+                  const rawTeamName = linkedTeam ? linkedTeam.name : (order.team_name || order.teamName || (order.team_id ? `Team #${order.team_id}` : null));
+                  let cleanTeamName = rawTeamName ? String(rawTeamName).trim() : null;
+                  if (cleanTeamName && cleanTeamName.includes('|')) cleanTeamName = cleanTeamName.split('|')[0].trim();
+
+                  const isBatch = Boolean(order.batch_ref || order.batchRef);
+
+                  return (
+                    <tr
+                      key={order.id}
+                      style={{
+                        borderBottom: '1px solid rgba(255,255,255,0.05)',
+                        borderLeft: isBatch ? '3px solid #8b5cf6' : '3px solid transparent',
+                        background: isBatch ? 'rgba(139,92,246,0.03)' : 'transparent',
+                        transition: 'background 0.15s ease'
+                      }}
+                    >
+                      {/* CỘT 1: ĐƠN & KHÁCH HÀNG */}
+                      <td style={{ padding: '8px 10px', minWidth: '160px', verticalAlign: 'middle' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <strong
                             onClick={() => {
-                              navigator.clipboard.writeText(order.phone);
-                              toast.success(`✅ Đã copy SĐT ${order.phone}!`);
+                              navigator.clipboard.writeText(`#${order.id}`);
+                              setCopiedId(`order-${order.id}`);
+                              toast.success(`✅ Đã copy mã đơn #${order.id}!`);
+                              setTimeout(() => setCopiedId(''), 1500);
                             }}
-                            title="Click 1-click copy SĐT"
-                            style={{ fontSize: '11px', color: '#94a3b8', cursor: 'pointer', whiteSpace: 'nowrap', textDecoration: 'underline decoration-dotted' }}
+                            title="Click 1-click copy mã đơn"
+                            style={{
+                              color: copiedId === `order-${order.id}` ? '#10b981' : '#fff',
+                              fontSize: '12.5px',
+                              fontFamily: 'monospace',
+                              cursor: 'pointer'
+                            }}
                           >
-                            {order.phone}
-                          </span>
-                        ) : (
-                          <span style={{ fontSize: '11px', color: '#64748b' }}>N/A</span>
-                        )}
-                          <span style={{ fontSize: '9.5px', padding: '1px 6px', borderRadius: '4px', background: tierCfg.bg, color: tierCfg.color, border: tierCfg.border, fontWeight: '600', whiteSpace: 'nowrap', display: 'inline-block' }}>
+                            #{order.id}
+                          </strong>
+                          <span style={{ fontSize: '10.5px', color: '#64748b' }}>{createdStr}</span>
+                          {isBatch && (
+                            <span title={`Đơn thuộc Batch ${order.batch_ref || order.batchRef}`} style={{ fontSize: '9.5px', background: 'rgba(139,92,246,0.2)', color: '#c084fc', padding: '1px 5px', borderRadius: '4px', border: '1px solid rgba(139,92,246,0.3)', fontWeight: '700' }}>
+                              📦 Batch
+                            </span>
+                          )}
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '5px', marginTop: '2px' }}>
+                          <strong style={{ fontSize: '13px', color: '#fff', whiteSpace: 'nowrap' }}>{custName}</strong>
+                          {order.phone && (
+                            <span
+                              onClick={() => {
+                                navigator.clipboard.writeText(order.phone);
+                                toast.success(`✅ Đã copy SĐT ${order.phone}!`);
+                              }}
+                              title="Click copy SĐT"
+                              style={{ fontSize: '10.5px', color: '#94a3b8', cursor: 'pointer' }}
+                            >
+                              ({order.phone})
+                            </span>
+                          )}
+                          <span style={{ fontSize: '9px', padding: '0px 5px', borderRadius: '3px', background: tierCfg.bg, color: tierCfg.color, border: tierCfg.border, fontWeight: '700' }}>
                             {tierCfg.label}
                           </span>
                         </div>
                       </td>
 
-                      {/* 3. SẢN PHẨM & ACC */}
-                      <td style={{ padding: '12px 10px', maxWidth: '230px' }}>
-                        <strong style={{ color: '#818cf8', display: 'block', marginBottom: '3px', fontSize: '13px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                          {prodName}
-                        </strong>
-                        {(() => {
-                          const descText = linkedProd?.description || order.notes || (
-                            prodName?.includes('Canva') ? 'Kích hoạt Slot Canva Pro chính chủ. BH 1 đổi 1 365 ngày' :
-                            prodName?.includes('ChatGPT') ? 'Tài khoản ChatGPT Plus dùng chung. BH full thời hạn' :
-                            prodName?.includes('Google') ? 'Gói Google AI Pro Premium. BH 100% thời hạn' :
-                            'Quy cách dịch vụ chính chủ. BH full thời hạn'
-                          );
-                          if (!descText) return null;
-                          return (
-                            <div
-                              title={`Mô tả sản phẩm: ${descText}`}
-                              style={{
-                                fontSize: '10.5px',
-                                color: '#94a3b8',
-                                background: 'rgba(255,255,255,0.03)',
-                                border: '1px solid rgba(255,255,255,0.06)',
-                                padding: '3px 7px',
-                                borderRadius: '5px',
-                                marginBottom: '4px',
-                                lineClamp: 2,
-                                WebkitLineClamp: 2,
-                                display: '-webkit-box',
-                                WebkitBoxOrient: 'vertical',
-                                overflow: 'hidden',
-                                lineHeight: '1.3'
-                              }}
-                            >
-                              📝 {descText}
-                            </div>
-                          );
-                        })()}
-
-                        {/* Badges container for Supplier & Team */}
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-                          {/* Supplier (NCC) Badge */}
-                          {(() => {
-                            const linkedSupp = suppliers.find(s => String(s.id) === String(order.supplier_id || order.supplierId));
-                            const suppDisplayName = linkedSupp ? linkedSupp.name : (order.supplier_name || order.supplierName || null);
-                            if (!suppDisplayName) return null;
-                            return (
-                              <div
-                                title={`Nhà cung cấp: ${suppDisplayName}`}
-                                style={{
-                                  fontSize: '10.5px',
-                                  color: '#38bdf8',
-                                  fontWeight: '600',
-                                  display: 'inline-flex',
-                                  alignItems: 'center',
-                                  gap: '4px',
-                                  background: 'rgba(56,189,248,0.12)',
-                                  padding: '2px 7px',
-                                  borderRadius: '4px',
-                                  border: '1px solid rgba(56,189,248,0.25)',
-                                  maxWidth: '190px',
-                                  whiteSpace: 'nowrap',
-                                  overflow: 'hidden',
-                                  textOverflow: 'ellipsis'
-                                }}
-                              >
-                                <span style={{ flexShrink: 0 }}>🏬</span>
-                                <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                  NCC: {suppDisplayName}
-                                </span>
-                              </div>
-                            );
-                          })()}
-
-                          {/* Team Slot Badge */}
-                          {(() => {
-                            const linkedTeam = teams.find(t => String(t.id) === String(order.team_id || order.teamId));
-                            const rawTeamName = linkedTeam ? linkedTeam.name : (order.team_name || order.teamName || (order.team_id ? `Team #${order.team_id}` : null));
-                            if (!rawTeamName) return null;
-                            
-                            let cleanName = String(rawTeamName).trim();
-                            if (cleanName.includes('|')) cleanName = cleanName.split('|')[0].trim();
-                            cleanName = cleanName.replace(/^Mail\s*\|\s*Pass\s*\|\s*2FA\s*/i, '').trim();
-
-                            return (
-                              <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                                <div
-                                  title={rawTeamName}
-                                  style={{
-                                    fontSize: '10.5px',
-                                    color: '#10b981',
-                                    fontWeight: '700',
-                                    display: 'inline-flex',
-                                    alignItems: 'center',
-                                    gap: '4px',
-                                    background: 'rgba(16,185,129,0.12)',
-                                    padding: '2px 7px',
-                                    borderRadius: '4px',
-                                    border: '1px solid rgba(16,185,129,0.25)',
-                                    maxWidth: '190px',
-                                    overflow: 'hidden',
-                                    textOverflow: 'ellipsis',
-                                    whiteSpace: 'nowrap'
-                                  }}
-                                >
-                                  <ShieldCheck size={12} style={{ flexShrink: 0 }} />
-                                  <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                    {cleanName}
-                                  </span>
-                                </div>
-                                {order.migrated_from_team_name && (
-                                  <div style={{ fontSize: '10px', color: '#f59e0b', fontWeight: '700', marginTop: '1px', whiteSpace: 'nowrap' }} title={`Đã tự động chuyển từ Team ${order.migrated_from_team_name} do bảo hành`}>
-                                    🔄 Chuyển từ BH: {order.migrated_from_team_name}
-                                  </div>
-                                )}
-                              </div>
-                            );
-                          })()}
+                      {/* CỘT 2: SẢN PHẨM & TÀI KHOẢN */}
+                      <td style={{ padding: '8px 10px', minWidth: '250px', maxWidth: '320px', verticalAlign: 'middle' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <strong style={{ color: '#818cf8', fontSize: '13px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                            {prodName}
+                          </strong>
                         </div>
 
-                        {/* Account / Invite Link Credentials */}
-                        {order.infor && (
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '4px' }}>
-                            <code style={{ fontSize: '11px', color: isRevealed ? '#fff' : '#64748b', background: 'rgba(0,0,0,0.2)', padding: '2px 6px', borderRadius: '4px', whiteSpace: 'nowrap' }}>
-                              {isRevealed ? order.infor : '••••••••••••••••'}
-                            </code>
-                            <button onClick={() => toggleRevealInfor(order.id)} style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer' }}>
+                        {/* Badges container for Supplier & Team side-by-side */}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', marginTop: '2px' }}>
+                          {suppDisplayName && (
+                            <span style={{ fontSize: '10px', color: '#38bdf8', background: 'rgba(56,189,248,0.12)', padding: '1px 6px', borderRadius: '4px', border: '1px solid rgba(56,189,248,0.25)', fontWeight: '600', whiteSpace: 'nowrap' }}>
+                              🏬 {suppDisplayName}
+                            </span>
+                          )}
+                          {cleanTeamName && (
+                            <span style={{ fontSize: '10px', color: '#10b981', background: 'rgba(16,185,129,0.12)', padding: '1px 6px', borderRadius: '4px', border: '1px solid rgba(16,185,129,0.25)', fontWeight: '600', whiteSpace: 'nowrap' }}>
+                              🛡️ {cleanTeamName}
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Account credentials line */}
+                        {order.infor ? (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '5px', marginTop: '2px' }}>
+                            <span style={{ fontSize: '11px', color: isRevealed ? '#e2e8f0' : '#64748b', fontFamily: 'monospace', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '180px' }}>
+                              🔑 {isRevealed ? order.infor : '••••••••••••••••'}
+                            </span>
+                            <button
+                              onClick={() => toggleRevealInfor(order.id)}
+                              style={{ background: 'none', border: 'none', color: '#64748b', cursor: 'pointer', padding: 0 }}
+                              title={isRevealed ? "Ẩn thông tin" : "Hiện thông tin"}
+                            >
                               {isRevealed ? <EyeOff size={12} /> : <Eye size={12} />}
                             </button>
-                            <button onClick={() => handleCopyInfor(order.infor, order.id)} style={{ background: 'none', border: 'none', color: isCopied ? '#10b981' : '#94a3b8', cursor: 'pointer' }}>
+                            <button
+                              onClick={() => handleCopyInfor(order.id, order.infor)}
+                              style={{ background: 'none', border: 'none', color: isCopied ? '#10b981' : '#64748b', cursor: 'pointer', padding: 0 }}
+                              title="Copy Acc / Link"
+                            >
                               {isCopied ? <Check size={12} /> : <Copy size={12} />}
                             </button>
                           </div>
-                        )}
-                      </td>
-                      {/* 4. NGUỒN / KÊNH (BRAND LOGO ICON) */}
-                      <td style={{ padding: '12px 10px', whiteSpace: 'nowrap', textAlign: 'center' }}>
-                        {renderChannelBrandIcon(order.source, order.channel || order.source || 'Facebook Page')}
-                      </td>
-
-                      {/* 5. THỜI HẠN (MỚI) */}
-                      <td style={{ padding: '12px 10px', whiteSpace: 'nowrap' }}>
-                        {isEvergreen ? (
-                          <span style={{ fontSize: '12px', color: '#a855f7', fontWeight: '600', display: 'inline-flex', alignItems: 'center', gap: '4px', whiteSpace: 'nowrap' }}>
-                            ♾️ Vĩnh viễn
-                          </span>
                         ) : (
-                          <div>
-                            <div style={{ fontSize: '12px', color: '#cbd5e1', fontWeight: '500', whiteSpace: 'nowrap' }}>
-                              {expDate !== '---' ? new Date(expDate).toLocaleDateString('vi-VN') : '---'}
-                            </div>
-                            {daysLeft !== null && (
-                              <div style={{ marginTop: '3px' }}>
-                                {daysLeft <= 0 ? (
-                                  <span style={{ fontSize: '10px', padding: '2px 8px', borderRadius: '10px', background: 'rgba(239,68,68,0.2)', color: '#ef4444', border: '1px solid #ef4444', fontWeight: '700', whiteSpace: 'nowrap', display: 'inline-block' }}>
-                                    ⚫ Hết hạn
-                                  </span>
-                                ) : daysLeft <= 7 ? (
-                                  <span style={{ fontSize: '10px', padding: '2px 8px', borderRadius: '10px', background: 'rgba(239,68,68,0.18)', color: '#f87171', border: '1px solid rgba(239,68,68,0.4)', fontWeight: '700', boxShadow: '0 0 6px rgba(239,68,68,0.3)', whiteSpace: 'nowrap', display: 'inline-block' }}>
-                                    🔴 {daysLeft} ngày
-                                  </span>
-                                ) : daysLeft <= 30 ? (
-                                  <span style={{ fontSize: '10px', padding: '2px 8px', borderRadius: '10px', background: 'rgba(245,158,11,0.18)', color: '#f59e0b', border: '1px solid rgba(245,158,11,0.4)', fontWeight: '700', whiteSpace: 'nowrap', display: 'inline-block' }}>
-                                    🟡 {daysLeft} ngày
-                                  </span>
-                                ) : (
-                                  <span style={{ fontSize: '10px', padding: '2px 8px', borderRadius: '10px', background: 'rgba(16,185,129,0.12)', color: '#10b981', border: '1px solid rgba(16,185,129,0.25)', fontWeight: '600', whiteSpace: 'nowrap', display: 'inline-block' }}>
-                                    🟢 {daysLeft} ngày
-                                  </span>
-                                )}
-                              </div>
-                            )}
-                          </div>
+                          <div style={{ fontSize: '10.5px', color: '#475569', fontStyle: 'italic', marginTop: '2px' }}>Chưa bàn giao Acc/Key</div>
                         )}
                       </td>
 
-                      {/* 6. TÀI CHÍNH (NÂNG CẤP) */}
-                      <td style={{ padding: '12px 10px', whiteSpace: 'nowrap' }}>
-                        <strong style={{ color: '#10b981', fontSize: '13.5px', display: 'block', whiteSpace: 'nowrap' }}>{sellP.toLocaleString()}đ</strong>
-                        {costP > 0 && (
-                          <div style={{ fontSize: '10.5px', marginTop: '2px', color: profit > 0 ? '#34d399' : '#f87171', fontWeight: '600', whiteSpace: 'nowrap' }}>
-                            {profit > 0 ? `+${profit.toLocaleString()}đ (${profitMargin}%)` : `⚠️ ${profit.toLocaleString()}đ` }
-                          </div>
-                        )}
-                      </td>
+                      {/* CỘT 3: HẠN DÙNG & KÊNH BÁN */}
+                      <td style={{ padding: '8px 10px', minWidth: '150px', verticalAlign: 'middle' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <span style={{ fontSize: '12px', fontWeight: '700', color: '#e2e8f0' }}>{expDate}</span>
+                          {isEvergreen ? (
+                            <span style={{ fontSize: '9.5px', padding: '1px 5px', borderRadius: '4px', background: 'rgba(16,185,129,0.15)', color: '#10b981', border: '1px solid rgba(16,185,129,0.3)', fontWeight: '700' }}>
+                              ⚪ Vĩnh viễn
+                            </span>
+                          ) : daysLeft !== null && (
+                            <span style={{
+                              fontSize: '9.5px', padding: '1px 5px', borderRadius: '4px', fontWeight: '700',
+                              background: daysLeft <= 0 ? 'rgba(239,68,68,0.2)' : daysLeft <= 7 ? 'rgba(245,158,11,0.2)' : 'rgba(16,185,129,0.15)',
+                              color: daysLeft <= 0 ? '#f87171' : daysLeft <= 7 ? '#fbbf24' : '#34d399',
+                              border: daysLeft <= 0 ? '1px solid rgba(239,68,68,0.3)' : daysLeft <= 7 ? '1px solid rgba(245,158,11,0.3)' : '1px solid rgba(16,185,129,0.3)'
+                            }}>
+                              {daysLeft <= 0 ? '🔴 Hết hạn' : `Còn ${daysLeft}d`}
+                            </span>
+                          )}
+                        </div>
 
-                      {/* 7. BẢO HÀNH (NÂNG CẤP) */}
-                      <td style={{ padding: '12px 10px', whiteSpace: 'nowrap' }}>
-                        {wCount > 0 ? (
-                          <span className="badge badge-warning" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '11px', whiteSpace: 'nowrap' }}>
-                            <AlertTriangle size={11} /> {wCount} lần đổi
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '5px', marginTop: '3px' }}>
+                          {renderChannelBrandIcon(order.source, order.channel)}
+                          <span style={{ fontSize: '11px', color: '#94a3b8', whiteSpace: 'nowrap' }}>
+                            {order.channel || order.source || 'Facebook Page'}
                           </span>
-                        ) : (
-                          <span style={{ fontSize: '11px', color: '#10b981', background: 'rgba(16,185,129,0.08)', padding: '2px 8px', borderRadius: '4px', border: '1px solid rgba(16,185,129,0.2)', fontWeight: '500', whiteSpace: 'nowrap', display: 'inline-block' }}>
-                            ✅ Chưa BH
+                        </div>
+                      </td>
+
+                      {/* CỘT 4: TÀI CHÍNH & TRẠNG THÁI */}
+                      <td style={{ padding: '8px 10px', minWidth: '160px', verticalAlign: 'middle' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <strong style={{ fontSize: '13.5px', color: '#10b981', fontWeight: '800' }}>
+                            {sellP.toLocaleString()}đ
+                          </strong>
+                          {profit !== 0 && (
+                            <span style={{ fontSize: '10.5px', color: profit >= 0 ? '#34d399' : '#f87171' }}>
+                              ({profit >= 0 ? '+' : ''}{profit.toLocaleString()}đ)
+                            </span>
+                          )}
+                        </div>
+
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '5px', marginTop: '3px' }}>
+                          {/* Payment status badge */}
+                          <span style={{
+                            fontSize: '9.5px', padding: '1px 6px', borderRadius: '4px', fontWeight: '700',
+                            background: order.status === 'Đã thanh toán' ? 'rgba(16,185,129,0.15)' : 'rgba(239,68,68,0.2)',
+                            color: order.status === 'Đã thanh toán' ? '#34d399' : '#f87171',
+                            border: order.status === 'Đã thanh toán' ? '1px solid rgba(16,185,129,0.3)' : '1px solid rgba(239,68,68,0.3)'
+                          }}>
+                            {order.status === 'Đã thanh toán' ? '🟢 Đã TT' : '🔴 Nợ'}
                           </span>
-                        )}
+
+                          {/* Warranty badge */}
+                          <span style={{
+                            fontSize: '9.5px', padding: '1px 6px', borderRadius: '4px', fontWeight: '700',
+                            background: wCount > 0 ? 'rgba(245,158,11,0.18)' : 'rgba(100,116,139,0.15)',
+                            color: wCount > 0 ? '#fbbf24' : '#94a3b8',
+                            border: wCount > 0 ? '1px solid rgba(245,158,11,0.3)' : '1px solid rgba(100,116,139,0.2)'
+                          }}>
+                            {wCount > 0 ? `🛡️ BH ${wCount} lần` : '🛡️ Chưa BH'}
+                          </span>
+                        </div>
                       </td>
 
-                      {/* 8. TRẠNG THÁI (NÂNG CẤP) */}
-                      <td style={{ padding: '12px 10px', whiteSpace: 'nowrap' }}>
-                        <span className={`badge ${order.status === 'Đã thanh toán' ? 'badge-success' : 'badge-warning'}`} style={{ whiteSpace: 'nowrap', display: 'inline-block' }}>
-                          {order.status === 'Đã thanh toán' ? '✅ Đã thanh toán' : `💸 ${order.status || 'Nợ'}`}
-                        </span>
-                      </td>
-
-                      {/* 9. THAO TÁC 360° */}
-                      <td style={{ padding: '12px 10px', whiteSpace: 'nowrap' }}>
-                        <div style={{ display: 'flex', gap: '5px', alignItems: 'center' }}>
+                      {/* CỘT 5: THAO TÁC 360° */}
+                      <td style={{ padding: '8px 10px', minWidth: '150px', whiteSpace: 'nowrap', verticalAlign: 'middle' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                           <button
-                            className="glass-button"
-                            onClick={() => setShowDetailModal({ order, qrUrl })}
-                            title="Xem Chi Tiết 360°"
-                            style={{ padding: '5px 8px', fontSize: '11px', background: 'rgba(99,102,241,0.18)', color: '#818cf8' }}
+                            className="glass-button" style={{ padding: '5px 7px', fontSize: '11px' }}
+                            onClick={() => setShowDetailModal(order)} title="Xem chi tiết đơn"
                           >
                             <Eye size={13} />
                           </button>
                           <button
-                            className="glass-button"
-                            onClick={() => setShowInvoiceModal({ order, qrUrl })}
-                            title="In Hóa Đơn Bán Hàng"
-                            style={{ padding: '5px 8px', fontSize: '11px', background: 'rgba(16,185,129,0.18)', color: '#10b981' }}
+                            className="glass-button" style={{ padding: '5px 7px', fontSize: '11px', color: '#10b981' }}
+                            onClick={() => {
+                              const bRef = order.batch_ref || order.batchRef;
+                              const bOrders = bRef ? orders.filter(o => (o.batch_ref || o.batchRef) === bRef) : [order];
+                              setShowInvoiceModal({ order, qrUrl, batchOrders: bOrders });
+                            }} title="In Hóa Đơn Zalo / In ấn"
                           >
                             <Printer size={13} />
                           </button>
                           <button
-                            className="glass-button"
-                            onClick={() => handleOpenEditModal(order)}
-                            title="Dien Acc / Cap Nhat Tai Khoan & Gia Von"
-                            style={{ padding: '5px 8px', fontSize: '11px', background: 'rgba(59,130,246,0.18)', color: '#3b82f6' }}
+                            className="glass-button" style={{ padding: '5px 7px', fontSize: '11px', color: '#38bdf8' }}
+                            onClick={() => handleOpenEditModal(order)} title="Chỉnh sửa đơn"
                           >
                             <Edit3 size={13} />
                           </button>
                           <button
-                            className="glass-button"
-                            onClick={() => handleOpenWarrantyModal(order)}
-                            title="Bảo Hành / Đổi Tài Khoản"
-                            style={{ padding: '5px 8px', fontSize: '11px', background: 'rgba(245,158,11,0.18)', color: '#f59e0b' }}
+                            className="glass-button" style={{ padding: '5px 7px', fontSize: '11px', color: '#f59e0b' }}
+                            onClick={() => handleOpenWarrantyModal(order)} title="Bảo hành & Gia hạn"
                           >
                             <RefreshCw size={13} />
                           </button>
                           <button
-                            onClick={() => setConfirmDeleteId(order.id)}
-                            title="Xóa Đơn"
-                            style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', padding: '4px' }}
+                            className="glass-button" style={{ padding: '5px 7px', fontSize: '11px', color: '#ef4444' }}
+                            onClick={() => setConfirmDeleteId(order.id)} title="Xóa đơn"
                           >
-                            <Trash2 size={15} />
+                            <Trash2 size={13} />
                           </button>
                         </div>
                       </td>
                     </tr>
                   );
-                })}
-              </tbody>
+                })}</tbody>
             </table>
           </div>
 
@@ -1897,64 +1816,78 @@ export default function Orders() {
               <button className="modal-close-btn" style={{ color: '#000' }} onClick={() => setShowInvoiceModal(null)}><X size={18} /></button>
             </div>
             
-            <div id="printable-invoice" style={{ padding: '16px 0', fontSize: '13.5px', color: '#0f172a', lineHeight: 1.6 }}>
-              {/* Header */}
-              <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '2px solid #6366f1', paddingBottom: '12px', marginBottom: '16px' }}>
-                <div>
-                  <h2 style={{ fontSize: '20px', fontWeight: '800', color: '#6366f1', margin: 0 }}>DROPSHIP CRM STORE</h2>
-                  <p style={{ fontSize: '12px', color: '#64748b', margin: '2px 0' }}>Chuyên Dịch Vụ & Tài Khoản Bản Quyền Số</p>
-                  <p style={{ fontSize: '12px', color: '#64748b', margin: 0 }}>Hotline / Zalo CSKH: 0901234567</p>
-                </div>
-                <div style={{ textAlign: 'right' }}>
-                  <p style={{ fontWeight: '700', fontSize: '14px', margin: 0 }}>MÃ HÓA ĐƠN: #{showInvoiceModal.order.id}</p>
-                  <p style={{ fontSize: '12px', color: '#64748b', margin: '2px 0' }}>Ngày: {new Date(showInvoiceModal.order.purchase_date || showInvoiceModal.order.purchaseDate || todayStr).toLocaleDateString('vi-VN')}</p>
-                </div>
-              </div>
+            {(() => {
+              const bOrders = showInvoiceModal.batchOrders && showInvoiceModal.batchOrders.length > 0
+                ? showInvoiceModal.batchOrders
+                : [showInvoiceModal.order];
+              const isMultiBatch = bOrders.length > 1;
+              const totalBatchSum = bOrders.reduce((sum, item) => sum + Number(item.sell_price || item.sellPrice || 0), 0);
 
-              {/* Customer Info */}
-              <div style={{ background: '#f8fafc', padding: '12px', borderRadius: '8px', marginBottom: '16px' }}>
-                <p style={{ margin: 0 }}><strong>Khách Hàng:</strong> {showInvoiceModal.order.customer_name || showInvoiceModal.order.customerName}</p>
-                <p style={{ margin: '4px 0 0' }}><strong>Số Điện Thoại / Zalo:</strong> {showInvoiceModal.order.phone || 'N/A'}</p>
-              </div>
+              return (
+                <div id="printable-invoice" style={{ padding: '16px 0', fontSize: '13.5px', color: '#0f172a', lineHeight: 1.6 }}>
+                  {/* Header */}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '2px solid #6366f1', paddingBottom: '12px', marginBottom: '16px' }}>
+                    <div>
+                      <h2 style={{ fontSize: '20px', fontWeight: '800', color: '#6366f1', margin: 0 }}>DROPSHIP CRM STORE</h2>
+                      <p style={{ fontSize: '12px', color: '#64748b', margin: '2px 0' }}>Chuyên Dịch Vụ & Tài Khoản Bản Quyền Số</p>
+                      <p style={{ fontSize: '12px', color: '#64748b', margin: 0 }}>Hotline / Zalo CSKH: 0901234567</p>
+                    </div>
+                    <div style={{ textAlign: 'right' }}>
+                      <p style={{ fontWeight: '700', fontSize: '14px', margin: 0 }}>
+                        {isMultiBatch ? `MÃ BATCH: ${showInvoiceModal.order.batch_ref || showInvoiceModal.order.batchRef}` : `MÃ HÓA ĐƠN: #${showInvoiceModal.order.id}`}
+                      </p>
+                      <p style={{ fontSize: '12px', color: '#64748b', margin: '2px 0' }}>Ngày: {new Date(showInvoiceModal.order.purchase_date || showInvoiceModal.order.purchaseDate || todayStr).toLocaleDateString('vi-VN')}</p>
+                    </div>
+                  </div>
 
-              {/* Items Table */}
-              <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '16px' }}>
-                <thead>
-                  <tr style={{ background: '#f1f5f9', borderBottom: '2px solid #cbd5e1' }}>
-                    <th style={{ padding: '8px', textAlign: 'left' }}>Sản Phẩm Dịch Vụ</th>
-                    <th style={{ padding: '8px', textAlign: 'left' }}>Thông Tin Infor</th>
-                    <th style={{ padding: '8px', textAlign: 'right' }}>Hạn Dùng</th>
-                    <th style={{ padding: '8px', textAlign: 'right' }}>Thành Tiền</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
-                    <td style={{ padding: '10px 8px', fontWeight: '700' }}>${showInvoiceModal.order.product_name || showInvoiceModal.order.productName}</td>
-                    <td style={{ padding: '10px 8px', fontFamily: 'monospace', fontSize: '12px' }}>${showInvoiceModal.order.infor || 'Đã kích hoạt'}</td>
-                    <td style={{ padding: '10px 8px', textAlign: 'right' }}>${showInvoiceModal.order.expire_date || showInvoiceModal.order.expireDate}</td>
-                    <td style={{ padding: '10px 8px', textAlign: 'right', fontWeight: '700', color: '#10b981' }}>
-                      {(showInvoiceModal.order.sell_price || showInvoiceModal.order.sellPrice || 0).toLocaleString()}đ
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
+                  {/* Customer Info */}
+                  <div style={{ background: '#f8fafc', padding: '12px', borderRadius: '8px', marginBottom: '16px' }}>
+                    <p style={{ margin: 0 }}><strong>Khách Hàng:</strong> {showInvoiceModal.order.customer_name || showInvoiceModal.order.customerName}</p>
+                    <p style={{ margin: '4px 0 0' }}><strong>Số Điện Thoại / Zalo:</strong> {showInvoiceModal.order.phone || 'N/A'}</p>
+                  </div>
 
-              {/* Total & QR */}
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#f8fafc', padding: '12px', borderRadius: '8px' }}>
-                <div>
-                  {showInvoiceModal.qrUrl && (
-                    <img src={showInvoiceModal.qrUrl} alt="VietQR" style={{ width: '160px', borderRadius: '6px', border: '1px solid #cbd5e1' }} />
-                  )}
+                  {/* Items Table */}
+                  <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '16px' }}>
+                    <thead>
+                      <tr style={{ background: '#f1f5f9', borderBottom: '2px solid #cbd5e1' }}>
+                        <th style={{ padding: '8px', textAlign: 'left' }}>Sản Phẩm Dịch Vụ</th>
+                        <th style={{ padding: '8px', textAlign: 'left' }}>Thông Tin Infor / Key</th>
+                        <th style={{ padding: '8px', textAlign: 'right' }}>Hạn Dùng</th>
+                        <th style={{ padding: '8px', textAlign: 'right' }}>Thành Tiền</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {bOrders.map((item, idx) => (
+                        <tr key={item.id || idx} style={{ borderBottom: '1px solid #e2e8f0' }}>
+                          <td style={{ padding: '8px', fontWeight: '700' }}>#{item.id} - {item.product_name || item.productName}</td>
+                          <td style={{ padding: '8px', fontFamily: 'monospace', fontSize: '12px' }}>{item.infor || 'Đã kích hoạt'}</td>
+                          <td style={{ padding: '8px', textAlign: 'right' }}>{item.expire_date || item.expireDate || '---'}</td>
+                          <td style={{ padding: '8px', textAlign: 'right', fontWeight: '700', color: '#10b981' }}>
+                            {(Number(item.sell_price || item.sellPrice || 0)).toLocaleString()}đ
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+
+                  {/* Total & QR */}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#f8fafc', padding: '12px', borderRadius: '8px' }}>
+                    <div>
+                      {showInvoiceModal.qrUrl && (
+                        <img src={showInvoiceModal.qrUrl} alt="VietQR" style={{ width: '160px', borderRadius: '6px', border: '1px solid #cbd5e1' }} />
+                      )}
+                    </div>
+                    <div style={{ textAlign: 'right' }}>
+                      <p style={{ fontSize: '13px', color: '#64748b', margin: 0 }}>Tổng Tiền Thanh Toán ({bOrders.length} món):</p>
+                      <p style={{ fontSize: '22px', fontWeight: '800', color: '#10b981', margin: '4px 0' }}>
+                        {totalBatchSum.toLocaleString()} VNĐ
+                      </p>
+                      <p style={{ fontSize: '12px', color: '#64748b', margin: 0 }}>Trạng thái: <strong>{showInvoiceModal.order.status}</strong></p>
+                    </div>
+                  </div>
                 </div>
-                <div style={{ textAlign: 'right' }}>
-                  <p style={{ fontSize: '13px', color: '#64748b', margin: 0 }}>Tổng Tiền Thanh Toán:</p>
-                  <p style={{ fontSize: '22px', fontWeight: '800', color: '#10b981', margin: '4px 0' }}>
-                    {(showInvoiceModal.order.sell_price || showInvoiceModal.order.sellPrice || 0).toLocaleString()} VNĐ
-                  </p>
-                  <p style={{ fontSize: '12px', color: '#64748b', margin: 0 }}>Trạng thái: <strong>${showInvoiceModal.order.status}</strong></p>
-                </div>
-              </div>
-            </div>
+              );
+            })()}
 
             <div style={{ display: 'flex', gap: '10px', marginTop: '14px' }}>
               <button onClick={handlePrintInvoice} className="glass-button" style={{ flex: 1, background: '#6366f1', color: '#fff', fontWeight: '700' }}>
