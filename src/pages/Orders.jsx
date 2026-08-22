@@ -847,6 +847,15 @@ export default function Orders() {
       });
     }
 
+    if (!formData.customerId) {
+      return toast.error('Vui lòng chọn hoặc nhập thông tin Khách hàng!');
+    }
+    if (!formData.source) {
+      return toast.error('Vui lòng chọn Nguồn / Kênh bán hàng main!');
+    }
+    if (!formData.subChannelName || !formData.subChannelName.trim()) {
+      return toast.error('Vui lòng chọn hoặc nhập Kênh bán phụ (Trang/Zalo/Đại lý)!');
+    }
     if (itemsToProcess.length === 0) {
       return toast.error('Vui lòng chọn ít nhất 1 sản phẩm vào Giỏ hàng POS!');
     }
@@ -2390,7 +2399,7 @@ export default function Orders() {
               {/* Channel Selector */}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
                 <div>
-                  <label className="form-label">Nguồn / Kênh Bán Hàng Main</label>
+                  <label className="form-label">NGUỒN / KÊNH BÁN HÀNG MAIN *</label>
                   <select
                     className="glass-input"
                     value={formData.source} onChange={e => setFormData({ ...formData, source: e.target.value, subChannelName: '' })}
@@ -2402,7 +2411,7 @@ export default function Orders() {
                 </div>
                 <div>
                   <label className="form-label" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span>Kênh Bán Phụ (Trang/Zalo/Đại Lý)</span>
+                    <span>KÊNH BÁN PHỤ (TRANG/ZALO/ĐẠI LÝ) *</span>
                     {formData.subChannelName && (
                       <span style={{ fontSize: '11px', color: '#a855f7', fontWeight: '700' }}>
                         ✅ Đã chọn
