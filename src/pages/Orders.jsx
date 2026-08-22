@@ -2371,7 +2371,7 @@ export default function Orders() {
                       .filter(c => c.type === 'Si' || c.type === 'CTV')
                       .map(ag => (
                         <option key={ag.id} value={`Đại lý ${ag.name.replace(/^Đại lý\s+/i, '')}`}>
-                          ${ag.type === 'Si' ? '🟣 Sỉ' : '🟡 CTV'}: ${ag.name} ${ag.phone ? `(${ag.phone})` : ''}
+                          {ag.type === 'Si' ? '🟣 Sỉ' : '🟡 CTV'}: {ag.name} {ag.phone ? `(${ag.phone})` : ''}
                         </option>
                       ))
                     }
