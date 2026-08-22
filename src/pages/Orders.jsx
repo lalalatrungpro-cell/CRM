@@ -1514,7 +1514,7 @@ export default function Orders() {
                               {isRevealed ? <EyeOff size={12} /> : <Eye size={12} />}
                             </button>
                             <button
-                              onClick={() => handleCopyInfor(order.id, order.infor)}
+                              onClick={() => handleCopyInfor(order.infor, order.id)}
                               style={{ background: 'none', border: 'none', color: isCopied ? '#10b981' : '#64748b', cursor: 'pointer', padding: 0 }}
                               title="Copy Acc / Link"
                             >
