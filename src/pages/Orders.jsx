@@ -2120,12 +2120,11 @@ export default function Orders() {
                 </label>
 
                 {/* Smart Search Bar + 1-Click Khách Vãng Lai Button */}
-                <div style={{ display: 'flex', gap: '8px', position: 'relative' }}>
-                  <div style={{ position: 'relative', flex: 1 }}>
+                <div style={{ position: 'relative', width: '100%' }}>
                     <input
                       type="text"
                       className="glass-input"
-                      placeholder="🔍 Nhập SĐT, Email hoặc Tên khách..."
+                      placeholder="🔍 Nhập SĐT, Email hoặc Tên khách hàng để tra cứu (Bắt buộc SĐT)..."
                       value={posCustSearchTerm}
                       onChange={e => {
                         const val = e.target.value;
@@ -2245,38 +2244,6 @@ export default function Orders() {
                     )}
                   </div>
 
-                  {/* 1-Click Khách Vãng Lai Button */}
-                  <button
-                    type="button"
-                    onClick={() => {
-                      let walkIn = customers.find(c => c.name && (c.name.includes('Vãng Lai') || c.name.includes('Khách Vãng Lai')));
-                      if (walkIn) {
-                        handleCustomerChange(walkIn.id);
-                        setPosCustSearchTerm(`${walkIn.name} (${walkIn.phone || 'Khách Vãng Lai'})`);
-                      } else {
-                        setFormData(f => ({
-                          ...f,
-                          customerId: 'NEW',
-                          newCustomerName: 'Khách Vãng Lai',
-                          newCustomerPhone: '0000000000',
-                          newCustomerType: 'Le'
-                        }));
-                        handleCustomerChange('NEW');
-                        setPosCustSearchTerm('Khách Vãng Lai');
-                      }
-                      setShowPosCustDropdown(false);
-                    }}
-                    className="glass-button"
-                    style={{
-                      padding: '0 12px', fontSize: '12px', fontWeight: '700', whiteSpace: 'nowrap',
-                      background: 'rgba(56,189,248,0.12)', color: '#38bdf8', border: '1px solid rgba(56,189,248,0.3)',
-                      display: 'flex', alignItems: 'center', gap: '5px'
-                    }}
-                    title="Bỏ qua chọn khách, bán hàng cho Khách Vãng Lai ngay lập tức"
-                  >
-                    👤 Khách Vãng Lai
-                  </button>
-                </div>
               </div>
 
               {formData.customerId === 'NEW' && (
