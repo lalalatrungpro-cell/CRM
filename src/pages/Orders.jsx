@@ -765,8 +765,28 @@ export default function Orders() {
   const handleCreateOrder = async (e) => {
     e.preventDefault();
 
-    if (!formData.productName) {
-      return toast.error('Vui lòng chọn Sản phẩm dịch vụ!');
+    // Determine items to process: use batchItems if non-empty, or auto-convert formData.productName
+    let itemsToProcess = [...batchItems];
+    if (itemsToProcess.length === 0 && formData.productName) {
+      const prod = products.find(p => p.name === formData.productName);
+      const custType = getCustomerTypeFromState(formData);
+      itemsToProcess.push({
+        id: 'batch_auto_' + Date.now(),
+        productName: formData.productName,
+        quantity: 1,
+        sellPrice: Number(formData.sellPrice || 0),
+        costPrice: Number(formData.costPrice || 0),
+        teamId: formData.teamId,
+        supplierId: formData.supplierId,
+        infor: formData.infor || '',
+        durationDays: parseInt(formData.durationDays) || 30,
+        expireDate: formData.expireDate || nextMonthStr,
+        isEvergreen: isEvergreen
+      });
+    }
+
+    if (itemsToProcess.length === 0) {
+      return toast.error('Vui lòng chọn ít nhất 1 sản phẩm vào Giỏ hàng POS!');
     }
     if (!formData.status) {
       return toast.error('Vui lòng chọn Trạng thái thanh toán (Đã thanh toán hoặc Nợ)!');
@@ -802,9 +822,6 @@ export default function Orders() {
         finalCustPhone = cust.phone || '';
       }
 
-      const supp = suppliers.find(s => String(s.id) === String(formData.supplierId));
-      const suppName = supp ? supp.name : '';
-
       let channelVal = formData.source;
       if (formData.subChannelName) {
         channelVal = `${formData.source} - ${formData.subChannelName}`;
@@ -816,35 +833,72 @@ export default function Orders() {
         return isNaN(num) ? val : num;
       };
 
-      const payload = {
-        customer_id: finalCustId,
-        customer_name: finalCustName,
-        phone: finalCustPhone,
-        supplier_id: safeParseId(formData.supplierId),
-        supplier_name: suppName,
-        team_id: safeParseId(formData.teamId),
-        product_name: formData.productName,
-        infor: (formData.infor || '').trim(),
-        cost_price: parseFloat(formData.costPrice) || 0,
-        sell_price: parseFloat(formData.sellPrice) || 0,
-        status: formData.status || 'Đã thanh toán',
-        purchase_date: formData.purchaseDate || todayStr,
-        expire_date: formData.expireDate || nextMonthStr,
-        duration_days: parseInt(formData.durationDays) || 30,
-        supplier_paid: false,
-        warranty_count: 0,
-        source: formData.source,
-        channel: channelVal
-      };
+      // Generate unique Batch Reference for this checkout session
+      const datePart = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+      const randPart = Math.random().toString(36).substr(2, 5).toUpperCase();
+      const batchRef = `BATCH-${datePart}-${randPart}`;
 
-      const newOrder = await OrderService.create(shopId, payload);
+      // Expand batch items into individual order payloads
+      const expandedPayloads = [];
+      for (const item of itemsToProcess) {
+        const qty = Math.max(1, parseInt(item.quantity) || 1);
+        const supp = suppliers.find(s => String(s.id) === String(item.supplierId));
+        const suppName = supp ? supp.name : '';
 
-      // Bug #3 Fix: Sync customer.debt field when a Nợ order is created
-      if (payload.status === 'Nợ' && finalCustId && finalCustId !== 'NEW') {
+        // Split multi-line infor string
+        const inforLines = (item.infor || '')
+          .split('\n')
+          .map(line => line.trim())
+          .filter(Boolean);
+
+        for (let i = 0; i < qty; i++) {
+          let singleInfor = '';
+          if (inforLines.length > i) {
+            singleInfor = inforLines[i];
+          } else if (inforLines.length === 1) {
+            singleInfor = inforLines[0];
+          } else {
+            singleInfor = (item.infor || '').trim();
+          }
+
+          expandedPayloads.push({
+            customer_id: finalCustId,
+            customer_name: finalCustName,
+            phone: finalCustPhone,
+            supplier_id: safeParseId(item.supplierId),
+            supplier_name: suppName,
+            team_id: safeParseId(item.teamId),
+            product_name: item.productName,
+            infor: singleInfor,
+            cost_price: parseFloat(item.costPrice) || 0,
+            sell_price: parseFloat(item.sellPrice) || 0,
+            status: formData.status || 'Đã thanh toán',
+            purchase_date: formData.purchaseDate || todayStr,
+            expire_date: item.isEvergreen ? '---' : (item.expireDate || nextMonthStr),
+            duration_days: parseInt(item.durationDays) || 30,
+            supplier_paid: formData.status === 'Đã thanh toán',
+            warranty_count: 0,
+            source: formData.source,
+            channel: channelVal,
+            batch_ref: batchRef
+          });
+        }
+      }
+
+      // Create all orders in parallel
+      const createdOrders = await Promise.all(
+        expandedPayloads.map(payload => OrderService.create(shopId, payload))
+      );
+
+      // Calculate total created order value
+      const totalCreatedValue = expandedPayloads.reduce((sum, p) => sum + Number(p.sell_price || 0), 0);
+
+      // Bug #3 Fix: Sync customer.debt field ONCE when Nợ orders are created
+      if (formData.status === 'Nợ' && finalCustId && finalCustId !== 'NEW') {
         try {
           const custObj = customers.find(c => String(c.id) === String(finalCustId));
           const currentDebt = Number(custObj?.debt || 0);
-          const newDebt = currentDebt + Number(payload.sell_price || 0);
+          const newDebt = currentDebt + totalCreatedValue;
           await CustomerService.update(finalCustId, { debt: newDebt });
           setCustomers(prev => prev.map(c =>
             String(c.id) === String(finalCustId) ? { ...c, debt: newDebt } : c
@@ -854,18 +908,9 @@ export default function Orders() {
         }
       }
 
-      // Auto-assign inventory item if used
-      if (formData.inventoryItemId) {
-        try {
-          await InventoryService.assignItemToOrder(shopId, formData.inventoryItemId, newOrder.id, finalCustId, finalCustName);
-        } catch (e) {
-          console.error('Lỗi khi cập nhật kho tồn:', e);
-        }
-      }
-
-      setOrders(prev => [newOrder, ...prev]);
+      setOrders(prev => [...createdOrders, ...prev]);
       closeModal();
-      toast.success(`Đã tạo đơn hàng POS thành công cho ${finalCustName}!`);
+      toast.success(`🎉 Đã tạo thành công ${createdOrders.length} đơn hàng POS cho ${finalCustName}!`);
     } catch (err) {
       console.error('Order creation error:', err);
       toast.error('Lỗi khi tạo đơn hàng: ' + (err.message || 'Vui lòng thử lại.'));

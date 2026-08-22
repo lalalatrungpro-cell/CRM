@@ -309,7 +309,8 @@ export const OrderService = {
       status: payload.status || 'Đã thanh toán',
       purchase_date: payload.purchase_date || payload.purchaseDate || new Date().toISOString().split('T')[0],
       expire_date: payload.expire_date || payload.expireDate || new Date().toISOString().split('T')[0],
-      channel: payload.channel || payload.source || 'Facebook Page'
+      channel: payload.channel || payload.source || 'Facebook Page',
+      batch_ref: payload.batch_ref || payload.batchRef || null
     };
 
     const current = getLocal('orders');
