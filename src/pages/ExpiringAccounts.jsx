@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { OrderService, TeamService } from '../utils/dataService';
+import { OrderService, TeamService, CustomerService } from '../utils/dataService';
 import { useToast } from '../components/Toast';
 import DateFilterBar from '../components/DateFilterBar';
-import { Clock, Truck, Copy, Check, RefreshCw, Search, X } from 'lucide-react';
+import { Clock, Truck, Copy, Check, RefreshCw, Search, X, MessageSquare, User, ExternalLink, Calendar, ShieldCheck, DollarSign } from 'lucide-react';
 
 export default function ExpiringAccounts() {
   const toast = useToast();
@@ -11,7 +11,16 @@ export default function ExpiringAccounts() {
 
   const [orders, setOrders] = useState([]);
   const [teams, setTeams] = useState([]);
+  const [customers, setCustomers] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  // Customer Profile 360° Modal State
+  const [selectedCustProfile, setSelectedCustProfile] = useState(null);
+
+  // Care Note Modal State
+  const [selectedCareOrder, setSelectedCareOrder] = useState(null);
+  const [careStatus, setCareStatus] = useState('Đã nhắn Zalo');
+  const [careNotes, setCareNotes] = useState('');
 
   const [copiedId, setCopiedId] = useState('');
   const [activeTab, setActiveTab] = useState('orders'); // 'orders' | 'teams'
@@ -41,12 +50,14 @@ export default function ExpiringAccounts() {
     if (!shopId) return;
     setLoading(true);
     try {
-      const [oList, tList] = await Promise.all([
+      const [oList, tList, cList] = await Promise.all([
         OrderService.list(shopId),
-        TeamService.list(shopId)
+        TeamService.list(shopId),
+        CustomerService.list(shopId)
       ]);
       setOrders(oList || []);
       setTeams(tList || []);
+      setCustomers(cList || []);
     } catch (err) {
       console.error(err);
       toast.error('Lỗi khi tải danh sách cảnh báo hết hạn!');
@@ -149,6 +160,50 @@ export default function ExpiringAccounts() {
     setCopiedId(`msg-${order.id}`);
     toast.success('Đã copy tin nhắn mẫu nhắc gia hạn Zalo!');
     setTimeout(() => setCopiedId(''), 2000);
+  };
+
+  
+  const handleOpenCustProfile = (order) => {
+    let cust = customers.find(c => String(c.id) === String(order.customer_id || order.customerId));
+    if (!cust) {
+      cust = {
+        name: order.customer_name || order.customerName || 'Khách Hàng',
+        phone: order.phone || 'N/A',
+        email: order.email || '',
+        type: 'Le',
+        source: order.source || 'N/A'
+      };
+    }
+    const custOrders = orders.filter(o => String(o.customer_id || o.customerId) === String(cust.id) || (cust.phone && o.phone === cust.phone));
+    setSelectedCustProfile({ customer: cust, orders: custOrders });
+  };
+
+  const handleOpenCareModal = (order) => {
+    setSelectedCareOrder(order);
+    setCareStatus(order.care_status || order.careStatus || 'Đã nhắn Zalo');
+    setCareNotes(order.care_notes || order.careNotes || '');
+  };
+
+  const handleSaveCareNote = async (e) => {
+    e.preventDefault();
+    if (!selectedCareOrder) return;
+
+    try {
+      const nowStr = new Date().toLocaleString('vi-VN');
+      const payload = {
+        care_status: careStatus,
+        care_notes: careNotes,
+        care_time: nowStr
+      };
+
+      const updated = await OrderService.update(selectedCareOrder.id, payload);
+      setOrders(prev => prev.map(o => o.id === selectedCareOrder.id ? { ...o, ...payload } : o));
+      setSelectedCareOrder(null);
+      toast.success(`Đã lưu nhật ký CSKH cho đơn #${selectedCareOrder.id}!`);
+    } catch (err) {
+      console.error(err);
+      toast.error('Lỗi khi lưu nhật ký chăm sóc.');
+    }
   };
 
   const handleOpenOrderRenewModal = (order) => {
@@ -318,10 +373,40 @@ export default function ExpiringAccounts() {
 
                   return (
                     <tr key={order.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                      <td style={{ padding: '14px 16px' }}><strong>#{order.id}</strong></td>
                       <td style={{ padding: '14px 16px' }}>
-                        <strong style={{ color: '#fff' }}>{custName}</strong>
-                        <div style={{ fontSize: '11px', color: '#94a3b8' }}>{order.phone || 'N/A'}</div>
+                        <button
+                          type="button"
+                          onClick={() => handleOpenCustProfile(order)}
+                          style={{ background: 'none', border: 'none', color: '#818cf8', fontWeight: '800', cursor: 'pointer', padding: 0, textDecoration: 'underline' }}
+                        >
+                          #{order.id}
+                        </button>
+                      </td>
+                      <td style={{ padding: '14px 16px' }}>
+                        <button
+                          type="button"
+                          onClick={() => handleOpenCustProfile(order)}
+                          style={{ background: 'none', border: 'none', color: '#fff', fontWeight: '700', cursor: 'pointer', padding: 0, textAlign: 'left', display: 'block' }}
+                          title="Click để mở Hồ Sơ Khách Hàng 360°"
+                        >
+                          👤 {custName}
+                        </button>
+                        <div style={{ fontSize: '11px', color: '#94a3b8', marginTop: '2px' }}>📱 {order.phone || 'N/A'}</div>
+
+                        {/* CSKH Care Status Badge */}
+                        {order.care_status && (
+                          <div style={{ marginTop: '4px', fontSize: '10.5px', display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '2px 6px', borderRadius: '4px',
+                            background: order.care_status.includes('Đã nhắn') ? 'rgba(245,158,11,0.18)'
+                              : (order.care_status.includes('chốt') ? 'rgba(16,185,129,0.18)'
+                              : (order.care_status.includes('Từ chối') ? 'rgba(239,68,68,0.18)' : 'rgba(99,102,241,0.18)')),
+                            color: order.care_status.includes('Đã nhắn') ? '#f59e0b'
+                              : (order.care_status.includes('chốt') ? '#10b981'
+                              : (order.care_status.includes('Từ chối') ? '#ef4444' : '#818cf8')),
+                            fontWeight: '700'
+                          }}>
+                            💬 {order.care_status} {order.care_time ? `(${order.care_time.split(' ')[0]})` : ''}
+                          </div>
+                        )}
                       </td>
                       <td style={{ padding: '14px 16px', color: '#818cf8', fontWeight: '600' }}>{prodName}</td>
                       <td style={{ padding: '14px 16px' }}>{expDate}</td>
@@ -335,20 +420,30 @@ export default function ExpiringAccounts() {
                         )}
                       </td>
                       <td style={{ padding: '14px 16px' }}>
-                        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                        <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexWrap: 'wrap' }}>
                           <button
                             className="glass-button"
                             onClick={() => handleCopyMessage(order)}
-                            style={{ padding: '5px 10px', fontSize: '11px', background: 'rgba(59,130,246,0.18)', color: '#60a5fa', display: 'flex', alignItems: 'center', gap: '4px' }}
+                            style={{ padding: '5px 9px', fontSize: '11px', background: 'rgba(59,130,246,0.18)', color: '#60a5fa', display: 'flex', alignItems: 'center', gap: '4px' }}
+                            title="Copy tin nhắn Zalo gia hạn cá nhân hóa"
                           >
                             {isCopied ? <Check size={12} /> : <Copy size={12} />} Mẫu Zalo
                           </button>
                           <button
                             className="glass-button"
-                            onClick={() => handleOpenOrderRenewModal(order)}
-                            style={{ padding: '5px 10px', fontSize: '11px', background: 'rgba(16,185,129,0.18)', color: '#10b981', display: 'flex', alignItems: 'center', gap: '4px' }}
+                            onClick={() => handleOpenCareModal(order)}
+                            style={{ padding: '5px 9px', fontSize: '11px', background: 'rgba(168,85,247,0.18)', color: '#c084fc', border: '1px solid rgba(168,85,247,0.3)', display: 'flex', alignItems: 'center', gap: '4px' }}
+                            title="Lưu nhật ký chăm sóc khách hàng"
                           >
-                            <RefreshCw size={12} /> Gia Hạn Đơn
+                            <MessageSquare size={12} /> CSKH
+                          </button>
+                          <button
+                            className="glass-button"
+                            onClick={() => handleOpenOrderRenewModal(order)}
+                            style={{ padding: '5px 9px', fontSize: '11px', background: 'rgba(16,185,129,0.18)', color: '#10b981', display: 'flex', alignItems: 'center', gap: '4px' }}
+                            title="Tạo đơn gia hạn mới"
+                          >
+                            <RefreshCw size={12} /> Gia Hạn
                           </button>
                         </div>
                       </td>
