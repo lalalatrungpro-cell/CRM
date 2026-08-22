@@ -2397,11 +2397,16 @@ export default function Orders() {
               )}
 
               {/* Channel Selector */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', alignItems: 'start' }}>
                 <div>
-                  <label className="form-label">NGUỒN / KÊNH BÁN HÀNG MAIN *</label>
+                  <div style={{ height: '20px', marginBottom: '6px', display: 'flex', alignItems: 'center' }}>
+                    <label className="form-label" style={{ margin: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      🌐 Nguồn Bán Hàng Main *
+                    </label>
+                  </div>
                   <select
                     className="glass-input"
+                    style={{ width: '100%', height: '40px' }}
                     value={formData.source} onChange={e => setFormData({ ...formData, source: e.target.value, subChannelName: '' })}
                   >
                     {Object.keys(SOURCE_CONFIG).map(src => (
@@ -2410,20 +2415,22 @@ export default function Orders() {
                   </select>
                 </div>
                 <div>
-                  <label className="form-label" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span>KÊNH BÁN PHỤ (TRANG/ZALO/ĐẠI LÝ) *</span>
+                  <div style={{ height: '20px', marginBottom: '6px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <label className="form-label" style={{ margin: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      📍 Kênh Phụ / Đại Lý *
+                    </label>
                     {formData.subChannelName && (
-                      <span style={{ fontSize: '11px', color: '#a855f7', fontWeight: '700' }}>
+                      <span style={{ fontSize: '10.5px', color: '#10b981', background: 'rgba(16,185,129,0.15)', border: '1px solid rgba(16,185,129,0.25)', padding: '2px 7px', borderRadius: '4px', fontWeight: '700', whiteSpace: 'nowrap' }}>
                         ✅ Đã chọn
                       </span>
                     )}
-                  </label>
+                  </div>
 
                   <div ref={subChannelContainerRef} style={{ position: 'relative', width: '100%' }}>
                     <input
                       type="text"
                       className="glass-input"
-                      placeholder="🔍 Nhập tên Đại Lý, CTV hoặc Trang/Zalo..."
+                      placeholder="🔍 Tra cứu Đại Lý, CTV hoặc Trang..."
                       value={subChannelSearchTerm || formData.subChannelName || ''}
                       onChange={e => {
                         const val = e.target.value;
@@ -2432,7 +2439,7 @@ export default function Orders() {
                         setFormData(f => ({ ...f, subChannelName: val }));
                       }}
                       onFocus={() => setShowSubChannelDropdown(true)}
-                      style={{ width: '100%', paddingRight: (subChannelSearchTerm || formData.subChannelName) ? '30px' : '12px' }}
+                      style={{ width: '100%', height: '40px', paddingRight: (subChannelSearchTerm || formData.subChannelName) ? '30px' : '12px' }}
                     />
                     {(subChannelSearchTerm || formData.subChannelName) && (
                       <button
