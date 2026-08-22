@@ -2862,12 +2862,15 @@ export default function Orders() {
                 </div>
               )}
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', alignItems: 'start' }}>
                 <div>
-                  <label className="form-label" style={{ color: !formData.status ? '#f87171' : '#94a3b8' }}>Trạng Thái Thanh Toán *</label>
+                  <div style={{ height: '20px', marginBottom: '6px', display: 'flex', alignItems: 'center' }}>
+                    <label className="form-label" style={{ margin: 0, color: !formData.status ? '#f87171' : '#94a3b8', whiteSpace: 'nowrap' }}>💳 Trạng Thái Thanh Toán *</label>
+                  </div>
                   <select
                     className="glass-input" required
                     style={{
+                      width: '100%', height: '40px',
                       borderColor: !formData.status ? 'rgba(239,68,68,0.5)' : 'rgba(255,255,255,0.12)',
                       background: !formData.status ? 'rgba(239,68,68,0.08)' : 'rgba(0,0,0,0.2)'
                     }}
@@ -2880,9 +2883,12 @@ export default function Orders() {
                 </div>
                 {!isEvergreen ? (
                 <div>
-                  <label className="form-label">Ngày Hết Hạn Đơn</label>
+                  <div style={{ height: '20px', marginBottom: '6px', display: 'flex', alignItems: 'center' }}>
+                    <label className="form-label" style={{ margin: 0, whiteSpace: 'nowrap' }}>📅 Ngày Hết Hạn Đơn</label>
+                  </div>
                   <input
                     type="date" className="glass-input"
+                    style={{ width: '100%', height: '40px' }}
                     value={formData.expireDate} onChange={e => setFormData({ ...formData, expireDate: e.target.value })}
                   />
                 </div>
