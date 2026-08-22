@@ -241,6 +241,44 @@ export default function Orders() {
   const [showPosCustDropdown, setShowPosCustDropdown] = useState(false);
   const searchContainerRef = useRef(null);
 
+  // Sub-Channel Smart Search State & Ref
+  const [subChannelSearchTerm, setSubChannelSearchTerm] = useState('');
+  const [showSubChannelDropdown, setShowSubChannelDropdown] = useState(false);
+  const subChannelContainerRef = useRef(null);
+
+  // Product Smart Search State & Ref
+  const [productSearchTerm, setProductSearchTerm] = useState('');
+  const [showProductDropdown, setShowProductDropdown] = useState(false);
+  const productContainerRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutsideSubChannel = (event) => {
+      if (subChannelContainerRef.current && !subChannelContainerRef.current.contains(event.target)) {
+        setShowSubChannelDropdown(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutsideSubChannel);
+    document.addEventListener('touchstart', handleClickOutsideSubChannel);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutsideSubChannel);
+      document.removeEventListener('touchstart', handleClickOutsideSubChannel);
+    };
+  }, []);
+
+  useEffect(() => {
+    const handleClickOutsideProduct = (event) => {
+      if (productContainerRef.current && !productContainerRef.current.contains(event.target)) {
+        setShowProductDropdown(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutsideProduct);
+    document.addEventListener('touchstart', handleClickOutsideProduct);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutsideProduct);
+      document.removeEventListener('touchstart', handleClickOutsideProduct);
+    };
+  }, []);
+
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (searchContainerRef.current && !searchContainerRef.current.contains(event.target)) {
@@ -578,6 +616,10 @@ export default function Orders() {
     setBatchItems([]);
     setPosCustSearchTerm('');
     setShowPosCustDropdown(false);
+    setSubChannelSearchTerm('');
+    setShowSubChannelDropdown(false);
+    setProductSearchTerm('');
+    setShowProductDropdown(false);
     setSelectedAddProduct('');
   };
 
@@ -2359,27 +2401,153 @@ export default function Orders() {
                   </select>
                 </div>
                 <div>
-                  <label className="form-label">Kênh Bán Phụ (Trang/Zalo)</label>
-                  <select
-                    className="glass-input"
-                    value={formData.subChannelName} onChange={e => setFormData({ ...formData, subChannelName: e.target.value })}
-                  >
-                    <option value="">-- Mặc định --</option>
+                  <label className="form-label" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span>Kênh Bán Phụ (Trang/Zalo/Đại Lý)</span>
+                    {formData.subChannelName && (
+                      <span style={{ fontSize: '11px', color: '#a855f7', fontWeight: '700' }}>
+                        ✅ Đã chọn
+                      </span>
+                    )}
+                  </label>
 
-                    {/* Dynamic List of Tagged Agents & Wholesalers & CTVs from Customers Table */}
-                    {customers
-                      .filter(c => c.type === 'Si' || c.type === 'CTV')
-                      .map(ag => (
-                        <option key={ag.id} value={`Đại lý ${ag.name.replace(/^Đại lý\s+/i, '')}`}>
-                          {ag.type === 'Si' ? '🟣 Sỉ' : '🟡 CTV'}: {ag.name} {ag.phone ? `(${ag.phone})` : ''}
-                        </option>
-                      ))
-                    }
+                  <div ref={subChannelContainerRef} style={{ position: 'relative', width: '100%' }}>
+                    <input
+                      type="text"
+                      className="glass-input"
+                      placeholder="🔍 Nhập tên Đại Lý, CTV hoặc Trang/Zalo..."
+                      value={subChannelSearchTerm || formData.subChannelName || ''}
+                      onChange={e => {
+                        const val = e.target.value;
+                        setSubChannelSearchTerm(val);
+                        setShowSubChannelDropdown(true);
+                        setFormData(f => ({ ...f, subChannelName: val }));
+                      }}
+                      onFocus={() => setShowSubChannelDropdown(true)}
+                      style={{ width: '100%', paddingRight: (subChannelSearchTerm || formData.subChannelName) ? '30px' : '12px' }}
+                    />
+                    {(subChannelSearchTerm || formData.subChannelName) && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSubChannelSearchTerm('');
+                          setShowSubChannelDropdown(false);
+                          setFormData(f => ({ ...f, subChannelName: '' }));
+                        }}
+                        style={{
+                          position: 'absolute', right: '8px', top: '50%', transform: 'translateY(-50%)',
+                          background: 'none', border: 'none', color: '#64748b', cursor: 'pointer', padding: '2px'
+                        }}
+                      >
+                        <X size={14} />
+                      </button>
+                    )}
 
-                    {(channels || []).filter(ch => !formData.source || ch.main_channel === formData.source).map(ch => (
-                      <option key={ch.id} value={ch.sub_channel_name || ch.name}>{ch.sub_channel_name || ch.name}</option>
-                    ))}
-                  </select>
+                    {/* Floating Auto-Suggest Dropdown */}
+                    {showSubChannelDropdown && (
+                      <div
+                        style={{
+                          position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 1000,
+                          background: '#0f172a', border: '1px solid rgba(168,85,247,0.4)', borderRadius: '10px',
+                          marginTop: '4px', maxHeight: '240px', overflowY: 'auto', boxShadow: '0 10px 25px rgba(0,0,0,0.5)',
+                          display: 'flex', flexDirection: 'column', gap: '2px', padding: '6px'
+                        }}
+                      >
+                        {/* Top Option if typing new agent/subchannel name */}
+                        {subChannelSearchTerm.trim() && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const val = subChannelSearchTerm.trim();
+                              setFormData(f => ({ ...f, subChannelName: val }));
+                              setSubChannelSearchTerm(val);
+                              setShowSubChannelDropdown(false);
+                            }}
+                            style={{
+                              textAlign: 'left', padding: '8px 10px', borderRadius: '6px', border: '1px dashed #a855f7',
+                              background: 'rgba(168,85,247,0.12)', color: '#c084fc', fontSize: '12px', fontWeight: '700',
+                              cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px'
+                            }}
+                          >
+                            <span>➕</span> Chọn Kênh / Đại Lý Mới "${subChannelSearchTerm}"
+                          </button>
+                        )}
+
+                        {/* List Tagged Agents & Wholesalers & CTVs from Customers Table */}
+                        {(() => {
+                          const term = (subChannelSearchTerm || '').trim().toLowerCase();
+                          
+                          const agentMatches = customers
+                            .filter(c => c.type === 'Si' || c.type === 'CTV')
+                            .filter(c => !term || (c.name && c.name.toLowerCase().includes(term)) || (c.phone && c.phone.includes(term)));
+
+                          const chanMatches = (channels || [])
+                            .filter(ch => !formData.source || ch.main_channel === formData.source)
+                            .filter(ch => {
+                              const name = ch.sub_channel_name || ch.name || '';
+                              return !term || name.toLowerCase().includes(term);
+                            });
+
+                          return (
+                            <>
+                              {agentMatches.map(ag => {
+                                const agentVal = `Đại lý ${ag.name.replace(/^Đại lý\s+/i, '')}`;
+                                return (
+                                  <div
+                                    key={'ag_' + ag.id}
+                                    onClick={() => {
+                                      setFormData(f => ({ ...f, subChannelName: agentVal }));
+                                      setSubChannelSearchTerm(agentVal);
+                                      setShowSubChannelDropdown(false);
+                                    }}
+                                    style={{
+                                      padding: '8px 10px', borderRadius: '6px', cursor: 'pointer',
+                                      background: formData.subChannelName === agentVal ? 'rgba(168,85,247,0.2)' : 'transparent',
+                                      display: 'flex', alignItems: 'center', justifyContent: 'space-between', transition: 'background 0.15s ease'
+                                    }}
+                                    onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.06)'}
+                                    onMouseLeave={e => e.currentTarget.style.background = formData.subChannelName === agentVal ? 'rgba(168,85,247,0.2)' : 'transparent'}
+                                  >
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                                      <span style={{ fontSize: '13px', fontWeight: '700', color: '#fff' }}>{ag.name}</span>
+                                      <span style={{ fontSize: '11px', color: '#94a3b8' }}>
+                                        📱 {ag.phone || 'Chưa có SĐT'}
+                                      </span>
+                                    </div>
+                                    <span style={{ fontSize: '10.5px', fontWeight: '700', padding: '2px 6px', borderRadius: '4px', background: ag.type === 'Si' ? 'rgba(168,85,247,0.15)' : 'rgba(245,158,11,0.15)', color: ag.type === 'Si' ? '#a855f7' : '#f59e0b' }}>
+                                      {ag.type === 'Si' ? '🟣 Sỉ' : '🟡 CTV'}
+                                    </span>
+                                  </div>
+                                );
+                              })}
+
+                              {chanMatches.map(ch => {
+                                const chVal = ch.sub_channel_name || ch.name;
+                                return (
+                                  <div
+                                    key={'ch_' + ch.id}
+                                    onClick={() => {
+                                      setFormData(f => ({ ...f, subChannelName: chVal }));
+                                      setSubChannelSearchTerm(chVal);
+                                      setShowSubChannelDropdown(false);
+                                    }}
+                                    style={{
+                                      padding: '8px 10px', borderRadius: '6px', cursor: 'pointer',
+                                      background: formData.subChannelName === chVal ? 'rgba(99,102,241,0.2)' : 'transparent',
+                                      display: 'flex', alignItems: 'center', justifyContent: 'space-between', transition: 'background 0.15s ease'
+                                    }}
+                                    onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.06)'}
+                                    onMouseLeave={e => e.currentTarget.style.background = formData.subChannelName === chVal ? 'rgba(99,102,241,0.2)' : 'transparent'}
+                                  >
+                                    <span style={{ fontSize: '13px', fontWeight: '600', color: '#e2e8f0' }}>🌐 Trang: {chVal}</span>
+                                  </div>
+                                );
+                              })}
+                            </>
+                          );
+                        })()}
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
 
@@ -2392,32 +2560,108 @@ export default function Orders() {
                   <span style={{ fontSize: '11px', color: '#94a3b8' }}>{batchItems.length} loại sản phẩm</span>
                 </div>
 
-                {/* Add Product Selector Bar */}
-                <div style={{ display: 'flex', gap: '8px' }}>
-                  <select
-                    className="glass-input"
-                    style={{ flex: 1 }}
-                    value={selectedAddProduct}
-                    onChange={e => setSelectedAddProduct(e.target.value)}
-                  >
-                    <option value="">-- Chọn sản phẩm để thêm vào đơn... --</option>
-                    {products.map(p => (
-                      <option key={p.id} value={p.name}>{p.name}</option>
-                    ))}
-                  </select>
-                  <button
-                    type="button"
-                    onClick={() => handleAddProductToBatch(selectedAddProduct)}
-                    disabled={!selectedAddProduct}
-                    style={{
-                      padding: '8px 16px', borderRadius: '8px', border: 'none', cursor: selectedAddProduct ? 'pointer' : 'not-allowed',
-                      background: selectedAddProduct ? 'linear-gradient(135deg, #6366f1, #8b5cf6)' : 'rgba(255,255,255,0.08)',
-                      color: selectedAddProduct ? '#fff' : '#64748b', fontWeight: '700', fontSize: '12.5px',
-                      whiteSpace: 'nowrap', transition: 'all 0.15s ease'
-                    }}
-                  >
-                    <Plus size={14} style={{ display: 'inline', marginRight: '4px' }} /> Thêm Vào Đơn
-                  </button>
+                {/* Add Product Smart Auto-Lookup Search Bar */}
+                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                  <div ref={productContainerRef} style={{ position: 'relative', flex: 1 }}>
+                    <input
+                      type="text"
+                      className="glass-input"
+                      placeholder="🔍 Nhập tên sản phẩm để tra cứu (Canva, ChatGPT, Netflix...)..."
+                      value={productSearchTerm}
+                      onChange={e => {
+                        setProductSearchTerm(e.target.value);
+                        setShowProductDropdown(true);
+                      }}
+                      onFocus={() => setShowProductDropdown(true)}
+                      onKeyDown={e => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          const term = productSearchTerm.trim().toLowerCase();
+                          const matched = products.find(p => p.name.toLowerCase().includes(term));
+                          if (matched) {
+                            handleAddProductToBatch(matched.name);
+                            setProductSearchTerm('');
+                            setShowProductDropdown(false);
+                          }
+                        }
+                      }}
+                      style={{ width: '100%', paddingRight: productSearchTerm ? '30px' : '12px' }}
+                    />
+                    {productSearchTerm && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setProductSearchTerm('');
+                          setShowProductDropdown(false);
+                        }}
+                        style={{
+                          position: 'absolute', right: '8px', top: '50%', transform: 'translateY(-50%)',
+                          background: 'none', border: 'none', color: '#64748b', cursor: 'pointer', padding: '2px'
+                        }}
+                      >
+                        <X size={14} />
+                      </button>
+                    )}
+
+                    {/* Floating Product Auto-Suggest Dropdown */}
+                    {showProductDropdown && (
+                      <div
+                        style={{
+                          position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 1000,
+                          background: '#0f172a', border: '1px solid rgba(56,189,248,0.4)', borderRadius: '10px',
+                          marginTop: '4px', maxHeight: '240px', overflowY: 'auto', boxShadow: '0 10px 25px rgba(0,0,0,0.5)',
+                          display: 'flex', flexDirection: 'column', gap: '2px', padding: '6px'
+                        }}
+                      >
+                        {(() => {
+                          const term = productSearchTerm.trim().toLowerCase();
+                          const matches = products.filter(p => {
+                            if (!term) return true;
+                            return (
+                              (p.name && p.name.toLowerCase().includes(term)) ||
+                              (p.category && p.category.toLowerCase().includes(term))
+                            );
+                          }).slice(0, 8);
+
+                          if (matches.length === 0) {
+                            return <div style={{ padding: '10px', color: '#64748b', fontSize: '12px', textAlign: 'center' }}>Không tìm thấy sản phẩm khớp...</div>;
+                          }
+
+                          const custType = getCustomerTypeFromState(formData);
+
+                          return matches.map(p => {
+                            const sellPrice = getTierPriceForProduct(p, custType);
+                            return (
+                              <div
+                                key={p.id}
+                                onClick={() => {
+                                  handleAddProductToBatch(p.name);
+                                  setProductSearchTerm('');
+                                  setShowProductDropdown(false);
+                                }}
+                                style={{
+                                  padding: '9px 12px', borderRadius: '8px', cursor: 'pointer',
+                                  background: 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                                  transition: 'background 0.15s ease'
+                                }}
+                                onMouseEnter={e => e.currentTarget.style.background = 'rgba(56,189,248,0.12)'}
+                                onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                              >
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                                  <span style={{ fontSize: '13px', fontWeight: '700', color: '#fff' }}>📦 {p.name}</span>
+                                  {p.category && <span style={{ fontSize: '11px', color: '#64748b' }}>🏷️ Danh mục: {p.category}</span>}
+                                </div>
+                                <div style={{ textAlign: 'right' }}>
+                                  <span style={{ fontSize: '13px', fontWeight: '800', color: '#38bdf8' }}>{sellPrice.toLocaleString()}đ</span>
+                                  <span style={{ display: 'block', fontSize: '10px', color: '#10b981', fontWeight: '700' }}>+ Thêm vào đơn</span>
+                                </div>
+                              </div>
+                            );
+                          });
+                        })()}
+                      </div>
+                    )}
+                  </div>
                 </div>
 
                 {/* Batch Items List */}
