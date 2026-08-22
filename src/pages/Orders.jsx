@@ -2476,9 +2476,12 @@ export default function Orders() {
                         {(() => {
                           const term = (subChannelSearchTerm || '').trim().toLowerCase();
                           
-                          const agentMatches = customers
-                            .filter(c => c.type === 'Si' || c.type === 'CTV')
-                            .filter(c => !term || (c.name && c.name.toLowerCase().includes(term)) || (c.phone && c.phone.includes(term)));
+                          const isAgencySource = formData.source === 'Đại Lý / CTV';
+                          const agentMatches = (isAgencySource || !formData.source)
+                            ? customers
+                                .filter(c => c.type === 'Si' || c.type === 'CTV')
+                                .filter(c => !term || (c.name && c.name.toLowerCase().includes(term)) || (c.phone && c.phone.includes(term)))
+                            : [];
 
                           const chanMatches = (channels || [])
                             .filter(ch => {
