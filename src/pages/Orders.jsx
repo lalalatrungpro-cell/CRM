@@ -2365,12 +2365,17 @@ export default function Orders() {
                     value={formData.subChannelName} onChange={e => setFormData({ ...formData, subChannelName: e.target.value })}
                   >
                     <option value="">-- Mặc định --</option>
-                    <option value="Đại lý KHỞI">Đại lý KHỞI</option>
-                    <option value="Đại lý ĐỖ HÀ">Đại lý ĐỖ HÀ</option>
-                    <option value="Đại lý CƯƠNG">Đại lý CƯƠNG</option>
-                    <option value="Đại lý TRANG">Đại lý TRANG</option>
-                    <option value="Đại lý HÀ">Đại lý HÀ</option>
-                    <option value="Đại lý C.TUYỀN">Đại lý C.TUYỀN</option>
+
+                    {/* Dynamic List of Tagged Agents & Wholesalers & CTVs from Customers Table */}
+                    {customers
+                      .filter(c => c.type === 'Si' || c.type === 'CTV')
+                      .map(ag => (
+                        <option key={ag.id} value={`Đại lý ${ag.name.replace(/^Đại lý\s+/i, '')}`}>
+                          ${ag.type === 'Si' ? '🟣 Sỉ' : '🟡 CTV'}: ${ag.name} ${ag.phone ? `(${ag.phone})` : ''}
+                        </option>
+                      ))
+                    }
+
                     {(channels || []).filter(ch => !formData.source || ch.main_channel === formData.source).map(ch => (
                       <option key={ch.id} value={ch.sub_channel_name || ch.name}>{ch.sub_channel_name || ch.name}</option>
                     ))}
