@@ -2481,7 +2481,11 @@ export default function Orders() {
                             .filter(c => !term || (c.name && c.name.toLowerCase().includes(term)) || (c.phone && c.phone.includes(term)));
 
                           const chanMatches = (channels || [])
-                            .filter(ch => !formData.source || ch.main_channel === formData.source)
+                            .filter(ch => {
+                              if (!formData.source) return true;
+                              const mainType = ch.channel_type || ch.channelType || ch.main_channel || ch.mainChannel;
+                              return mainType === formData.source;
+                            })
                             .filter(ch => {
                               const name = ch.sub_channel_name || ch.name || '';
                               return !term || name.toLowerCase().includes(term);
