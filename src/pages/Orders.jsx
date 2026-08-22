@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import {
   OrderService, CustomerService, ProductService, SupplierService,
@@ -239,6 +239,21 @@ export default function Orders() {
   const [copiedId, setCopiedId] = useState('');
   const [posCustSearchTerm, setPosCustSearchTerm] = useState('');
   const [showPosCustDropdown, setShowPosCustDropdown] = useState(false);
+  const searchContainerRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (searchContainerRef.current && !searchContainerRef.current.contains(event.target)) {
+        setShowPosCustDropdown(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('touchstart', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('touchstart', handleClickOutside);
+    };
+  }, []);
   const [revealedInfors, setRevealedInfors] = useState({});
 
   // Warranty form
@@ -2121,7 +2136,7 @@ export default function Orders() {
                 </label>
 
                 {/* Smart Search Bar + 1-Click Khách Vãng Lai Button */}
-                <div style={{ position: 'relative', width: '100%' }}>
+                <div ref={searchContainerRef} style={{ position: 'relative', width: '100%' }}>
                     <input
                       type="text"
                       className="glass-input"
