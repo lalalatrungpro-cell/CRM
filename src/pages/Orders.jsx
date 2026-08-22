@@ -528,6 +528,10 @@ export default function Orders() {
 
   const [formData, setFormData] = useState(emptyForm);
 
+  // [Task 1 - Batch POS Cart State]
+  const [batchItems, setBatchItems] = useState([]);
+  const [selectedAddProduct, setSelectedAddProduct] = useState('');
+
   // [Phase 5] Detect if selected product is EVERGREEN (no expire date)
   const selectedProduct = products.find(p => p.name === formData.productName);
   const isEvergreen = (selectedProduct?.product_type || selectedProduct?.productType) === 'EVERGREEN';
@@ -553,6 +557,8 @@ export default function Orders() {
   const closeModal = () => {
     setShowModal(false);
     setFormData(emptyForm);
+    setBatchItems([]);
+    setSelectedAddProduct('');
   };
 
   const getCustomerTypeFromState = (fData) => {
@@ -572,11 +578,83 @@ export default function Orders() {
     return sellP;
   };
 
+  // [Task 1] Batch Item Helper Functions
+  const handleAddProductToBatch = (prodName) => {
+    if (!prodName) return;
+    const prod = products.find(p => p.name === prodName);
+    if (!prod) return;
+
+    const dur = prod.default_duration_days || prod.defaultDurationDays || 30;
+    const custType = getCustomerTypeFromState(formData);
+    const sellP = getTierPriceForProduct(prod, custType);
+    const costP = Number(prod.default_cost || prod.defaultCost || 50000);
+    const expDate = new Date(Date.now() + dur * 86400000).toISOString().split('T')[0];
+
+    const availTeam = teams.find(t => {
+      if (t.status === 'FAULTY_DIE') return false;
+      const tCat = (t.category || '').toLowerCase().trim();
+      const tName = (t.name || '').toLowerCase().trim();
+      const pCat = (prod.category || '').toLowerCase().trim();
+      const pN = (prodName || '').toLowerCase().trim();
+      return (tCat && pCat && (tCat.includes(pCat) || pCat.includes(tCat))) ||
+             (tName && pN && (tName.includes(pN) || pN.includes(tName)));
+    });
+
+    const newItem = {
+      id: 'batch_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
+      productName: prod.name,
+      quantity: 1,
+      sellPrice: sellP,
+      costPrice: costP,
+      teamId: availTeam ? String(availTeam.id) : '',
+      supplierId: prod.supplier_id || prod.supplierId || '',
+      infor: '',
+      durationDays: dur,
+      expireDate: expDate,
+      isEvergreen: (prod.product_type || prod.productType) === 'EVERGREEN',
+      isTeamSlot: (prod.product_type || prod.productType) === 'TEAM_SLOT'
+    };
+
+    setBatchItems(prev => [...prev, newItem]);
+    setSelectedAddProduct('');
+  };
+
+  const handleUpdateBatchItem = (itemId, field, value) => {
+    setBatchItems(prev => prev.map(item => {
+      if (item.id !== itemId) return item;
+      const updated = { ...item };
+      if (field === 'quantity') {
+        const qty = Math.max(1, parseInt(value) || 1);
+        updated.quantity = qty;
+      } else if (field === 'durationDays') {
+        const days = parseInt(value) || 30;
+        updated.durationDays = days;
+        updated.expireDate = new Date(Date.now() + days * 86400000).toISOString().split('T')[0];
+      } else {
+        updated[field] = value;
+      }
+      return updated;
+    }));
+  };
+
+  const handleRemoveBatchItem = (itemId) => {
+    setBatchItems(prev => prev.filter(item => item.id !== itemId));
+  };
+
   const handleCustomerChange = (cId) => {
     setFormData(f => {
       const nextCustType = cId === 'NEW' ? (f.newCustomerType || '') : (customers.find(c => String(c.id) === String(cId))?.type || 'Le');
       const prod = products.find(p => p.name === f.productName);
       const newSellPrice = prod ? getTierPriceForProduct(prod, nextCustType) : f.sellPrice;
+
+      // Update tier prices for all batch items
+      setBatchItems(prev => prev.map(item => {
+        const itemProd = products.find(p => p.name === item.productName);
+        if (itemProd) {
+          return { ...item, sellPrice: getTierPriceForProduct(itemProd, nextCustType) };
+        }
+        return item;
+      }));
 
       return {
         ...f,
@@ -590,6 +668,15 @@ export default function Orders() {
     setFormData(f => {
       const prod = products.find(p => p.name === f.productName);
       const newSellPrice = prod ? getTierPriceForProduct(prod, newType) : f.sellPrice;
+
+      setBatchItems(prev => prev.map(item => {
+        const itemProd = products.find(p => p.name === item.productName);
+        if (itemProd) {
+          return { ...item, sellPrice: getTierPriceForProduct(itemProd, newType) };
+        }
+        return item;
+      }));
+
       return {
         ...f,
         newCustomerType: newType,
@@ -2138,24 +2225,8 @@ export default function Orders() {
                 </div>
               )}
 
-              <div>
-                <label className="form-label">Chọn Sản Phẩm Dịch Vụ *</label>
-                <select
-                  className="glass-input" required
-                  style={{
-                    borderColor: !formData.productName ? 'rgba(239,68,68,0.5)' : 'rgba(255,255,255,0.12)',
-                    background: !formData.productName ? 'rgba(239,68,68,0.08)' : 'rgba(0,0,0,0.2)'
-                  }}
-                  value={formData.productName} onChange={e => handleProductSelect(e.target.value)}
-                >
-                  <option value="">-- Chọn Sản Phẩm Dịch Vụ * --</option>
-                  {products.map(p => (
-                    <option key={p.id} value={p.name}>{p.name}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+              {/* Channel Selector */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
                 <div>
                   <label className="form-label">Nguồn / Kênh Bán Hàng Main</label>
                   <select
@@ -2181,52 +2252,176 @@ export default function Orders() {
                 </div>
               </div>
 
-              <div>
-                <label className="form-label">Gán Kho Team Slot (Tùy chọn)</label>
-                <select
-                  className="glass-input"
-                  value={formData.teamId} onChange={e => handleTeamSelect(e.target.value)}
-                >
-                  <option value="">-- Tự động chọn team trống --</option>
-                  {teams.map(t => (
-                    <option key={t.id} value={t.id}>{t.name} ({t.category})</option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="form-label">Thông Tin Tài Khoản / Invite Link Gửi Khách</label>
-                <textarea
-                  className="glass-input" style={{ minHeight: '50px', fontFamily: 'monospace', fontSize: '12px' }} placeholder="VD: user@gmail.com | InviteLinkJoin"
-                  value={formData.infor} onChange={e => setFormData({ ...formData, infor: e.target.value })}
-                />
-              </div>
-
-              <div style={{ display: 'grid', gridTemplateColumns: isEvergreen ? '1fr 1fr' : '1fr 1fr 1fr', gap: '10px' }}>
-                {!isEvergreen && (
-                <div>
-                  <label className="form-label">Thời Hạn (Ngày)</label>
-                  <input
-                    type="number" className="glass-input"
-                    value={formData.durationDays} onChange={e => handleDurationChange(e.target.value)}
-                  />
+              {/* [Task 1] Smart POS Cart Section */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', background: 'rgba(255,255,255,0.03)', padding: '14px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.1)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <label className="form-label" style={{ color: '#38bdf8', fontWeight: '800', margin: 0, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    🛒 GIỎ HÀNG POS (TẠO 1 HOẶC NHIỀU ĐƠN CÙNG LÚC) *
+                  </label>
+                  <span style={{ fontSize: '11px', color: '#94a3b8' }}>{batchItems.length} loại sản phẩm</span>
                 </div>
+
+                {/* Add Product Selector Bar */}
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <select
+                    className="glass-input"
+                    style={{ flex: 1 }}
+                    value={selectedAddProduct}
+                    onChange={e => setSelectedAddProduct(e.target.value)}
+                  >
+                    <option value="">-- Chọn sản phẩm để thêm vào đơn... --</option>
+                    {products.map(p => (
+                      <option key={p.id} value={p.name}>{p.name}</option>
+                    ))}
+                  </select>
+                  <button
+                    type="button"
+                    onClick={() => handleAddProductToBatch(selectedAddProduct)}
+                    disabled={!selectedAddProduct}
+                    style={{
+                      padding: '8px 16px', borderRadius: '8px', border: 'none', cursor: selectedAddProduct ? 'pointer' : 'not-allowed',
+                      background: selectedAddProduct ? 'linear-gradient(135deg, #6366f1, #8b5cf6)' : 'rgba(255,255,255,0.08)',
+                      color: selectedAddProduct ? '#fff' : '#64748b', fontWeight: '700', fontSize: '12.5px',
+                      whiteSpace: 'nowrap', transition: 'all 0.15s ease'
+                    }}
+                  >
+                    <Plus size={14} style={{ display: 'inline', marginRight: '4px' }} /> Thêm Vào Đơn
+                  </button>
+                </div>
+
+                {/* Batch Items List */}
+                {batchItems.length === 0 ? (
+                  <div style={{ padding: '20px', textAlign: 'center', color: '#64748b', background: 'rgba(0,0,0,0.2)', borderRadius: '8px', border: '1px dashed rgba(255,255,255,0.1)', fontSize: '12.5px' }}>
+                    🛒 Giỏ hàng đang trống. Hãy chọn sản phẩm ở trên và bấm <strong>+ Thêm Vào Đơn</strong>.
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', maxHeight: '360px', overflowY: 'auto' }}>
+                    {batchItems.map((item, idx) => {
+                      return (
+                        <div key={item.id} style={{ background: 'rgba(0,0,0,0.3)', padding: '12px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.08)', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                          {/* Item Header */}
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                              <span style={{ background: '#6366f1', color: '#fff', width: '20px', height: '20px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', fontWeight: '800' }}>
+                                {idx + 1}
+                              </span>
+                              <strong style={{ fontSize: '13.5px', color: '#fff' }}>{item.productName}</strong>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveBatchItem(item.id)}
+                              style={{ background: 'rgba(239,68,68,0.15)', border: '1px solid rgba(239,68,68,0.3)', color: '#f87171', borderRadius: '6px', padding: '4px 8px', fontSize: '11px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
+                            >
+                              <Trash2 size={12} /> Xóa
+                            </button>
+                          </div>
+
+                          {/* Item Controls Row 1: Quantity & Prices */}
+                          <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr 1fr', gap: '8px', alignItems: 'center' }}>
+                            <div>
+                              <label className="form-label" style={{ fontSize: '11px' }}>Số Lượng Slot / Đơn</label>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                <button
+                                  type="button"
+                                  onClick={() => handleUpdateBatchItem(item.id, 'quantity', item.quantity - 1)}
+                                  style={{ width: '28px', height: '28px', borderRadius: '6px', background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)', color: '#fff', fontWeight: '800', cursor: 'pointer' }}
+                                >
+                                  -
+                                </button>
+                                <input
+                                  type="number" min="1" className="glass-input"
+                                  style={{ textAlign: 'center', padding: '4px', fontWeight: '800', color: '#f59e0b' }}
+                                  value={item.quantity}
+                                  onChange={e => handleUpdateBatchItem(item.id, 'quantity', e.target.value)}
+                                />
+                                <button
+                                  type="button"
+                                  onClick={() => handleUpdateBatchItem(item.id, 'quantity', item.quantity + 1)}
+                                  style={{ width: '28px', height: '28px', borderRadius: '6px', background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)', color: '#fff', fontWeight: '800', cursor: 'pointer' }}
+                                >
+                                  +
+                                </button>
+                              </div>
+                            </div>
+
+                            <div>
+                              <label className="form-label" style={{ fontSize: '11px' }}>Đơn Giá Bán (đ)</label>
+                              <input
+                                type="number" className="glass-input" style={{ padding: '5px 8px', fontSize: '12px' }}
+                                value={item.sellPrice} onChange={e => handleUpdateBatchItem(item.id, 'sellPrice', e.target.value)}
+                              />
+                            </div>
+
+                            <div>
+                              <label className="form-label" style={{ fontSize: '11px' }}>Đơn Giá Vốn (đ)</label>
+                              <input
+                                type="number" className="glass-input" style={{ padding: '5px 8px', fontSize: '12px' }}
+                                value={item.costPrice} onChange={e => handleUpdateBatchItem(item.id, 'costPrice', e.target.value)}
+                              />
+                            </div>
+                          </div>
+
+                          {/* Item Controls Row 2: Team & Duration */}
+                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                            <div>
+                              <label className="form-label" style={{ fontSize: '11px' }}>Gán Kho Team Slot</label>
+                              <select
+                                className="glass-input" style={{ padding: '5px 8px', fontSize: '12px' }}
+                                value={item.teamId} onChange={e => handleUpdateBatchItem(item.id, 'teamId', e.target.value)}
+                              >
+                                <option value="">-- Tự động chọn team --</option>
+                                {teams.map(t => (
+                                  <option key={t.id} value={t.id}>{t.name} ({t.category})</option>
+                                ))}
+                              </select>
+                            </div>
+
+                            {!item.isEvergreen && (
+                              <div>
+                                <label className="form-label" style={{ fontSize: '11px' }}>Thời Hạn (Ngày)</label>
+                                <input
+                                  type="number" className="glass-input" style={{ padding: '5px 8px', fontSize: '12px' }}
+                                  value={item.durationDays} onChange={e => handleUpdateBatchItem(item.id, 'durationDays', e.target.value)}
+                                />
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Item Controls Row 3: Acc / Link Multi-line Textarea */}
+                          <div>
+                            <label className="form-label" style={{ fontSize: '11px', display: 'flex', justifyContent: 'space-between' }}>
+                              <span>🔑 Acc / Invite Link Gửi Khách</span>
+                              <span style={{ color: '#64748b', fontSize: '10.5px' }}>(Mỗi dòng 1 Acc cho 1 slot)</span>
+                            </label>
+                            <textarea
+                              className="glass-input"
+                              rows={Math.min(4, Math.max(2, item.quantity))}
+                              style={{ fontFamily: 'monospace', fontSize: '11.5px', padding: '6px' }}
+                              placeholder={item.quantity > 1 ? `Dán ${item.quantity} acc/link (mỗi dòng 1 acc)...` : "VD: user@gmail.com | InviteLinkJoin"}
+                              value={item.infor}
+                              onChange={e => handleUpdateBatchItem(item.id, 'infor', e.target.value)}
+                            />
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
                 )}
-                <div>
-                  <label className="form-label">Giá Bán Khách (VNĐ)</label>
-                  <input
-                    type="number" required className="glass-input"
-                    value={formData.sellPrice} onChange={e => setFormData({ ...formData, sellPrice: e.target.value })}
-                  data-tier-price="true"
-                  />
-                </div>
-                <div>
-                  <label className="form-label">Giá Vốn Nhập (VNĐ)</label>
-                  <input
-                    type="number" required className="glass-input"
-                    value={formData.costPrice} onChange={e => setFormData({ ...formData, costPrice: e.target.value })}
-                  />
-                </div>
+
+                {/* Batch Total Summary Footer Card */}
+                {batchItems.length > 0 && (
+                  <div style={{ background: 'rgba(16,185,129,0.12)', border: '1px solid rgba(16,185,129,0.3)', padding: '10px 14px', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div>
+                      <div style={{ fontSize: '11px', color: '#10b981', fontWeight: '700', textTransform: 'uppercase' }}>TỔNG CỘNG ĐƠN HÀNG</div>
+                      <div style={{ fontSize: '11.5px', color: '#94a3b8' }}>
+                        {batchItems.reduce((s, i) => s + Number(i.quantity || 1), 0)} sản phẩm trong giỏ ({batchItems.length} loại)
+                      </div>
+                    </div>
+                    <div style={{ fontSize: '18px', fontWeight: '800', color: '#10b981' }}>
+                      {batchItems.reduce((s, i) => s + (Number(i.sellPrice) || 0) * (Number(i.quantity) || 1), 0).toLocaleString()}đ
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Live Order Margin & Anti-Loss Guard Widget */}
