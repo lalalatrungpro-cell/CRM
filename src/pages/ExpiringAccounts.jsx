@@ -190,10 +190,23 @@ export default function ExpiringAccounts() {
 
     try {
       const nowStr = new Date().toLocaleString('vi-VN');
+      const prevHistory = Array.isArray(selectedCareOrder.care_history || selectedCareOrder.careHistory) 
+        ? (selectedCareOrder.care_history || selectedCareOrder.careHistory) 
+        : [];
+      
+      const newEntry = {
+        time: nowStr,
+        status: careStatus,
+        notes: careNotes
+      };
+
+      const updatedHistory = [newEntry, ...prevHistory];
+
       const payload = {
         care_status: careStatus,
         care_notes: careNotes,
-        care_time: nowStr
+        care_time: nowStr,
+        care_history: updatedHistory
       };
 
       const updated = await OrderService.update(selectedCareOrder.id, payload);
@@ -655,6 +668,42 @@ export default function ExpiringAccounts() {
                 </div>
               </div>
 
+              {/* Care Timeline Section */}
+              <div>
+                <h4 style={{ fontSize: '13px', fontWeight: '800', color: '#a855f7', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                  💬 Nhật Ký Chăm Sóc & Lịch Sử Tương Tác CSKH
+                </h4>
+                {(() => {
+                  const allCareLogs = [];
+                  selectedCustProfile.orders.forEach(o => {
+                    const logs = Array.isArray(o.care_history || o.careHistory) ? (o.care_history || o.careHistory) : [];
+                    if (logs.length > 0) {
+                      logs.forEach(l => allCareLogs.push({ ...l, orderId: o.id, prodName: o.product_name || o.productName }));
+                    } else if (o.care_status) {
+                      allCareLogs.push({ time: o.care_time || 'Gần đây', status: o.care_status, notes: o.care_notes || '', orderId: o.id, prodName: o.product_name || o.productName });
+                    }
+                  });
+
+                  if (allCareLogs.length === 0) {
+                    return <div style={{ color: '#64748b', fontSize: '12px', padding: '10px', textAlign: 'center', background: 'rgba(0,0,0,0.2)', borderRadius: '8px' }}>Chưa có ghi chú chăm sóc nào cho khách này.</div>;
+                  }
+
+                  return (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', maxHeight: '160px', overflowY: 'auto' }}>
+                      {allCareLogs.map((log, i) => (
+                        <div key={i} style={{ background: 'rgba(168,85,247,0.08)', border: '1px solid rgba(168,85,247,0.2)', borderRadius: '8px', padding: '8px 12px', fontSize: '12px' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontWeight: '700' }}>
+                            <span style={{ color: '#c084fc' }}>{log.status} (Đơn #{log.orderId})</span>
+                            <span style={{ fontSize: '10.5px', color: '#94a3b8' }}>🕒 {log.time}</span>
+                          </div>
+                          {log.notes && <div style={{ color: '#e2e8f0', marginTop: '4px', fontSize: '11.5px', fontStyle: 'italic' }}>"{log.notes}"</div>}
+                        </div>
+                      ))}
+                    </div>
+                  );
+                })()}
+              </div>
+
               {/* Purchase History Section */}
               <div>
                 <h4 style={{ fontSize: '13px', fontWeight: '800', color: '#38bdf8', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
@@ -663,7 +712,7 @@ export default function ExpiringAccounts() {
                 {selectedCustProfile.orders.length === 0 ? (
                   <div style={{ color: '#64748b', fontSize: '12px', padding: '12px', textAlign: 'center', background: 'rgba(0,0,0,0.2)', borderRadius: '8px' }}>Chưa phát sinh đơn hàng khác.</div>
                 ) : (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '220px', overflowY: 'auto' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '200px', overflowY: 'auto' }}>
                     {selectedCustProfile.orders.map(o => (
                       <div key={o.id} style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '8px', padding: '10px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <div>
