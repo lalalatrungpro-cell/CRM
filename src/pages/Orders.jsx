@@ -195,6 +195,7 @@ const renderChannelBrandIcon = (source, fullChannelName) => {
 };
 
 const SOURCE_CONFIG = {
+  'Đại Lý / CTV': { label: 'Đại Lý / CTV', color: '#a855f7', bg: 'rgba(168,85,247,0.15)', icon: '🏬' },
   'Facebook Page': { label: 'FB Page', color: '#3b82f6', bg: 'rgba(59,130,246,0.15)', icon: '🌐' },
   'Zalo': { label: 'Zalo', color: '#10b981', bg: 'rgba(16,185,129,0.15)', icon: '💬' },
   'TikTok Shop': { label: 'TikTok', color: '#ec4899', bg: 'rgba(236,72,153,0.15)', icon: '🎵' },
@@ -2349,6 +2350,12 @@ export default function Orders() {
                     value={formData.subChannelName} onChange={e => setFormData({ ...formData, subChannelName: e.target.value })}
                   >
                     <option value="">-- Mặc định --</option>
+                    <option value="Đại lý KHỞI">Đại lý KHỞI</option>
+                    <option value="Đại lý ĐỖ HÀ">Đại lý ĐỖ HÀ</option>
+                    <option value="Đại lý CƯƠNG">Đại lý CƯƠNG</option>
+                    <option value="Đại lý TRANG">Đại lý TRANG</option>
+                    <option value="Đại lý HÀ">Đại lý HÀ</option>
+                    <option value="Đại lý C.TUYỀN">Đại lý C.TUYỀN</option>
                     {(channels || []).filter(ch => !formData.source || ch.main_channel === formData.source).map(ch => (
                       <option key={ch.id} value={ch.sub_channel_name || ch.name}>{ch.sub_channel_name || ch.name}</option>
                     ))}
