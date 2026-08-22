@@ -625,6 +625,133 @@ export default function ExpiringAccounts() {
           </div>
         </div>
       )}
+
+      {/* Customer Profile 360° Modal */}
+      {selectedCustProfile && (
+        <div className="modal-overlay" onClick={() => setSelectedCustProfile(null)}>
+          <div className="modal-box" onClick={e => e.stopPropagation()} style={{ maxWidth: '640px' }}>
+            <div className="modal-header">
+              <h2 style={{ fontSize: '18px', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <User size={20} color="#818cf8" /> Hồ Sơ Khách Hàng 360°
+              </h2>
+              <button className="modal-close-btn" onClick={() => setSelectedCustProfile(null)}><X size={18} /></button>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              {/* Customer Info Card */}
+              <div style={{ background: 'rgba(99,102,241,0.1)', border: '1px solid rgba(99,102,241,0.25)', borderRadius: '12px', padding: '16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <h3 style={{ margin: 0, fontSize: '16px', fontWeight: '800', color: '#fff' }}>
+                    {selectedCustProfile.customer.name}
+                  </h3>
+                  <span style={{ fontSize: '11px', fontWeight: '700', padding: '3px 8px', borderRadius: '4px', background: selectedCustProfile.customer.type === 'Si' ? 'rgba(168,85,247,0.2)' : 'rgba(6,182,212,0.2)', color: selectedCustProfile.customer.type === 'Si' ? '#a855f7' : '#06b6d4' }}>
+                    {selectedCustProfile.customer.type === 'Si' ? '🟣 Khách Sỉ' : '🔵 Khách Lẻ'}
+                  </span>
+                </div>
+                <div style={{ fontSize: '12.5px', color: '#cbd5e1', display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
+                  <span>📱 SĐT: <strong>{selectedCustProfile.customer.phone || 'Chưa có SĐT'}</strong></span>
+                  <span>📧 Email: <strong>{selectedCustProfile.customer.email || 'Chưa có Email'}</strong></span>
+                  <span>🏬 Kênh: <strong>{selectedCustProfile.customer.source || 'Trực tiếp'}</strong></span>
+                </div>
+              </div>
+
+              {/* Purchase History Section */}
+              <div>
+                <h4 style={{ fontSize: '13px', fontWeight: '800', color: '#38bdf8', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                  📦 Lịch Sử Mua Hàng ({selectedCustProfile.orders.length} đơn)
+                </h4>
+                {selectedCustProfile.orders.length === 0 ? (
+                  <div style={{ color: '#64748b', fontSize: '12px', padding: '12px', textAlign: 'center', background: 'rgba(0,0,0,0.2)', borderRadius: '8px' }}>Chưa phát sinh đơn hàng khác.</div>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '220px', overflowY: 'auto' }}>
+                    {selectedCustProfile.orders.map(o => (
+                      <div key={o.id} style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '8px', padding: '10px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <div>
+                          <strong style={{ color: '#fff', fontSize: '13px' }}>#{o.id} - {o.product_name || o.productName}</strong>
+                          <div style={{ fontSize: '11px', color: '#94a3b8' }}>Hạn dùng: {o.expire_date || o.expireDate || 'N/A'}</div>
+                          {o.care_status && <div style={{ fontSize: '10.5px', color: '#f59e0b', marginTop: '2px' }}>💬 CSKH: {o.care_status} ({o.care_notes || ''})</div>}
+                        </div>
+                        <div style={{ textAlign: 'right' }}>
+                          <span style={{ fontSize: '13px', fontWeight: '800', color: '#10b981' }}>{Number(o.sell_price || o.sellPrice || 0).toLocaleString()}đ</span>
+                          <span style={{ display: 'block', fontSize: '10.5px', color: o.status === 'Đã thanh toán' ? '#10b981' : '#f87171' }}>{o.status}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '8px' }}>
+                <button className="glass-button" onClick={() => setSelectedCustProfile(null)} style={{ padding: '8px 20px' }}>Đóng Profile</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Care Note Modal */}
+      {selectedCareOrder && (
+        <div className="modal-overlay" onClick={() => setSelectedCareOrder(null)}>
+          <div className="modal-box" onClick={e => e.stopPropagation()} style={{ maxWidth: '500px' }}>
+            <div className="modal-header">
+              <h2 style={{ fontSize: '17px', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <MessageSquare size={18} color="#a855f7" /> Nhật Ký Chăm Sóc Đơn #{selectedCareOrder.id}
+              </h2>
+              <button className="modal-close-btn" onClick={() => setSelectedCareOrder(null)}><X size={18} /></button>
+            </div>
+
+            <form onSubmit={handleSaveCareNote} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+              <div>
+                <label className="form-label" style={{ color: '#c084fc', fontWeight: '700', marginBottom: '8px', display: 'block' }}>
+                  🏷️ TRẠNG THÁI CHĂM SÓC (BẮT BUỘC CHỌN) *
+                </label>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                  {[
+                    { label: '🟡 Đã nhắn Zalo', color: '#f59e0b', bg: 'rgba(245,158,11,0.18)' },
+                    { label: '🟢 Khách chốt gia hạn', color: '#10b981', bg: 'rgba(16,185,129,0.18)' },
+                    { label: '🔵 Khách hẹn lại', color: '#38bdf8', bg: 'rgba(56,189,248,0.18)' },
+                    { label: '🔴 Từ chối gia hạn', color: '#ef4444', bg: 'rgba(239,68,68,0.18)' }
+                  ].map(st => (
+                    <button
+                      key={st.label}
+                      type="button"
+                      onClick={() => setCareStatus(st.label)}
+                      style={{
+                        padding: '8px 10px', borderRadius: '8px', cursor: 'pointer', textAlign: 'center',
+                        background: careStatus === st.label ? st.bg : 'rgba(255,255,255,0.03)',
+                        border: careStatus === st.label ? `1.5px solid ${st.color}` : '1px solid rgba(255,255,255,0.08)',
+                        color: careStatus === st.label ? st.color : '#94a3b8',
+                        fontSize: '12px', fontWeight: '700', transition: 'all 0.15s ease'
+                      }}
+                    >
+                      {st.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label className="form-label">Ghi Chú Chi Tiết (Nội dung nhắn/Lý do hẹn...)</label>
+                <textarea
+                  className="glass-input"
+                  rows={3}
+                  placeholder="VD: Khách hẹn ngày 25/8 chuyển khoản gia hạn gói Canva Pro 1 năm..."
+                  value={careNotes}
+                  onChange={e => setCareNotes(e.target.value)}
+                />
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '6px' }}>
+                <button type="button" className="glass-button" onClick={() => setSelectedCareOrder(null)}>Hủy</button>
+                <button type="submit" className="glass-button" style={{ background: 'linear-gradient(135deg, #a855f7, #6366f1)', color: '#fff', fontWeight: '700' }}>
+                  Lưu Nhật Ký CSKH
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
