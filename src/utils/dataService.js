@@ -74,10 +74,19 @@ const mergeData = (supaList, localKey) => {
   const localList = getLocal(localKey);
   if (!supaList || supaList.length === 0) return localList;
   
-  // Merge by id
+  // Merge by id while preserving local custom fields (e.g. care_status, care_notes, care_history)
   const map = new Map();
   localList.forEach(item => map.set(String(item.id), item));
-  supaList.forEach(item => map.set(String(item.id), item));
+  
+  supaList.forEach(supaItem => {
+    const key = String(supaItem.id);
+    const localItem = map.get(key);
+    if (localItem) {
+      map.set(key, { ...supaItem, ...localItem });
+    } else {
+      map.set(key, supaItem);
+    }
+  });
   
   return Array.from(map.values()).sort((a, b) => {
     const aId = String(a.id || '');
