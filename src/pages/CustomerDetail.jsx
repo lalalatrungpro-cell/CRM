@@ -169,12 +169,22 @@ export default function CustomerDetail() {
     if (!logContent.trim()) return toast.error('Vui lòng nhập nội dung chăm sóc!');
 
     try {
+      const nowStr = new Date().toLocaleString('vi-VN');
       const created = await CareLogService.create(shopId, {
         customer_id: customer.id,
         type: logType,
         content: logContent.trim()
       });
+      
+      // Also sync care_status to customer profile
+      await CustomerService.update(customer.id, {
+        care_status: logType,
+        care_notes: logContent.trim(),
+        care_time: nowStr
+      });
+
       setCareLogs(prev => [created, ...prev]);
+      setCustomer(prev => ({ ...prev, care_status: logType, care_notes: logContent.trim(), care_time: nowStr }));
       setLogContent('');
       toast.success('Đã ghi nhận nhật ký chăm sóc khách!');
     } catch (err) {
@@ -422,20 +432,30 @@ export default function CustomerDetail() {
             </form>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '10px' }}>
-              {careLogs.map(log => (
-                <div key={log.id} style={{ background: 'rgba(255,255,255,0.03)', padding: '12px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.06)' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span className="badge badge-info" style={{ fontSize: '10px' }}>{log.type}</span>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <span style={{ fontSize: '11px', color: '#64748b' }}>{new Date(log.created_at).toLocaleDateString('vi-VN')}</span>
-                      <button onClick={() => setConfirmDeleteLogId(log.id)} style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer' }}>
-                        <Trash2 size={13} />
-                      </button>
-                    </div>
-                  </div>
-                  <p style={{ color: '#fff', fontSize: '13px', marginTop: '6px', whiteSpace: 'pre-wrap' }}>{log.content}</p>
+              {careLogs.length === 0 ? (
+                <div style={{ padding: '16px', textAlign: 'center', color: '#64748b', background: 'rgba(0,0,0,0.2)', borderRadius: '8px', fontSize: '12.5px' }}>
+                  💬 Chưa có nhật ký chăm sóc nào. Hãy chọn trạng thái ở trên và bấm <strong>Ghi Nhật Ký</strong>.
                 </div>
-              ))}
+              ) : (
+                careLogs.map(log => (
+                  <div key={log.id} style={{ background: 'rgba(255,255,255,0.03)', padding: '12px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.06)' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span className="badge badge-info" style={{ fontSize: '10.5px', background: 'rgba(168,85,247,0.18)', color: '#c084fc', border: '1px solid rgba(168,85,247,0.3)', fontWeight: '700' }}>
+                        {log.type}
+                      </span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span style={{ fontSize: '11px', color: '#94a3b8' }}>
+                          🕒 {log.created_at ? new Date(log.created_at).toLocaleString('vi-VN') : (log.time || 'Vừa xong')}
+                        </span>
+                        <button onClick={() => setConfirmDeleteLogId(log.id)} style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', padding: '2px' }} title="Xóa ghi chú này">
+                          <Trash2 size={13} />
+                        </button>
+                      </div>
+                    </div>
+                    <p style={{ color: '#fff', fontSize: '13px', marginTop: '6px', whiteSpace: 'pre-wrap' }}>{log.content}</p>
+                  </div>
+                ))
+              )}
             </div>
           </div>
         </div>

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { OrderService, TeamService, CustomerService } from '../utils/dataService';
+import { OrderService, TeamService, CustomerService, CareLogService } from '../utils/dataService';
 import { useToast } from '../components/Toast';
 import DateFilterBar from '../components/DateFilterBar';
 import { Clock, Truck, Copy, Check, RefreshCw, Search, X, MessageSquare, User, ExternalLink, Calendar, ShieldCheck, DollarSign } from 'lucide-react';
@@ -212,7 +212,7 @@ export default function ExpiringAccounts() {
       const updated = await OrderService.update(selectedCareOrder.id, payload);
       setOrders(prev => prev.map(o => o.id === selectedCareOrder.id ? { ...o, ...payload } : o));
 
-      // 🔄 Bidirectional Sync: Also save Care Log directly to Customer Profile!
+      // 🔄 Bidirectional Sync: Also save Care Log directly to Customer Profile & CareLogService!
       const custId = selectedCareOrder.customer_id || selectedCareOrder.customerId;
       if (custId) {
         try {
@@ -220,12 +220,20 @@ export default function ExpiringAccounts() {
           const custPrevHistory = Array.isArray(cust?.care_history || cust?.careHistory) ? (cust?.care_history || cust?.careHistory) : [];
           const custUpdatedHistory = [newEntry, ...custPrevHistory];
 
-          await CustomerService.update(custId, {
-            care_status: careStatus,
-            care_notes: careNotes,
-            care_time: nowStr,
-            care_history: custUpdatedHistory
-          });
+          await Promise.all([
+            CustomerService.update(custId, {
+              care_status: careStatus,
+              care_notes: careNotes,
+              care_time: nowStr,
+              care_history: custUpdatedHistory
+            }),
+            CareLogService.create(shopId, {
+              customer_id: custId,
+              type: careStatus,
+              content: careNotes ? `[Đơn #${selectedCareOrder.id}] ${careNotes}` : `[Đơn #${selectedCareOrder.id}] ${careStatus}`
+            })
+          ]);
+
           setCustomers(prev => prev.map(c => String(c.id) === String(custId) ? {
             ...c,
             care_status: careStatus,
