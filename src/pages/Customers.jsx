@@ -518,6 +518,25 @@ export default function Customers() {
                       <td style={{ padding: '14px 16px' }}>
                         <strong style={{ color: '#fff' }}>{customer.name}</strong>
                         {customer.email && <div style={{ fontSize: '11.5px', color: '#64748b' }}>{customer.email}</div>}
+                        {(() => {
+                          const latestCareStatus = customer.care_status || custOrders.find(o => o.care_status)?.care_status;
+                          const latestCareTime = customer.care_time || custOrders.find(o => o.care_time)?.care_time;
+                          if (!latestCareStatus) return null;
+
+                          return (
+                            <div style={{ marginTop: '3px', fontSize: '10.5px', display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '1.5px 6px', borderRadius: '4px',
+                              background: latestCareStatus.includes('Đã nhắn') ? 'rgba(245,158,11,0.18)'
+                                : (latestCareStatus.includes('chốt') ? 'rgba(16,185,129,0.18)'
+                                : (latestCareStatus.includes('Từ chối') ? 'rgba(239,68,68,0.18)' : 'rgba(99,102,241,0.18)')),
+                              color: latestCareStatus.includes('Đã nhắn') ? '#f59e0b'
+                                : (latestCareStatus.includes('chốt') ? '#10b981'
+                                : (latestCareStatus.includes('Từ chối') ? '#ef4444' : '#818cf8')),
+                              fontWeight: '700'
+                            }}>
+                              💬 {latestCareStatus} {latestCareTime ? `(${latestCareTime.split(' ')[0]})` : ''}
+                            </div>
+                          );
+                        })()}
                       </td>
                       <td style={{ padding: '14px 16px' }}>
                         {customer.phone ? (

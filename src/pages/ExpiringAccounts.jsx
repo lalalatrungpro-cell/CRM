@@ -211,8 +211,33 @@ export default function ExpiringAccounts() {
 
       const updated = await OrderService.update(selectedCareOrder.id, payload);
       setOrders(prev => prev.map(o => o.id === selectedCareOrder.id ? { ...o, ...payload } : o));
+
+      // 🔄 Bidirectional Sync: Also save Care Log directly to Customer Profile!
+      const custId = selectedCareOrder.customer_id || selectedCareOrder.customerId;
+      if (custId) {
+        try {
+          const cust = customers.find(c => String(c.id) === String(custId));
+          const custPrevHistory = Array.isArray(cust?.care_history || cust?.careHistory) ? (cust?.care_history || cust?.careHistory) : [];
+          const custUpdatedHistory = [newEntry, ...custPrevHistory];
+
+          await CustomerService.update(custId, {
+            care_status: careStatus,
+            care_notes: careNotes,
+            care_time: nowStr,
+            care_history: custUpdatedHistory
+          });
+          setCustomers(prev => prev.map(c => String(c.id) === String(custId) ? {
+            ...c,
+            care_status: careStatus,
+            care_notes: careNotes,
+            care_time: nowStr,
+            care_history: custUpdatedHistory
+          } : c));
+        } catch (e) {}
+      }
+
       setSelectedCareOrder(null);
-      toast.success(`Đã lưu nhật ký CSKH cho đơn #${selectedCareOrder.id}!`);
+      toast.success(`Đã lưu nhật ký CSKH cho đơn #${selectedCareOrder.id} và đồng bộ Hồ sơ Khách Hàng!`);
     } catch (err) {
       console.error(err);
       toast.error('Lỗi khi lưu nhật ký chăm sóc.');
