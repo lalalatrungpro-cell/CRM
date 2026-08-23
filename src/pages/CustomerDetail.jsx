@@ -431,13 +431,26 @@ export default function CustomerDetail() {
               </button>
             </form>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '10px' }}>
-              {careLogs.length === 0 ? (
-                <div style={{ padding: '16px', textAlign: 'center', color: '#64748b', background: 'rgba(0,0,0,0.2)', borderRadius: '8px', fontSize: '12.5px' }}>
-                  💬 Chưa có nhật ký chăm sóc nào. Hãy chọn trạng thái ở trên và bấm <strong>Ghi Nhật Ký</strong>.
-                </div>
-              ) : (
-                careLogs.map(log => (
+<div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '10px' }}>
+              {(() => {
+                // Deduplicate care logs by id or content+type
+                const seenKeys = new Set();
+                const uniqueLogs = careLogs.filter(log => {
+                  const key = String(log.id) + '_' + String(log.content) + '_' + String(log.type);
+                  if (seenKeys.has(key)) return false;
+                  seenKeys.add(key);
+                  return true;
+                });
+
+                if (uniqueLogs.length === 0) {
+                  return (
+                    <div style={{ padding: '16px', textAlign: 'center', color: '#64748b', background: 'rgba(0,0,0,0.2)', borderRadius: '8px', fontSize: '12.5px' }}>
+                      💬 Chưa có nhật ký chăm sóc nào. Hãy chọn trạng thái ở trên và bấm <strong>Ghi Nhật Ký</strong>.
+                    </div>
+                  );
+                }
+
+                return uniqueLogs.map(log => (
                   <div key={log.id} style={{ background: 'rgba(255,255,255,0.03)', padding: '12px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.06)' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <span className="badge badge-info" style={{ fontSize: '10.5px', background: 'rgba(168,85,247,0.18)', color: '#c084fc', border: '1px solid rgba(168,85,247,0.3)', fontWeight: '700' }}>
@@ -454,8 +467,8 @@ export default function CustomerDetail() {
                     </div>
                     <p style={{ color: '#fff', fontSize: '13px', marginTop: '6px', whiteSpace: 'pre-wrap' }}>{log.content}</p>
                   </div>
-                ))
-              )}
+                ));
+              })()}
             </div>
           </div>
         </div>

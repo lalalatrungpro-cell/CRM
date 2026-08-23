@@ -212,20 +212,14 @@ export default function ExpiringAccounts() {
       const updated = await OrderService.update(selectedCareOrder.id, payload);
       setOrders(prev => prev.map(o => o.id === selectedCareOrder.id ? { ...o, ...payload } : o));
 
-      // 🔄 Bidirectional Sync: Also save Care Log directly to Customer Profile & CareLogService!
       const custId = selectedCareOrder.customer_id || selectedCareOrder.customerId;
       if (custId) {
         try {
-          const cust = customers.find(c => String(c.id) === String(custId));
-          const custPrevHistory = Array.isArray(cust?.care_history || cust?.careHistory) ? (cust?.care_history || cust?.careHistory) : [];
-          const custUpdatedHistory = [newEntry, ...custPrevHistory];
-
           await Promise.all([
             CustomerService.update(custId, {
               care_status: careStatus,
               care_notes: careNotes,
-              care_time: nowStr,
-              care_history: custUpdatedHistory
+              care_time: nowStr
             }),
             CareLogService.create(shopId, {
               customer_id: custId,
@@ -238,8 +232,7 @@ export default function ExpiringAccounts() {
             ...c,
             care_status: careStatus,
             care_notes: careNotes,
-            care_time: nowStr,
-            care_history: custUpdatedHistory
+            care_time: nowStr
           } : c));
         } catch (e) {}
       }
@@ -707,14 +700,20 @@ export default function ExpiringAccounts() {
                   💬 Nhật Ký Chăm Sóc & Lịch Sử Tương Tác CSKH
                 </h4>
                 {(() => {
-                  const allCareLogs = [];
+                  const rawLogs = [];
                   selectedCustProfile.orders.forEach(o => {
-                    const logs = Array.isArray(o.care_history || o.careHistory) ? (o.care_history || o.careHistory) : [];
-                    if (logs.length > 0) {
-                      logs.forEach(l => allCareLogs.push({ ...l, orderId: o.id, prodName: o.product_name || o.productName }));
-                    } else if (o.care_status) {
-                      allCareLogs.push({ time: o.care_time || 'Gần đây', status: o.care_status, notes: o.care_notes || '', orderId: o.id, prodName: o.product_name || o.productName });
+                    if (o.care_status) {
+                      rawLogs.push({ time: o.care_time || 'Gần đây', status: o.care_status, notes: o.care_notes || '', orderId: o.id });
                     }
+                  });
+
+                  // Deduplicate by content + status + time
+                  const seen = new Set();
+                  const allCareLogs = rawLogs.filter(l => {
+                    const key = `${l.status}_${l.notes}_${l.time}`;
+                    if (seen.has(key)) return false;
+                    seen.add(key);
+                    return true;
                   });
 
                   if (allCareLogs.length === 0) {
