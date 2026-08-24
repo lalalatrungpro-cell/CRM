@@ -211,3 +211,26 @@ export const getVietQRUrl = (bankId, accountNo, accountName, amount, memo, templ
   const am = Math.round(parseFloat(amount) || 0);
   return `https://img.vietqr.io/image/${b}-${a}-${template}.png?amount=${am}&addInfo=${m}&accountName=${n}`;
 };
+
+export const getBankDisplayName = (code) => {
+  if (!code) return 'MBBank';
+  const c = String(code).toUpperCase().trim();
+  if (c === 'VPB' || c === 'VPBANK') return 'VPBank';
+  if (c === 'MB' || c === 'MBBANK') return 'MBBank';
+  if (c === 'VCB' || c === 'VIETCOMBANK') return 'Vietcombank';
+  if (c === 'TCB' || c === 'TECHCOMBANK') return 'Techcombank';
+  if (c === 'ICB' || c === 'VIETINBANK') return 'VietinBank';
+  if (c === 'ACB') return 'ACB';
+  if (c === 'TPB' || c === 'TPBANK') return 'TPBank';
+  if (c === 'VAB' || c === 'VIETABANK') return 'VietABank';
+  if (c === 'STB' || c === 'SACOMBANK') return 'Sacombank';
+  if (c === 'BIDV') return 'BIDV';
+  if (c === 'VIB') return 'VIB';
+  if (c === 'SHB') return 'SHB';
+  if (c === 'MSB') return 'MSB';
+  if (c === 'LPB' || c === 'LIENVIETPOSTBANK') return 'LPBank';
+  if (c === 'HDB' || c === 'HDBANK') return 'HDBank';
+  if (c === 'OCB') return 'OCB';
+  if (c === 'SCB') return 'SCB';
+  return code;
+};

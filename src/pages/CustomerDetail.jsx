@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { CustomerService, OrderService, CareLogService, VietQRService, WarrantyLogService, TeamService } from '../utils/dataService';
-import { getVietQRUrl } from '../utils/storage';
+import { getVietQRUrl, getBankDisplayName } from '../utils/storage';
 import { useToast } from '../components/Toast';
 import ConfirmDialog from '../components/ConfirmDialog';
 import {
@@ -570,7 +570,7 @@ export default function CustomerDetail() {
                   )}
                   <div style={{ fontSize: '11.5px', color: '#334155', lineHeight: 1.5 }}>
                     <p style={{ margin: 0, fontWeight: '700', color: '#0f172a' }}>💳 THÔNG TIN CHUYỂN KHOẢN:</p>
-                    <p style={{ margin: 0 }}>🏦 Ngân hàng: <strong>{vietqr?.bank_id || vietqr?.bankId || 'MB'}</strong></p>
+                    <p style={{ margin: 0 }}>🏦 Ngân hàng: <strong>{getBankDisplayName(vietqr?.bank_id || vietqr?.bankId || 'MB')}</strong></p>
                     <p style={{ margin: 0 }}>🔢 Số tài khoản: <strong style={{ color: '#10b981' }}>{vietqr?.account_no || vietqr?.accountNo || '0901234567'}</strong></p>
                     <p style={{ margin: 0 }}>👤 Chủ TK: <strong>{vietqr?.account_name || vietqr?.accountName || 'SHOP DROPSHIP CRM'}</strong></p>
                     <p style={{ margin: 0 }}>📝 Nội dung CK: <strong style={{ color: '#ef4444' }}>{(vietqr?.memo_prefix || vietqr?.memoPrefix || 'DON') + ' NO KH ' + customer.id}</strong></p>

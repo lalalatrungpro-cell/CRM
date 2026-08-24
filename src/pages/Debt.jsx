@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { CustomerService, OrderService, SupplierService, PurchaseService, VietQRService, CashTransactionService } from '../utils/dataService';
-import { getVietQRUrl } from '../utils/storage';
+import { getVietQRUrl, getBankDisplayName } from '../utils/storage';
 import { useToast } from '../components/Toast';
 import DateFilterBar from '../components/DateFilterBar';
 import { Wallet, ArrowDownLeft, ArrowUpRight, FileText, Printer, Copy, QrCode, X, Search } from 'lucide-react';
@@ -629,7 +629,7 @@ export default function Debt() {
                   )}
                   <div style={{ fontSize: '11.5px', color: '#334155', lineHeight: 1.5 }}>
                     <p style={{ margin: 0, fontWeight: '700', color: '#0f172a' }}>💳 THÔNG TIN CHUYỂN KHOẢN:</p>
-                    <p style={{ margin: 0 }}>🏦 Ngân hàng: <strong>{vietqr?.bank_id || vietqr?.bankId || 'MB'}</strong></p>
+                    <p style={{ margin: 0 }}>🏦 Ngân hàng: <strong>{getBankDisplayName(vietqr?.bank_id || vietqr?.bankId || 'MB')}</strong></p>
                     <p style={{ margin: 0 }}>🔢 Số tài khoản: <strong style={{ color: '#10b981' }}>{vietqr?.account_no || vietqr?.accountNo || '0901234567'}</strong></p>
                     <p style={{ margin: 0 }}>👤 Chủ TK: <strong>{vietqr?.account_name || vietqr?.accountName || 'SHOP DROPSHIP CRM'}</strong></p>
                     <p style={{ margin: 0 }}>📝 Nội dung CK: <strong style={{ color: '#ef4444' }}>{(vietqr?.memo_prefix || vietqr?.memoPrefix || 'DON') + ' NO KH ' + selectedInvoiceCust.id}</strong></p>

@@ -6,7 +6,7 @@ import {
   CashTransactionService, clearAllSystemData
 } from '../utils/dataService';
 import { supabase } from '../utils/supabaseClient';
-import { getVietQRUrl } from '../utils/storage';
+import { getVietQRUrl, getBankDisplayName } from '../utils/storage';
 import { useToast } from '../components/Toast';
 import ConfirmDialog from '../components/ConfirmDialog';
 import DateFilterBar from '../components/DateFilterBar';
@@ -1059,7 +1059,8 @@ export default function Orders() {
 
         const handleCopyZaloText = (order) => {
     const vqr = vietqr || { bank_id: 'MB', account_no: '0901234567', account_name: 'SHOP DROPSHIP CRM', memo_prefix: 'DON' };
-    const bankId = vqr.bank_id || vqr.bankId || 'MB';
+    const rawBankId = vqr.bank_id || vqr.bankId || 'MB';
+    const bankId = getBankDisplayName(rawBankId);
     const accountNo = vqr.account_no || vqr.accountNo || '0901234567';
     const accountName = vqr.account_name || vqr.accountName || 'SHOP DROPSHIP CRM';
     const memo = `${vqr.memo_prefix || vqr.memoPrefix || 'DON'} ${order.id}`;
@@ -1841,7 +1842,7 @@ export default function Orders() {
                   <img src={detailQrUrl} alt="VietQR" style={{ width: '140px', height: 'auto', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)' }} />
                   <div style={{ flex: 1, fontSize: '12px', color: '#cbd5e1', lineHeight: 1.6 }}>
                     <p style={{ margin: 0, fontWeight: '700', color: '#fff' }}>💳 THÔNG TIN CHUYỂN KHOẢN VIETQR:</p>
-                    <p style={{ margin: 0 }}>🏦 Ngân hàng: <strong>{vietqr?.bank_id || vietqr?.bankId || 'MB'}</strong></p>
+                    <p style={{ margin: 0 }}>🏦 Ngân hàng: <strong>{getBankDisplayName(vietqr?.bank_id || vietqr?.bankId || 'MB')}</strong></p>
                     <p style={{ margin: 0 }}>🔢 STK: <strong style={{ color: '#10b981' }}>{vietqr?.account_no || vietqr?.accountNo || '0901234567'}</strong></p>
                     <p style={{ margin: 0 }}>👤 Chủ TK: <strong>{vietqr?.account_name || vietqr?.accountName || 'SHOP DROPSHIP CRM'}</strong></p>
                     <p style={{ margin: 0 }}>📝 Nội dung: <strong style={{ color: '#ef4444' }}>{(vietqr?.memo_prefix || vietqr?.memoPrefix || 'DON') + ' ' + detailOrder.id}</strong></p>

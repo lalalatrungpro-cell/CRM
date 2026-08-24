@@ -1,3 +1,4 @@
+import { getBankDisplayName } from '../utils/storage';
 import React, { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { OrderService, TeamService, CustomerService, CareLogService, VietQRService } from '../utils/dataService';
@@ -161,7 +162,8 @@ export default function ExpiringAccounts() {
   const handleCopyFullOrderText = (order) => {
     if (!order) return;
     const vqr = vietqr || { bank_id: 'MB', account_no: '0901234567', account_name: 'SHOP DROPSHIP CRM', memo_prefix: 'DON' };
-    const bankId = vqr.bank_id || vqr.bankId || 'MBBank';
+    const rawBankId = vqr.bank_id || vqr.bankId || 'MB';
+    const bankId = getBankDisplayName(rawBankId);
     const accountNo = vqr.account_no || vqr.accountNo || '0901234567';
     const accountName = vqr.account_name || vqr.accountName || 'SHOP DROPSHIP CRM';
     const memo = `${vqr.memo_prefix || vqr.memoPrefix || 'DON'} ${order.id}`;
