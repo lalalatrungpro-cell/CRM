@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { OrderService, TeamService, CustomerService, CareLogService } from '../utils/dataService';
+import { OrderService, TeamService, CustomerService, CareLogService, VietQRService } from '../utils/dataService';
 import { useToast } from '../components/Toast';
 import DateFilterBar from '../components/DateFilterBar';
 import { Clock, Truck, Copy, Check, RefreshCw, Search, X, MessageSquare, User, ExternalLink, Calendar, ShieldCheck, DollarSign, EyeOff } from 'lucide-react';
@@ -12,6 +12,7 @@ export default function ExpiringAccounts() {
   const [orders, setOrders] = useState([]);
   const [teams, setTeams] = useState([]);
   const [customers, setCustomers] = useState([]);
+  const [vietqr, setVietqr] = useState(null);
   const [loading, setLoading] = useState(true);
 
   // Customer Profile 360° Modal State
@@ -155,6 +156,40 @@ export default function ExpiringAccounts() {
     return teamName.toLowerCase().includes(searchTerm.toLowerCase()) ||
            category.toLowerCase().includes(searchTerm.toLowerCase());
   });
+
+  
+  const handleCopyFullOrderText = (order) => {
+    if (!order) return;
+    const vqr = vietqr || { bank_id: 'MB', account_no: '0901234567', account_name: 'SHOP DROPSHIP CRM', memo_prefix: 'DON' };
+    const bankId = vqr.bank_id || vqr.bankId || 'MBBank';
+    const accountNo = vqr.account_no || vqr.accountNo || '0901234567';
+    const accountName = vqr.account_name || vqr.accountName || 'SHOP DROPSHIP CRM';
+    const memo = `${vqr.memo_prefix || vqr.memoPrefix || 'DON'} ${order.id}`;
+
+    const custName = order.customer_name || order.customerName || 'Khách Hàng';
+    const prodName = order.product_name || order.productName || 'Sản Phẩm';
+    const infor = order.infor || 'Đã kích hoạt';
+    const expDate = order.expire_date || order.expireDate || '---';
+    const price = (order.sell_price || order.sellPrice || 0).toLocaleString();
+
+    let text = `🎉 XÁC NHẬN ĐƠN HÀNG #${order.id}\n`;
+    text += `👤 Khách hàng: ${custName}\n`;
+    text += `📦 Sản phẩm: ${prodName}\n`;
+    text += `🔑 Account / Info: ${infor}\n`;
+    text += `⏳ Ngày hết hạn: ${expDate}\n`;
+    text += `💰 Giá thanh toán: ${price} VNĐ\n\n`;
+    text += `💳 THÔNG TIN CHUYỂN KHOẢN:\n`;
+    text += `🏦 Ngân hàng: ${bankId}\n`;
+    text += `🔢 Số tài khoản: ${accountNo}\n`;
+    text += `👤 Chủ TK: ${accountName}\n`;
+    text += `📝 Nội dung CK: ${memo}\n\n`;
+    text += `Cảm ơn Quý khách đã ủng hộ shop! ❤️🎁`;
+
+    navigator.clipboard.writeText(text);
+    setCopiedId(`full-${order.id}`);
+    toast.success(`✅ Đã copy toàn bộ thông tin đơn hàng #${order.id}! Dán (Ctrl+V) sang Zalo ngay.`);
+    setTimeout(() => setCopiedId(''), 2000);
+  };
 
   const handleCopyInfor = (text, id) => {
     navigator.clipboard.writeText(text);
@@ -612,6 +647,14 @@ export default function ExpiringAccounts() {
                             </span>
                             <button
                               type="button"
+                              onClick={() => handleCopyFullOrderText(order)}
+                              style={{ background: 'rgba(16,185,129,0.18)', border: '1px solid rgba(16,185,129,0.35)', color: '#10b981', borderRadius: '4px', padding: '2px 6px', fontSize: '10.5px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '3px', fontWeight: '700' }}
+                              title="1-Click copy TOÀN BỘ thông tin đơn hàng như lúc lên đơn để gửi Zalo"
+                            >
+                              {copiedId === `full-${order.id}` ? <Check size={11} /> : <Copy size={11} />} {copiedId === `full-${order.id}` ? 'Đã Copy Full' : '📋 Copy Full Đơn'}
+                            </button>
+                            <button
+                              type="button"
                               onClick={() => {
                                 navigator.clipboard.writeText(order.infor);
                                 setCopiedId(`infor-${order.id}`);
@@ -619,9 +662,9 @@ export default function ExpiringAccounts() {
                                 setTimeout(() => setCopiedId(''), 2000);
                               }}
                               style={{ background: 'rgba(99,102,241,0.18)', border: '1px solid rgba(99,102,241,0.35)', color: '#818cf8', borderRadius: '4px', padding: '2px 6px', fontSize: '10.5px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '3px', fontWeight: '700' }}
-                              title="1-Click copy thông tin acc/key gửi khách"
+                              title="Copy chỉ chuỗi email/password/key"
                             >
-                              {copiedId === `infor-${order.id}` ? <Check size={11} /> : <Copy size={11} />} {copiedId === `infor-${order.id}` ? 'Đã Copy' : 'Copy Acc'}
+                              {copiedId === `infor-${order.id}` ? <Check size={11} /> : <Copy size={11} />} Copy Acc
                             </button>
                           </div>
                         ) : (
@@ -893,18 +936,29 @@ export default function ExpiringAccounts() {
                     <div style={{ fontSize: '12px', color: '#e2e8f0', fontFamily: 'monospace' }}>
                       🔑 <strong>Infor Acc/Key (Đơn #{selectedCustProfile.currentOrder.id}):</strong> {selectedCustProfile.currentOrder.infor}
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        navigator.clipboard.writeText(selectedCustProfile.currentOrder.infor);
-                        setCopiedId(`infor-modal-${selectedCustProfile.currentOrder.id}`);
-                        toast.success(`✅ Đã copy thông tin acc/key đơn #${selectedCustProfile.currentOrder.id}!`);
-                        setTimeout(() => setCopiedId(''), 2000);
-                      }}
-                      style={{ background: 'rgba(16,185,129,0.2)', border: '1px solid rgba(16,185,129,0.4)', color: '#10b981', borderRadius: '6px', padding: '4px 10px', fontSize: '11.5px', cursor: 'pointer', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '4px' }}
-                    >
-                      {copiedId === `infor-modal-${selectedCustProfile.currentOrder.id}` ? <Check size={12} /> : <Copy size={12} />} Copy Acc Đơn Này
-                    </button>
+                    <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                      <button
+                        type="button"
+                        onClick={() => handleCopyFullOrderText(selectedCustProfile.currentOrder)}
+                        style={{ background: 'rgba(16,185,129,0.22)', border: '1px solid rgba(16,185,129,0.45)', color: '#10b981', borderRadius: '6px', padding: '4px 10px', fontSize: '11.5px', cursor: 'pointer', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '4px' }}
+                        title="Copy TOÀN BỘ văn bản xác nhận đơn hàng đầy đủ (Tên, SP, Acc, Hạn, Giá, Ngân hàng)"
+                      >
+                        {copiedId === `full-${selectedCustProfile.currentOrder.id}` ? <Check size={12} /> : <Copy size={12} />} 📋 Copy Full Đơn Hàng Cũ
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          navigator.clipboard.writeText(selectedCustProfile.currentOrder.infor);
+                          setCopiedId(`infor-modal-${selectedCustProfile.currentOrder.id}`);
+                          toast.success(`✅ Đã copy thông tin acc/key đơn #${selectedCustProfile.currentOrder.id}!`);
+                          setTimeout(() => setCopiedId(''), 2000);
+                        }}
+                        style={{ background: 'rgba(99,102,241,0.2)', border: '1px solid rgba(99,102,241,0.4)', color: '#818cf8', borderRadius: '6px', padding: '4px 10px', fontSize: '11.5px', cursor: 'pointer', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '4px' }}
+                        title="Copy chỉ chuỗi Acc/Key"
+                      >
+                        {copiedId === `infor-modal-${selectedCustProfile.currentOrder.id}` ? <Check size={12} /> : <Copy size={12} />} Copy Acc
+                      </button>
+                    </div>
                   </div>
                 )}
               </div>
