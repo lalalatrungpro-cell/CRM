@@ -1733,8 +1733,12 @@ export default function Orders() {
       </div>
 
       {/* MODAL 1: Detail Order 360° */}
-      {showDetailModal && (
-        <div className="modal-overlay" onClick={() => setShowDetailModal(null)}>
+      {showDetailModal && (() => {
+        const detailOrder = showDetailModal.order || showDetailModal;
+        const detailQrUrl = showDetailModal.qrUrl || '';
+
+        return (
+          <div className="modal-overlay" onClick={() => setShowDetailModal(null)}>
           <div className="modal-box" onClick={e => e.stopPropagation()} style={{ maxWidth: '620px', background: '#111625' }}>
             <div className="modal-header">
               <div>
@@ -1876,7 +1880,8 @@ export default function Orders() {
             </div>
           </div>
         </div>
-      )}
+        );
+      })()}
 
       {/* MODAL 2: Printable Commercial Invoice */}
       {showInvoiceModal && (
