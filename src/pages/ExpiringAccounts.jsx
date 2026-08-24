@@ -3,7 +3,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { OrderService, TeamService, CustomerService, CareLogService } from '../utils/dataService';
 import { useToast } from '../components/Toast';
 import DateFilterBar from '../components/DateFilterBar';
-import { Clock, Truck, Copy, Check, RefreshCw, Search, X, MessageSquare, User, ExternalLink, Calendar, ShieldCheck, DollarSign } from 'lucide-react';
+import { Clock, Truck, Copy, Check, RefreshCw, Search, X, MessageSquare, User, ExternalLink, Calendar, ShieldCheck, DollarSign, EyeOff } from 'lucide-react';
 
 export default function ExpiringAccounts() {
   const toast = useToast();
