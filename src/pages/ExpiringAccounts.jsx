@@ -383,7 +383,7 @@ export default function ExpiringAccounts() {
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
         <div>
@@ -467,9 +467,10 @@ export default function ExpiringAccounts() {
               <p>Tất cả các đơn hàng đều đang trong thời hạn sử dụng an toàn.</p>
             </div>
           ) : (
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13.5px' }}>
-              <thead>
-                <tr style={{ background: 'rgba(255,255,255,0.04)', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+            <div style={{ maxHeight: 'calc(100vh - 250px)', overflowY: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13.5px' }}>
+                <thead style={{ position: 'sticky', top: 0, zIndex: 10, background: '#0f172a', boxShadow: '0 2px 8px rgba(0,0,0,0.5)' }}>
+                  <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
                   {['Mã Đơn', 'Khách Hàng', 'Sản Phẩm', 'Ngày Hết Hạn', 'Còn Lại', 'Thao Tác Tái Ký'].map(h => (
                     <th key={h} style={{ padding: '14px 16px', textAlign: 'left', color: '#475569', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: '700' }}>{h}</th>
                   ))}
@@ -537,14 +538,6 @@ export default function ExpiringAccounts() {
                         <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexWrap: 'wrap' }}>
                           <button
                             className="glass-button"
-                            onClick={() => handleCopyMessage(order)}
-                            style={{ padding: '5px 9px', fontSize: '11px', background: 'rgba(59,130,246,0.18)', color: '#60a5fa', display: 'flex', alignItems: 'center', gap: '4px' }}
-                            title="Copy tin nhắn Zalo gia hạn cá nhân hóa"
-                          >
-                            {isCopied ? <Check size={12} /> : <Copy size={12} />} Mẫu Zalo
-                          </button>
-                          <button
-                            className="glass-button"
                             onClick={() => handleOpenCareModal(order)}
                             style={{ padding: '5px 9px', fontSize: '11px', background: 'rgba(168,85,247,0.18)', color: '#c084fc', border: '1px solid rgba(168,85,247,0.3)', display: 'flex', alignItems: 'center', gap: '4px' }}
                             title="Lưu nhật ký chăm sóc khách hàng"
@@ -586,6 +579,7 @@ export default function ExpiringAccounts() {
                 })}
               </tbody>
             </table>
+            </div>
           )}
         </div>
         </div>
