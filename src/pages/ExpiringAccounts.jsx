@@ -17,6 +17,9 @@ export default function ExpiringAccounts() {
   // Customer Profile 360° Modal State
   const [selectedCustProfile, setSelectedCustProfile] = useState(null);
 
+  // Care Sub-Tabs State ('PENDING' | 'ZALO' | 'SUCCESS' | 'REFUSED' | 'ALL')
+  const [careFilterTab, setCareFilterTab] = useState('PENDING');
+
   // Care Note Modal State
   const [selectedCareOrder, setSelectedCareOrder] = useState(null);
   const [careStatus, setCareStatus] = useState('Đã nhắn Zalo');
@@ -122,6 +125,17 @@ export default function ExpiringAccounts() {
     if (dateRange.startDate && ds < dateRange.startDate) return false;
     if (dateRange.endDate && ds > dateRange.endDate) return false;
 
+    const status = o.care_status || '';
+    if (careFilterTab === 'PENDING') {
+      if (status.includes('Từ chối gia hạn') || status.includes('Khách chốt gia hạn')) return false;
+    } else if (careFilterTab === 'ZALO') {
+      if (!status.includes('Đã nhắn Zalo')) return false;
+    } else if (careFilterTab === 'SUCCESS') {
+      if (!status.includes('Khách chốt gia hạn')) return false;
+    } else if (careFilterTab === 'REFUSED') {
+      if (!status.includes('Từ chối gia hạn')) return false;
+    }
+
     const custName = o.customer_name || o.customerName || '';
     const prodName = o.product_name || o.productName || '';
     return custName.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -163,6 +177,40 @@ export default function ExpiringAccounts() {
   };
 
   
+  
+  const handleQuickCareStatus = async (order, newStatus) => {
+    try {
+      const nowStr = new Date().toLocaleString('vi-VN');
+      const payload = {
+        care_status: newStatus,
+        care_notes: newStatus ? (order.care_notes || '') : '',
+        care_time: nowStr
+      };
+
+      await OrderService.update(order.id, payload);
+      setOrders(prev => prev.map(o => o.id === order.id ? { ...o, ...payload } : o));
+
+      const custId = order.customer_id || order.customerId;
+      if (custId) {
+        try {
+          await CustomerService.update(custId, {
+            care_status: newStatus,
+            care_time: nowStr
+          });
+        } catch (e) {}
+      }
+
+      if (newStatus === '🔴 Từ chối gia hạn') {
+        toast.success(`Đã ẩn đơn #${order.id} khỏi bảng Cảnh báo (Đã lưu trữ)!`);
+      } else if (!newStatus) {
+        toast.success(`Đã khôi phục đơn #${order.id} về danh sách Cần CSKH!`);
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error('Lỗi khi cập nhật trạng thái tái ký.');
+    }
+  };
+
   const handleOpenCustProfile = (order) => {
     let cust = customers.find(c => String(c.id) === String(order.customer_id || order.customerId));
     if (!cust) {
@@ -382,7 +430,34 @@ export default function ExpiringAccounts() {
 
       {/* Tab 1: Orders */}
       {activeTab === 'orders' && (
-        <div className="glass-panel" style={{ padding: 0, overflow: 'hidden' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          {/* Sub-Tabs Renewal Pipeline Filter */}
+          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
+            {[
+              { key: 'PENDING', label: '⚡ Cần CSKH', count: ordersWithDays.filter(o => !o.care_status?.includes('Từ chối gia hạn') && !o.care_status?.includes('Khách chốt gia hạn')).length, color: '#38bdf8' },
+              { key: 'ZALO', label: '🟡 Đã Nhắc Zalo', count: ordersWithDays.filter(o => o.care_status?.includes('Đã nhắn Zalo')).length, color: '#f59e0b' },
+              { key: 'SUCCESS', label: '🟢 Khách Chốt', count: ordersWithDays.filter(o => o.care_status?.includes('Khách chốt gia hạn')).length, color: '#10b981' },
+              { key: 'REFUSED', label: '🔴 Khách Từ Chối (Lưu Trữ)', count: ordersWithDays.filter(o => o.care_status?.includes('Từ chối gia hạn')).length, color: '#ef4444' },
+              { key: 'ALL', label: '🌐 Tất Cả Đơn', count: ordersWithDays.length, color: '#94a3b8' }
+            ].map(sub => (
+              <button
+                key={sub.key}
+                type="button"
+                onClick={() => setCareFilterTab(sub.key)}
+                style={{
+                  padding: '6px 14px', borderRadius: '8px', fontSize: '12px', fontWeight: '700', cursor: 'pointer',
+                  background: careFilterTab === sub.key ? `${sub.color}22` : 'rgba(255,255,255,0.03)',
+                  border: careFilterTab === sub.key ? `1.5px solid ${sub.color}` : '1px solid rgba(255,255,255,0.08)',
+                  color: careFilterTab === sub.key ? sub.color : '#94a3b8',
+                  transition: 'all 0.15s ease'
+                }}
+              >
+                {sub.label} ({sub.count})
+              </button>
+            ))}
+          </div>
+
+          <div className="glass-panel" style={{ padding: 0, overflow: 'hidden' }}>
           {loading ? (
             <div style={{ padding: '40px', textAlign: 'center', color: '#94a3b8' }}>Đang kiểm tra đơn sắp hết hạn...</div>
           ) : filteredOrders.length === 0 ? (
@@ -484,6 +559,26 @@ export default function ExpiringAccounts() {
                           >
                             <RefreshCw size={12} /> Gia Hạn
                           </button>
+
+                          {order.care_status?.includes('Từ chối gia hạn') ? (
+                            <button
+                              className="glass-button"
+                              onClick={() => handleQuickCareStatus(order, '')}
+                              style={{ padding: '5px 9px', fontSize: '11px', background: 'rgba(56,189,248,0.18)', color: '#38bdf8', border: '1px solid rgba(56,189,248,0.3)', display: 'flex', alignItems: 'center', gap: '4px' }}
+                              title="Khôi phục đơn về danh sách Cần CSKH"
+                            >
+                              <RefreshCw size={12} /> Khôi Phục
+                            </button>
+                          ) : (
+                            <button
+                              className="glass-button"
+                              onClick={() => handleQuickCareStatus(order, '🔴 Từ chối gia hạn')}
+                              style={{ padding: '5px 9px', fontSize: '11px', background: 'rgba(239,68,68,0.12)', color: '#f87171', border: '1px solid rgba(239,68,68,0.25)', display: 'flex', alignItems: 'center', gap: '4px' }}
+                              title="Ẩn đơn này khỏi bảng Cần CSKH (Khách từ chối)"
+                            >
+                              <EyeOff size={12} /> Ẩn Cảnh Báo
+                            </button>
+                          )}
                         </div>
                       </td>
                     </tr>
@@ -492,6 +587,7 @@ export default function ExpiringAccounts() {
               </tbody>
             </table>
           )}
+        </div>
         </div>
       )}
 
