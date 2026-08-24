@@ -20,10 +20,11 @@ export default function ExpiringAccounts() {
   // Care Sub-Tabs State ('PENDING' | 'ZALO' | 'SUCCESS' | 'REFUSED' | 'ALL')
   const [careFilterTab, setCareFilterTab] = useState('PENDING');
 
-  // Care Note Modal State
+  // Care Note & Unified 360 State
   const [selectedCareOrder, setSelectedCareOrder] = useState(null);
   const [careStatus, setCareStatus] = useState('Đã nhắn Zalo');
   const [careNotes, setCareNotes] = useState('');
+  const [followupDate, setFollowupDate] = useState('');
 
   const [copiedId, setCopiedId] = useState('');
   const [activeTab, setActiveTab] = useState('orders'); // 'orders' | 'teams'
@@ -223,13 +224,92 @@ export default function ExpiringAccounts() {
       };
     }
     const custOrders = orders.filter(o => String(o.customer_id || o.customerId) === String(cust.id) || (cust.phone && o.phone === cust.phone));
-    setSelectedCustProfile({ customer: cust, orders: custOrders });
+    
+    // Target order for care notes
+    const targetOrder = order || custOrders[0] || {};
+    setSelectedCustProfile({ customer: cust, orders: custOrders, currentOrder: targetOrder });
+    setCareStatus(targetOrder.care_status || targetOrder.careStatus || '🟡 Đã nhắn Zalo');
+    setCareNotes(targetOrder.care_notes || targetOrder.careNotes || '');
+    setFollowupDate(targetOrder.followup_date || targetOrder.followupDate || '');
   };
 
   const handleOpenCareModal = (order) => {
     setSelectedCareOrder(order);
     setCareStatus(order.care_status || order.careStatus || 'Đã nhắn Zalo');
     setCareNotes(order.care_notes || order.careNotes || '');
+  };
+
+  
+  const handleSaveUnifiedCareNote = async (e) => {
+    e.preventDefault();
+    if (!selectedCustProfile || !selectedCustProfile.currentOrder) return;
+    const targetOrder = selectedCustProfile.currentOrder;
+
+    try {
+      const nowStr = new Date().toLocaleString('vi-VN');
+      const prevHistory = Array.isArray(targetOrder.care_history || targetOrder.careHistory) 
+        ? (targetOrder.care_history || targetOrder.careHistory) 
+        : [];
+      
+      const newEntry = {
+        time: nowStr,
+        status: careStatus,
+        notes: careNotes,
+        followup_date: followupDate
+      };
+
+      const updatedHistory = [newEntry, ...prevHistory];
+
+      const payload = {
+        care_status: careStatus,
+        care_notes: careNotes,
+        care_time: nowStr,
+        followup_date: followupDate,
+        care_history: updatedHistory
+      };
+
+      const updated = await OrderService.update(targetOrder.id, payload);
+      setOrders(prev => prev.map(o => o.id === targetOrder.id ? { ...o, ...payload } : o));
+
+      const custId = targetOrder.customer_id || targetOrder.customerId;
+      if (custId) {
+        try {
+          await Promise.all([
+            CustomerService.update(custId, {
+              care_status: careStatus,
+              care_notes: careNotes,
+              care_time: nowStr,
+              followup_date: followupDate
+            }),
+            CareLogService.create(shopId, {
+              customer_id: custId,
+              type: careStatus,
+              content: careNotes ? `[Đơn #${targetOrder.id}] ${careNotes}` : `[Đơn #${targetOrder.id}] ${careStatus}`
+            })
+          ]);
+
+          setCustomers(prev => prev.map(c => String(c.id) === String(custId) ? {
+            ...c,
+            care_status: careStatus,
+            care_notes: careNotes,
+            care_time: nowStr,
+            followup_date: followupDate
+          } : c));
+        } catch (e) {}
+      }
+
+      // Update local profile state
+      setSelectedCustProfile(prev => prev ? {
+        ...prev,
+        currentOrder: { ...prev.currentOrder, ...payload },
+        orders: prev.orders.map(o => o.id === targetOrder.id ? { ...o, ...payload } : o)
+      } : null);
+
+      toast.success(`Đã lưu nhật ký CSKH 360° cho đơn #${targetOrder.id}!`);
+    } catch (err) {
+      console.error(err);
+      toast.error('Lỗi khi lưu nhật ký chăm sóc.');
+    }
   };
 
   const handleSaveCareNote = async (e) => {
@@ -538,26 +618,27 @@ export default function ExpiringAccounts() {
                         <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexWrap: 'wrap' }}>
                           <button
                             className="glass-button"
-                            onClick={() => handleOpenCareModal(order)}
-                            style={{ padding: '5px 9px', fontSize: '11px', background: 'rgba(168,85,247,0.18)', color: '#c084fc', border: '1px solid rgba(168,85,247,0.3)', display: 'flex', alignItems: 'center', gap: '4px' }}
-                            title="Lưu nhật ký chăm sóc khách hàng"
+                            onClick={() => handleOpenCustProfile(order)}
+                            style={{ padding: '6px 12px', fontSize: '11.5px', background: 'rgba(168,85,247,0.18)', color: '#c084fc', border: '1px solid rgba(168,85,247,0.35)', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '4px' }}
+                            title="Mở Hồ Sơ Khách Hàng 360° & Chăm Sóc KH"
                           >
-                            <MessageSquare size={12} /> CSKH
+                            <MessageSquare size={13} /> CSKH 360°
                           </button>
+
                           <button
                             className="glass-button"
                             onClick={() => handleOpenOrderRenewModal(order)}
-                            style={{ padding: '5px 9px', fontSize: '11px', background: 'rgba(16,185,129,0.18)', color: '#10b981', display: 'flex', alignItems: 'center', gap: '4px' }}
+                            style={{ padding: '6px 12px', fontSize: '11.5px', background: 'rgba(16,185,129,0.18)', color: '#10b981', border: '1px solid rgba(16,185,129,0.35)', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '4px' }}
                             title="Tạo đơn gia hạn mới"
                           >
-                            <RefreshCw size={12} /> Gia Hạn
+                            <RefreshCw size={13} /> Gia Hạn
                           </button>
 
                           {order.care_status?.includes('Từ chối gia hạn') ? (
                             <button
                               className="glass-button"
                               onClick={() => handleQuickCareStatus(order, '')}
-                              style={{ padding: '5px 9px', fontSize: '11px', background: 'rgba(56,189,248,0.18)', color: '#38bdf8', border: '1px solid rgba(56,189,248,0.3)', display: 'flex', alignItems: 'center', gap: '4px' }}
+                              style={{ padding: '6px 10px', fontSize: '11px', background: 'rgba(56,189,248,0.18)', color: '#38bdf8', border: '1px solid rgba(56,189,248,0.3)', display: 'flex', alignItems: 'center', gap: '4px' }}
                               title="Khôi phục đơn về danh sách Cần CSKH"
                             >
                               <RefreshCw size={12} /> Khôi Phục
@@ -566,7 +647,7 @@ export default function ExpiringAccounts() {
                             <button
                               className="glass-button"
                               onClick={() => handleQuickCareStatus(order, '🔴 Từ chối gia hạn')}
-                              style={{ padding: '5px 9px', fontSize: '11px', background: 'rgba(239,68,68,0.12)', color: '#f87171', border: '1px solid rgba(239,68,68,0.25)', display: 'flex', alignItems: 'center', gap: '4px' }}
+                              style={{ padding: '6px 10px', fontSize: '11px', background: 'rgba(239,68,68,0.12)', color: '#f87171', border: '1px solid rgba(239,68,68,0.25)', display: 'flex', alignItems: 'center', gap: '4px' }}
                               title="Ẩn đơn này khỏi bảng Cần CSKH (Khách từ chối)"
                             >
                               <EyeOff size={12} /> Ẩn Cảnh Báo
@@ -755,39 +836,127 @@ export default function ExpiringAccounts() {
         </div>
       )}
 
-      {/* Customer Profile 360° Modal */}
+      {/* UNIFIED CUSTOMER 360° PROFILE & CSKH CARE MODAL */}
       {selectedCustProfile && (
         <div className="modal-overlay" onClick={() => setSelectedCustProfile(null)}>
-          <div className="modal-box" onClick={e => e.stopPropagation()} style={{ maxWidth: '640px' }}>
+          <div className="modal-box" onClick={e => e.stopPropagation()} style={{ maxWidth: '720px', maxHeight: '90vh', overflowY: 'auto' }}>
             <div className="modal-header">
               <h2 style={{ fontSize: '18px', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <User size={20} color="#818cf8" /> Hồ Sơ Khách Hàng 360°
+                <User size={20} color="#a855f7" /> Hồ Sơ Khách Hàng 360° & CSKH
               </h2>
               <button className="modal-close-btn" onClick={() => setSelectedCustProfile(null)}><X size={18} /></button>
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              {/* Customer Info Card */}
-              <div style={{ background: 'rgba(99,102,241,0.1)', border: '1px solid rgba(99,102,241,0.25)', borderRadius: '12px', padding: '16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              {/* SECTION 1: Customer Profile Header Card */}
+              <div style={{ background: 'rgba(168,85,247,0.1)', border: '1px solid rgba(168,85,247,0.25)', borderRadius: '12px', padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <h3 style={{ margin: 0, fontSize: '16px', fontWeight: '800', color: '#fff' }}>
-                    {selectedCustProfile.customer.name}
+                  <h3 style={{ margin: 0, fontSize: '17px', fontWeight: '800', color: '#fff' }}>
+                    👤 {selectedCustProfile.customer.name}
                   </h3>
-                  <span style={{ fontSize: '11px', fontWeight: '700', padding: '3px 8px', borderRadius: '4px', background: selectedCustProfile.customer.type === 'Si' ? 'rgba(168,85,247,0.2)' : 'rgba(6,182,212,0.2)', color: selectedCustProfile.customer.type === 'Si' ? '#a855f7' : '#06b6d4' }}>
+                  <span style={{ fontSize: '11.5px', fontWeight: '700', padding: '3px 10px', borderRadius: '6px', background: selectedCustProfile.customer.type === 'Si' ? 'rgba(168,85,247,0.25)' : 'rgba(6,182,212,0.25)', color: selectedCustProfile.customer.type === 'Si' ? '#c084fc' : '#38bdf8' }}>
                     {selectedCustProfile.customer.type === 'Si' ? '🟣 Khách Sỉ' : '🔵 Khách Lẻ'}
                   </span>
                 </div>
-                <div style={{ fontSize: '12.5px', color: '#cbd5e1', display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
-                  <span>📱 SĐT: <strong>{selectedCustProfile.customer.phone || 'Chưa có SĐT'}</strong></span>
-                  <span>📧 Email: <strong>{selectedCustProfile.customer.email || 'Chưa có Email'}</strong></span>
-                  <span>🏬 Kênh: <strong>{selectedCustProfile.customer.source || 'Trực tiếp'}</strong></span>
+                <div style={{ fontSize: '12.5px', color: '#cbd5e1', display: 'flex', gap: '18px', flexWrap: 'wrap', alignItems: 'center' }}>
+                  <span>📱 SĐT/Zalo: <strong style={{ color: '#fff' }}>{selectedCustProfile.customer.phone || 'N/A'}</strong></span>
+                  {selectedCustProfile.customer.email && <span>📧 Email: <strong style={{ color: '#fff' }}>{selectedCustProfile.customer.email}</strong></span>}
+                  <span>🏬 Kênh: <strong style={{ color: '#818cf8' }}>{selectedCustProfile.customer.source || 'Trực tiếp'}</strong></span>
+                  <span>💰 Tổng LTV: <strong style={{ color: '#10b981' }}>{selectedCustProfile.orders.reduce((sum, o) => sum + Number(o.sell_price || o.sellPrice || 0), 0).toLocaleString()}đ</strong></span>
                 </div>
               </div>
 
-              {/* Care Timeline Section */}
+              {/* SECTION 2: Interactive CSKH 1-Click Action Panel */}
+              <form onSubmit={handleSaveUnifiedCareNote} style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', padding: '16px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <h4 style={{ fontSize: '13.5px', fontWeight: '800', color: '#f59e0b', margin: 0, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <MessageSquare size={15} /> TƯƠNG TÁC CSKH & NHẮC TÁI KÝ ĐƠN #{selectedCustProfile.currentOrder?.id || ''}
+                </h4>
+
+                {/* Quick Status Selector Buttons */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '8px' }}>
+                  {[
+                    { label: '🟡 Đã nhắn Zalo', value: '🟡 Đã nhắn Zalo', color: '#f59e0b' },
+                    { label: '🟢 Khách chốt gia hạn', value: '🟢 Khách chốt gia hạn', color: '#10b981' },
+                    { label: '🔵 Khách hẹn lại', value: '🔵 Khách hẹn lại', color: '#38bdf8' },
+                    { label: '🔴 Từ chối gia hạn', value: '🔴 Từ chối gia hạn', color: '#ef4444' }
+                  ].map(st => (
+                    <button
+                      key={st.value}
+                      type="button"
+                      onClick={() => setCareStatus(st.value)}
+                      style={{
+                        padding: '8px 10px', borderRadius: '8px', fontSize: '12px', fontWeight: '700', cursor: 'pointer', textAlign: 'center',
+                        background: careStatus === st.value ? `${st.color}25` : 'rgba(255,255,255,0.04)',
+                        border: careStatus === st.value ? `1.5px solid ${st.color}` : '1px solid rgba(255,255,255,0.08)',
+                        color: careStatus === st.value ? st.color : '#94a3b8',
+                        transition: 'all 0.15s ease'
+                      }}
+                    >
+                      {st.label}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Follow-up Reminder Date (Shows when Khách hẹn lại is selected) */}
+                {careStatus.includes('hẹn lại') && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', background: 'rgba(56,189,248,0.1)', padding: '10px', borderRadius: '8px', border: '1px solid rgba(56,189,248,0.25)' }}>
+                    <Calendar size={16} color="#38bdf8" />
+                    <label style={{ fontSize: '12.5px', color: '#38bdf8', fontWeight: '700', whiteSpace: 'nowrap' }}>📅 Chọn Ngày Hẹn Nhắc Lại:</label>
+                    <input
+                      type="date"
+                      className="glass-input"
+                      value={followupDate}
+                      onChange={e => setFollowupDate(e.target.value)}
+                      style={{ padding: '6px 10px', fontSize: '12.5px' }}
+                    />
+                  </div>
+                )}
+
+                {/* Quick Zalo Copy Button */}
+                {selectedCustProfile.currentOrder && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      handleCopyMessage(selectedCustProfile.currentOrder);
+                      setCareStatus('🟡 Đã nhắn Zalo');
+                    }}
+                    style={{
+                      padding: '8px 14px', borderRadius: '8px', fontSize: '12px', fontWeight: '700', cursor: 'pointer',
+                      background: 'rgba(59,130,246,0.18)', color: '#60a5fa', border: '1px solid rgba(59,130,246,0.35)',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px'
+                    }}
+                  >
+                    <Copy size={14} /> 📋 Copy Tin Nhắn Mẫu Zalo Tái Ký Cá Nhân Hóa
+                  </button>
+                )}
+
+                {/* Notes Textarea */}
+                <div>
+                  <label className="form-label" style={{ fontSize: '11.5px', color: '#94a3b8' }}>Ghi Chú Chi Tiết Tương Tác</label>
+                  <textarea
+                    className="glass-input"
+                    rows={2}
+                    placeholder="Gõ ghi chú chăm sóc (VD: Khách hẹn ngày 28/8 nạp tiền gia hạn Canva Pro 1 năm...)"
+                    value={careNotes}
+                    onChange={e => setCareNotes(e.target.value)}
+                    style={{ fontSize: '12.5px', resize: 'vertical' }}
+                  />
+                </div>
+
+                {/* Submit Save Button */}
+                <button
+                  type="submit"
+                  className="glass-button"
+                  style={{ padding: '10px', fontSize: '13px', background: '#a855f7', color: '#fff', fontWeight: '700', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
+                >
+                  <Check size={16} /> 💾 Lưu Nhật Ký CSKH 360° & Cập Nhật Profile
+                </button>
+              </form>
+
+              {/* SECTION 3: Care History Timeline */}
               <div>
-                <h4 style={{ fontSize: '13px', fontWeight: '800', color: '#a855f7', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                  💬 Nhật Ký Chăm Sóc & Lịch Sử Tương Tác CSKH
+                <h4 style={{ fontSize: '13px', fontWeight: '800', color: '#c084fc', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                  💬 Dòng Thời Gian Nhật Ký CSKH (Lịch Sử Tương Tác)
                 </h4>
                 {(() => {
                   const rawLogs = [];
@@ -797,7 +966,6 @@ export default function ExpiringAccounts() {
                     }
                   });
 
-                  // Deduplicate by content + status + time
                   const seen = new Set();
                   const allCareLogs = rawLogs.filter(l => {
                     const key = `${l.status}_${l.notes}_${l.time}`;
@@ -811,14 +979,14 @@ export default function ExpiringAccounts() {
                   }
 
                   return (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', maxHeight: '160px', overflowY: 'auto' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', maxHeight: '150px', overflowY: 'auto' }}>
                       {allCareLogs.map((log, i) => (
                         <div key={i} style={{ background: 'rgba(168,85,247,0.08)', border: '1px solid rgba(168,85,247,0.2)', borderRadius: '8px', padding: '8px 12px', fontSize: '12px' }}>
                           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontWeight: '700' }}>
-                            <span style={{ color: '#c084fc' }}>{log.status} (Đơn #{log.orderId})</span>
+                            <span style={{ color: '#c084fc' }}>{log.status} (Đơn #${log.orderId})</span>
                             <span style={{ fontSize: '10.5px', color: '#94a3b8' }}>🕒 {log.time}</span>
                           </div>
-                          {log.notes && <div style={{ color: '#e2e8f0', marginTop: '4px', fontSize: '11.5px', fontStyle: 'italic' }}>"{log.notes}"</div>}
+                          {log.notes && <div style={{ color: '#e2e8f0', marginTop: '4px', fontSize: '11.5px', fontStyle: 'italic' }}>"${log.notes}"</div>}
                         </div>
                       ))}
                     </div>
@@ -826,15 +994,15 @@ export default function ExpiringAccounts() {
                 })()}
               </div>
 
-              {/* Purchase History Section */}
+              {/* SECTION 4: Purchase History & Quick Renewal */}
               <div>
                 <h4 style={{ fontSize: '13px', fontWeight: '800', color: '#38bdf8', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                  📦 Lịch Sử Mua Hàng ({selectedCustProfile.orders.length} đơn)
+                  📦 Lịch Sử Mua Hàng ({selectedCustProfile.orders.length} đơn) & Gia Hạn
                 </h4>
                 {selectedCustProfile.orders.length === 0 ? (
                   <div style={{ color: '#64748b', fontSize: '12px', padding: '12px', textAlign: 'center', background: 'rgba(0,0,0,0.2)', borderRadius: '8px' }}>Chưa phát sinh đơn hàng khác.</div>
                 ) : (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '200px', overflowY: 'auto' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '180px', overflowY: 'auto' }}>
                     {selectedCustProfile.orders.map(o => (
                       <div key={o.id} style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '8px', padding: '10px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <div>
@@ -842,9 +1010,19 @@ export default function ExpiringAccounts() {
                           <div style={{ fontSize: '11px', color: '#94a3b8' }}>Hạn dùng: {o.expire_date || o.expireDate || 'N/A'}</div>
                           {o.care_status && <div style={{ fontSize: '10.5px', color: '#f59e0b', marginTop: '2px' }}>💬 CSKH: {o.care_status} ({o.care_notes || ''})</div>}
                         </div>
-                        <div style={{ textAlign: 'right' }}>
+                        <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '4px' }}>
                           <span style={{ fontSize: '13px', fontWeight: '800', color: '#10b981' }}>{Number(o.sell_price || o.sellPrice || 0).toLocaleString()}đ</span>
-                          <span style={{ display: 'block', fontSize: '10.5px', color: o.status === 'Đã thanh toán' ? '#10b981' : '#f87171' }}>{o.status}</span>
+                          <button
+                            type="button"
+                            className="glass-button"
+                            onClick={() => {
+                              setSelectedCustProfile(null);
+                              handleOpenOrderRenewModal(o);
+                            }}
+                            style={{ padding: '4px 8px', fontSize: '11px', background: 'rgba(16,185,129,0.18)', color: '#10b981', border: '1px solid rgba(16,185,129,0.3)', display: 'flex', alignItems: 'center', gap: '4px' }}
+                          >
+                            <RefreshCw size={11} /> Gia Hạn Đơn Này
+                          </button>
                         </div>
                       </div>
                     ))}
@@ -852,77 +1030,13 @@ export default function ExpiringAccounts() {
                 )}
               </div>
 
-              <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '8px' }}>
-                <button className="glass-button" onClick={() => setSelectedCustProfile(null)} style={{ padding: '8px 20px' }}>Đóng Profile</button>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '4px' }}>
+                <button className="glass-button" onClick={() => setSelectedCustProfile(null)} style={{ padding: '8px 20px', fontSize: '12.5px' }}>Đóng Profile 360°</button>
               </div>
             </div>
           </div>
         </div>
       )}
-
-      {/* Care Note Modal */}
-      {selectedCareOrder && (
-        <div className="modal-overlay" onClick={() => setSelectedCareOrder(null)}>
-          <div className="modal-box" onClick={e => e.stopPropagation()} style={{ maxWidth: '500px' }}>
-            <div className="modal-header">
-              <h2 style={{ fontSize: '17px', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <MessageSquare size={18} color="#a855f7" /> Nhật Ký Chăm Sóc Đơn #{selectedCareOrder.id}
-              </h2>
-              <button className="modal-close-btn" onClick={() => setSelectedCareOrder(null)}><X size={18} /></button>
-            </div>
-
-            <form onSubmit={handleSaveCareNote} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-              <div>
-                <label className="form-label" style={{ color: '#c084fc', fontWeight: '700', marginBottom: '8px', display: 'block' }}>
-                  🏷️ TRẠNG THÁI CHĂM SÓC (BẮT BUỘC CHỌN) *
-                </label>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
-                  {[
-                    { label: '🟡 Đã nhắn Zalo', color: '#f59e0b', bg: 'rgba(245,158,11,0.18)' },
-                    { label: '🟢 Khách chốt gia hạn', color: '#10b981', bg: 'rgba(16,185,129,0.18)' },
-                    { label: '🔵 Khách hẹn lại', color: '#38bdf8', bg: 'rgba(56,189,248,0.18)' },
-                    { label: '🔴 Từ chối gia hạn', color: '#ef4444', bg: 'rgba(239,68,68,0.18)' }
-                  ].map(st => (
-                    <button
-                      key={st.label}
-                      type="button"
-                      onClick={() => setCareStatus(st.label)}
-                      style={{
-                        padding: '8px 10px', borderRadius: '8px', cursor: 'pointer', textAlign: 'center',
-                        background: careStatus === st.label ? st.bg : 'rgba(255,255,255,0.03)',
-                        border: careStatus === st.label ? `1.5px solid ${st.color}` : '1px solid rgba(255,255,255,0.08)',
-                        color: careStatus === st.label ? st.color : '#94a3b8',
-                        fontSize: '12px', fontWeight: '700', transition: 'all 0.15s ease'
-                      }}
-                    >
-                      {st.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div>
-                <label className="form-label">Ghi Chú Chi Tiết (Nội dung nhắn/Lý do hẹn...)</label>
-                <textarea
-                  className="glass-input"
-                  rows={3}
-                  placeholder="VD: Khách hẹn ngày 25/8 chuyển khoản gia hạn gói Canva Pro 1 năm..."
-                  value={careNotes}
-                  onChange={e => setCareNotes(e.target.value)}
-                />
-              </div>
-
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '6px' }}>
-                <button type="button" className="glass-button" onClick={() => setSelectedCareOrder(null)}>Hủy</button>
-                <button type="submit" className="glass-button" style={{ background: 'linear-gradient(135deg, #a855f7, #6366f1)', color: '#fff', fontWeight: '700' }}>
-                  Lưu Nhật Ký CSKH
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
     </div>
   );
 }
