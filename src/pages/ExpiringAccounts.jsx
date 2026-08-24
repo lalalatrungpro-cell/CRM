@@ -603,7 +603,31 @@ export default function ExpiringAccounts() {
                           </div>
                         )}
                       </td>
-                      <td style={{ padding: '14px 16px', color: '#818cf8', fontWeight: '600' }}>{prodName}</td>
+                      <td style={{ padding: '14px 16px' }}>
+                        <div style={{ color: '#818cf8', fontWeight: '700' }}>{prodName}</div>
+                        {order.infor ? (
+                          <div style={{ marginTop: '4px', fontSize: '11px', color: '#cbd5e1', display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                            <span style={{ background: 'rgba(255,255,255,0.06)', padding: '2px 6px', borderRadius: '4px', fontFamily: 'monospace', maxWidth: '220px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={order.infor}>
+                              🔑 {order.infor}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                navigator.clipboard.writeText(order.infor);
+                                setCopiedId(`infor-${order.id}`);
+                                toast.success(`✅ Đã copy thông tin acc/key đơn #${order.id}!`);
+                                setTimeout(() => setCopiedId(''), 2000);
+                              }}
+                              style={{ background: 'rgba(99,102,241,0.18)', border: '1px solid rgba(99,102,241,0.35)', color: '#818cf8', borderRadius: '4px', padding: '2px 6px', fontSize: '10.5px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '3px', fontWeight: '700' }}
+                              title="1-Click copy thông tin acc/key gửi khách"
+                            >
+                              {copiedId === `infor-${order.id}` ? <Check size={11} /> : <Copy size={11} />} {copiedId === `infor-${order.id}` ? 'Đã Copy' : 'Copy Acc'}
+                            </button>
+                          </div>
+                        ) : (
+                          <div style={{ fontSize: '11px', color: '#64748b', fontStyle: 'italic', marginTop: '2px' }}>Tự nhập acc</div>
+                        )}
+                      </td>
                       <td style={{ padding: '14px 16px' }}>{expDate}</td>
                       <td style={{ padding: '14px 16px' }}>
                         {isExpired ? (
@@ -864,6 +888,25 @@ export default function ExpiringAccounts() {
                   <span>🏬 Kênh: <strong style={{ color: '#818cf8' }}>{selectedCustProfile.customer.source || 'Trực tiếp'}</strong></span>
                   <span>💰 Tổng LTV: <strong style={{ color: '#10b981' }}>{selectedCustProfile.orders.reduce((sum, o) => sum + Number(o.sell_price || o.sellPrice || 0), 0).toLocaleString()}đ</strong></span>
                 </div>
+                {selectedCustProfile.currentOrder?.infor && (
+                  <div style={{ marginTop: '4px', background: 'rgba(0,0,0,0.3)', padding: '8px 12px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+                    <div style={{ fontSize: '12px', color: '#e2e8f0', fontFamily: 'monospace' }}>
+                      🔑 <strong>Infor Acc/Key (Đơn #{selectedCustProfile.currentOrder.id}):</strong> {selectedCustProfile.currentOrder.infor}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        navigator.clipboard.writeText(selectedCustProfile.currentOrder.infor);
+                        setCopiedId(`infor-modal-${selectedCustProfile.currentOrder.id}`);
+                        toast.success(`✅ Đã copy thông tin acc/key đơn #${selectedCustProfile.currentOrder.id}!`);
+                        setTimeout(() => setCopiedId(''), 2000);
+                      }}
+                      style={{ background: 'rgba(16,185,129,0.2)', border: '1px solid rgba(16,185,129,0.4)', color: '#10b981', borderRadius: '6px', padding: '4px 10px', fontSize: '11.5px', cursor: 'pointer', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '4px' }}
+                    >
+                      {copiedId === `infor-modal-${selectedCustProfile.currentOrder.id}` ? <Check size={12} /> : <Copy size={12} />} Copy Acc Đơn Này
+                    </button>
+                  </div>
+                )}
               </div>
 
               {/* SECTION 2: Interactive CSKH 1-Click Action Panel */}
@@ -1008,6 +1051,21 @@ export default function ExpiringAccounts() {
                         <div>
                           <strong style={{ color: '#fff', fontSize: '13px' }}>#{o.id} - {o.product_name || o.productName}</strong>
                           <div style={{ fontSize: '11px', color: '#94a3b8' }}>Hạn dùng: {o.expire_date || o.expireDate || 'N/A'}</div>
+                          {o.infor && (
+                            <div style={{ fontSize: '11px', color: '#cbd5e1', marginTop: '2px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                              <span style={{ fontFamily: 'monospace', background: 'rgba(255,255,255,0.06)', padding: '1px 5px', borderRadius: '4px' }}>🔑 {o.infor}</span>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  navigator.clipboard.writeText(o.infor);
+                                  toast.success(`✅ Đã copy thông tin acc/key đơn #${o.id}!`);
+                                }}
+                                style={{ background: 'none', border: 'none', color: '#818cf8', cursor: 'pointer', padding: 0, fontSize: '10.5px', fontWeight: '700', textDecoration: 'underline' }}
+                              >
+                                Copy
+                              </button>
+                            </div>
+                          )}
                           {o.care_status && <div style={{ fontSize: '10.5px', color: '#f59e0b', marginTop: '2px' }}>💬 CSKH: {o.care_status} ({o.care_notes || ''})</div>}
                         </div>
                         <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '4px' }}>
