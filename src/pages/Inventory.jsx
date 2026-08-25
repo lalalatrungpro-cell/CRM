@@ -2103,8 +2103,25 @@ export default function Inventory() {
 
       {/* ==================== MODAL: BULK IMPORT KEYS ==================== */}
       {showBulkModal && createPortal(
-        <div className="global-modal-overlay" onClick={() => setShowBulkModal(false)}>
-          <div className="global-modal-box" onClick={e => e.stopPropagation()} style={{ maxWidth: '640px' }}>
+        <div
+            className="drawer-overlay"
+            onClick={() => setShowBulkModal(false)}
+            style={{
+              position: 'fixed', inset: 0, zIndex: 9999,
+              background: 'rgba(0,0,0,0.65)', backdropFilter: 'blur(6px)',
+              display: 'flex', justifyContent: 'flex-end'
+            }}
+          >
+            <div
+              className="drawer-content animate-slide-in-right"
+              onClick={e => e.stopPropagation()}
+              style={{
+                width: '100%', maxWidth: '680px', height: '100vh',
+                background: '#0f172a', borderLeft: '1px solid rgba(255,255,255,0.1)',
+                boxShadow: '-10px 0 35px rgba(0,0,0,0.7)',
+                display: 'flex', flexDirection: 'column', padding: '24px', overflowY: 'auto'
+              }}
+            >
             <div className="modal-header">
               <h2 style={{ fontSize: '18px', fontWeight: '800', color: '#fff', display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <Plus size={20} color="#10b981" /> Nhập Key / Account Số Lượng Lớn (Bulk Import)
@@ -2299,8 +2316,25 @@ export default function Inventory() {
 
       {/* ==================== MODAL: MARK FAULTY ==================== */}
       {showFaultyModal && createPortal(
-        <div className="global-modal-overlay" onClick={() => setShowFaultyModal(null)}>
-          <div className="global-modal-box" onClick={e => e.stopPropagation()} style={{ maxWidth: '480px' }}>
+        <div
+            className="drawer-overlay"
+            onClick={() => setShowFaultyModal(null)}
+            style={{
+              position: 'fixed', inset: 0, zIndex: 9999,
+              background: 'rgba(0,0,0,0.65)', backdropFilter: 'blur(6px)',
+              display: 'flex', justifyContent: 'flex-end'
+            }}
+          >
+            <div
+              className="drawer-content animate-slide-in-right"
+              onClick={e => e.stopPropagation()}
+              style={{
+                width: '100%', maxWidth: '560px', height: '100vh',
+                background: '#0f172a', borderLeft: '1px solid rgba(255,255,255,0.1)',
+                boxShadow: '-10px 0 35px rgba(0,0,0,0.7)',
+                display: 'flex', flexDirection: 'column', padding: '24px'
+              }}
+            >
             <div className="modal-header">
               <h2 style={{ fontSize: '17px', fontWeight: '800', color: '#ef4444', display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <AlertTriangle size={18} /> Đánh Dấu Key Lỗi / Chờ Đổi Trả NCC
