@@ -2115,12 +2115,7 @@ export default function Inventory() {
             <div
               className="drawer-content animate-slide-in-right"
               onClick={e => e.stopPropagation()}
-              style={{
-                width: '100%', maxWidth: '680px', height: '100vh',
-                background: '#0f172a', borderLeft: '1px solid rgba(255,255,255,0.1)',
-                boxShadow: '-10px 0 35px rgba(0,0,0,0.7)',
-                display: 'flex', flexDirection: 'column', padding: '24px', overflowY: 'auto'
-              }}
+              style={{ width: '100%', maxWidth: '680px', height: '100vh', background: '#0f172a', borderLeft: '1px solid rgba(255,255,255,0.1)', boxShadow: '-10px 0 35px rgba(0,0,0,0.7)', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}
             >
             <div style={{
               padding: '20px 24px',
@@ -2154,7 +2149,8 @@ export default function Inventory() {
               </button>
             </div>
 
-            <form onSubmit={handleBulkImport} style={{ display: 'flex', flexDirection: 'column', gap: '14px', marginTop: '10px' }}>
+            <form onSubmit={handleBulkImport} style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+            <div style={{ flex: 1, overflowY: 'auto', padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                 <div>
                   <label className="form-label">Chọn Sản Phẩm *</label>
@@ -2317,23 +2313,23 @@ export default function Inventory() {
                 </div>
               </div>
 
-              <div style={{ display: 'flex', gap: '10px', marginTop: '6px' }}>
-                <button
-                  type="submit"
-                  className="glass-button"
-                  style={{ flex: 1, background: 'linear-gradient(135deg, #10b981, #059669)', color: '#fff', fontWeight: '700' }}
-                >
-                  <Plus size={16} /> Xác Nhận Nhập {liveLinesCount} Key Vào Kho
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setShowBulkModal(false)}
-                  style={{ padding: '10px 20px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)', background: 'transparent', color: '#94a3b8', cursor: 'pointer' }}
-                >
-                  Hủy
-                </button>
-              </div>
-            </form>
+            </div>
+            <div style={{ padding: '16px 24px', borderTop: '1px solid rgba(255,255,255,0.08)', background: '#111827', marginTop: 'auto', display: 'flex', gap: '12px' }}>
+              <button
+                type="submit" className="glass-button"
+                style={{ flex: 1, height: '44px', background: 'linear-gradient(135deg, #6366f1, #10b981)', color: '#fff', fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
+              >
+                <Plus size={16} /> Xác Nhận Nhập {liveLinesCount} Key Vào Kho
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowBulkModal(false)}
+                style={{ padding: '0 20px', height: '44px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)', background: 'transparent', color: '#94a3b8', cursor: 'pointer' }}
+              >
+                Hủy
+              </button>
+            </div>
+          </form>
           </div>
         </div>,
         document.body
@@ -2392,7 +2388,8 @@ export default function Inventory() {
               </button>
             </div>
 
-            <form onSubmit={handleConfirmFaulty} style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '10px' }}>
+            <form onSubmit={handleConfirmFaulty} style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+            <div style={{ flex: 1, overflowY: 'auto', padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
               <p style={{ fontSize: '13px', color: '#94a3b8', margin: 0 }}>
                 Sản phẩm: <strong style={{ color: '#fff' }}>{showFaultyModal.product_name}</strong>
               </p>
@@ -2412,19 +2409,20 @@ export default function Inventory() {
                 />
               </div>
 
-              <div style={{ display: 'flex', gap: '10px', marginTop: '6px' }}>
-                <button type="submit" className="glass-button" style={{ flex: 1, background: '#ef4444', color: '#fff', fontWeight: '700' }}>
-                  Xác Nhận Đưa Vào Mục Đòi NCC
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setShowFaultyModal(null)}
-                  style={{ padding: '8px 16px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)', background: 'transparent', color: '#94a3b8', cursor: 'pointer' }}
-                >
-                  Hủy
-                </button>
-              </div>
-            </form>
+            </div>
+            <div style={{ padding: '16px 24px', borderTop: '1px solid rgba(255,255,255,0.08)', background: '#111827', marginTop: 'auto', display: 'flex', gap: '12px' }}>
+              <button type="submit" className="glass-button" style={{ flex: 1, height: '44px', background: 'linear-gradient(135deg, #ef4444, #dc2626)', color: '#fff', fontWeight: 'bold' }}>
+                🚨 Xác Nhận Báo Lỗi Kho
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowFaultyModal(null)}
+                style={{ padding: '0 20px', height: '44px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)', background: 'transparent', color: '#94a3b8', cursor: 'pointer' }}
+              >
+                Hủy
+              </button>
+            </div>
+          </form>
           </div>
         </div>,
         document.body

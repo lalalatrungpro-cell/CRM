@@ -512,12 +512,7 @@ export default function SupplierDetail() {
           <div
             className="drawer-content animate-slide-in-right"
             onClick={e => e.stopPropagation()}
-            style={{
-              width: '100%', maxWidth: '560px', height: '100vh',
-              background: '#0f172a', borderLeft: '1px solid rgba(255,255,255,0.1)',
-              boxShadow: '-10px 0 35px rgba(0,0,0,0.7)',
-              display: 'flex', flexDirection: 'column', padding: '24px', overflowY: 'auto'
-            }}
+            style={{ width: '100%', maxWidth: '560px', height: '100vh', background: '#0f172a', borderLeft: '1px solid rgba(255,255,255,0.1)', boxShadow: '-10px 0 35px rgba(0,0,0,0.7)', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}
           >
             <div className="modal-header" style={{ marginBottom: '16px' }}>
               <h2 style={{ fontSize: '18px', fontWeight: 'bold', color: '#fff', display: 'flex', alignItems: 'center', gap: '8px' }}>

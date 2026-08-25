@@ -361,12 +361,7 @@ export default function CashFlow() {
             <div
               className="drawer-content animate-slide-in-right"
               onClick={e => e.stopPropagation()}
-              style={{
-                width: '100%', maxWidth: '560px', height: '100vh',
-                background: '#0f172a', borderLeft: '1px solid rgba(255,255,255,0.1)',
-                boxShadow: '-10px 0 35px rgba(0,0,0,0.7)',
-                display: 'flex', flexDirection: 'column', padding: '24px', overflowY: 'auto'
-              }}
+              style={{ width: '100%', maxWidth: '560px', height: '100vh', background: '#0f172a', borderLeft: '1px solid rgba(255,255,255,0.1)', boxShadow: '-10px 0 35px rgba(0,0,0,0.7)', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}
             >
             <div style={{
               padding: '20px 24px',
@@ -400,7 +395,8 @@ export default function CashFlow() {
               </button>
             </div>
 
-            <form onSubmit={handleSaveTransaction} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+            <form onSubmit={handleSaveTransaction} style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+            <div style={{ flex: 1, overflowY: 'auto', padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
               {/* Type Switcher */}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
                 <button
@@ -508,23 +504,24 @@ export default function CashFlow() {
                 />
               </div>
 
-              <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
-                <button
-                  type="submit"
-                  className="glass-button"
-                  style={{
-                    flex: 1,
-                    background: formData.type === 'INCOME' ? 'linear-gradient(135deg, #10b981, #059669)' : 'linear-gradient(135deg, #ef4444, #dc2626)',
-                    color: '#fff', fontWeight: '700'
-                  }}
-                >
-                  💾 Xác Nhận Lưu Phiếu
-                </button>
-                <button type="button" onClick={closeModal} style={{ padding: '10px 20px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)', background: 'transparent', color: '#94a3b8', cursor: 'pointer' }}>
-                  Hủy
-                </button>
-              </div>
-            </form>
+            </div>
+            <div style={{ padding: '16px 24px', borderTop: '1px solid rgba(255,255,255,0.08)', background: '#111827', marginTop: 'auto', display: 'flex', gap: '12px' }}>
+              <button
+                type="submit"
+                className="glass-button"
+                style={{
+                  flex: 1, height: '44px',
+                  background: formData.type === 'INCOME' ? 'linear-gradient(135deg, #10b981, #059669)' : 'linear-gradient(135deg, #ef4444, #dc2626)',
+                  color: '#fff', fontWeight: '700'
+                }}
+              >
+                💾 Xác Nhận Lưu Phiếu
+              </button>
+              <button type="button" onClick={closeModal} style={{ padding: '0 20px', height: '44px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)', background: 'transparent', color: '#94a3b8', cursor: 'pointer' }}>
+                Hủy
+              </button>
+            </div>
+          </form>
           </div>
         </div>,
         document.body

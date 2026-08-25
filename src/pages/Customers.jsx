@@ -695,7 +695,8 @@ export default function Customers() {
               </button>
             </div>
 
-            <form onSubmit={handleSaveCustomer} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+            <form onSubmit={handleSaveCustomer} style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+            <div style={{ flex: 1, overflowY: 'auto', padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                 <div>
                   <label className="form-label">Tên Khách Hàng *</label>
@@ -811,13 +812,16 @@ export default function Customers() {
                 />
               </div>
 
-              <div style={{ display: 'flex', gap: '10px', marginTop: '8px' }}>
-                <button type="submit" className="glass-button" style={{ flex: 1, background: '#6366f1', color: '#fff', fontWeight: '700' }}>
-                  {editingCustomer ? 'Cập Nhật Hồ Sơ Khách' : 'Hoàn Tất Thêm Khách Hàng 360°'}
-                </button>
-                <button type="button" onClick={closeModal} style={{ padding: '10px 20px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)', background: 'transparent', color: '#94a3b8', cursor: 'pointer' }}>Hủy</button>
-              </div>
-            </form>
+            </div>
+            <div style={{ padding: '16px 24px', borderTop: '1px solid rgba(255,255,255,0.08)', background: '#111827', marginTop: 'auto', display: 'flex', gap: '12px' }}>
+              <button type="submit" className="glass-button" style={{ flex: 1, height: '44px', background: 'linear-gradient(135deg, #10b981, #6366f1)', color: '#fff', fontWeight: '700' }}>
+                {editingCustomer ? '💾 Cập Nhật Hồ Sơ' : '✨ Thêm Khách Hàng Mới'}
+              </button>
+              <button type="button" onClick={closeModal} style={{ padding: '0 20px', height: '44px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)', background: 'transparent', color: '#94a3b8', cursor: 'pointer' }}>
+                Hủy
+              </button>
+            </div>
+          </form>
           </div>
         </div>
       )}
