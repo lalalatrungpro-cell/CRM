@@ -2234,87 +2234,88 @@ export default function Orders() {
               </button>
             </div>
 
-            {/* 6-Card Scenario Tabs Selector */}
-            <div style={{ marginBottom: '16px' }}>
-              <label className="form-label" style={{ color: '#38bdf8', fontWeight: 'bold', marginBottom: '8px', display: 'block' }}>
-                🎯 CHỌN KỊCH BẢN BẢO HÀNH (1-CLICK):
-              </label>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px' }}>
-                <button
-                  type="button"
-                  onClick={() => setWarrantyMode('SWITCH_TEAM')}
-                  style={{
-                    padding: '10px 8px', borderRadius: '8px', border: warrantyMode === 'SWITCH_TEAM' ? '2px solid #3b82f6' : '1px solid rgba(255,255,255,0.1)',
-                    background: warrantyMode === 'SWITCH_TEAM' ? 'rgba(59,130,246,0.25)' : 'rgba(255,255,255,0.04)',
-                    color: '#fff', fontSize: '12px', fontWeight: '600', cursor: 'pointer', textAlign: 'center'
-                  }}
-                >
-                  🔵 1. Đổi Kho Team
-                </button>
 
-                <button
-                  type="button"
-                  onClick={() => setWarrantyMode('EXCHANGE_SAME_SUPPLIER')}
-                  style={{
-                    padding: '10px 8px', borderRadius: '8px', border: warrantyMode === 'EXCHANGE_SAME_SUPPLIER' ? '2px solid #10b981' : '1px solid rgba(255,255,255,0.1)',
-                    background: warrantyMode === 'EXCHANGE_SAME_SUPPLIER' ? 'rgba(16,185,129,0.25)' : 'rgba(255,255,255,0.04)',
-                    color: '#fff', fontSize: '12px', fontWeight: '600', cursor: 'pointer', textAlign: 'center'
-                  }}
-                >
-                  🟢 2. Đổi Acc Cùng NCC
-                </button>
+            <form onSubmit={handleConfirmWarranty} style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+              <div style={{ flex: 1, overflowY: 'auto', padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                {/* 6-Card Scenario Tabs Selector */}
+                <div>
+                  <label className="form-label" style={{ color: '#38bdf8', fontWeight: 'bold', marginBottom: '8px', display: 'block' }}>
+                    🎯 CHỌN KỊCH BẢN BẢO HÀNH (1-CLICK):
+                  </label>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px' }}>
+                    <button
+                      type="button"
+                      onClick={() => setWarrantyMode('SWITCH_TEAM')}
+                      style={{
+                        padding: '10px 8px', borderRadius: '8px', border: warrantyMode === 'SWITCH_TEAM' ? '2px solid #3b82f6' : '1px solid rgba(255,255,255,0.1)',
+                        background: warrantyMode === 'SWITCH_TEAM' ? 'rgba(59,130,246,0.25)' : 'rgba(255,255,255,0.04)',
+                        color: '#fff', fontSize: '12px', fontWeight: '600', cursor: 'pointer', textAlign: 'center'
+                      }}
+                    >
+                      🔵 1. Đổi Kho Team
+                    </button>
 
-                <button
-                  type="button"
-                  onClick={() => setWarrantyMode('CROSS_SUPPLIER')}
-                  style={{
-                    padding: '10px 8px', borderRadius: '8px', border: warrantyMode === 'CROSS_SUPPLIER' ? '2px solid #f97316' : '1px solid rgba(255,255,255,0.1)',
-                    background: warrantyMode === 'CROSS_SUPPLIER' ? 'rgba(249,115,22,0.25)' : 'rgba(255,255,255,0.04)',
-                    color: '#fff', fontSize: '12px', fontWeight: '600', cursor: 'pointer', textAlign: 'center'
-                  }}
-                >
-                  🟧 3. Đổi Acc Chéo NCC B
-                </button>
+                    <button
+                      type="button"
+                      onClick={() => setWarrantyMode('EXCHANGE_SAME_SUPPLIER')}
+                      style={{
+                        padding: '10px 8px', borderRadius: '8px', border: warrantyMode === 'EXCHANGE_SAME_SUPPLIER' ? '2px solid #10b981' : '1px solid rgba(255,255,255,0.1)',
+                        background: warrantyMode === 'EXCHANGE_SAME_SUPPLIER' ? 'rgba(16,185,129,0.25)' : 'rgba(255,255,255,0.04)',
+                        color: '#fff', fontSize: '12px', fontWeight: '600', cursor: 'pointer', textAlign: 'center'
+                      }}
+                    >
+                      🟢 2. Đổi Acc Cùng NCC
+                    </button>
 
-                <button
-                  type="button"
-                  onClick={() => setWarrantyMode('FULL_REFUND')}
-                  style={{
-                    padding: '10px 8px', borderRadius: '8px', border: warrantyMode === 'FULL_REFUND' ? '2px solid #ef4444' : '1px solid rgba(255,255,255,0.1)',
-                    background: warrantyMode === 'FULL_REFUND' ? 'rgba(239,68,68,0.25)' : 'rgba(255,255,255,0.04)',
-                    color: '#fff', fontSize: '12px', fontWeight: '600', cursor: 'pointer', textAlign: 'center'
-                  }}
-                >
-                  🔴 4. Hoàn Tiền 100%
-                </button>
+                    <button
+                      type="button"
+                      onClick={() => setWarrantyMode('CROSS_SUPPLIER')}
+                      style={{
+                        padding: '10px 8px', borderRadius: '8px', border: warrantyMode === 'CROSS_SUPPLIER' ? '2px solid #f97316' : '1px solid rgba(255,255,255,0.1)',
+                        background: warrantyMode === 'CROSS_SUPPLIER' ? 'rgba(249,115,22,0.25)' : 'rgba(255,255,255,0.04)',
+                        color: '#fff', fontSize: '12px', fontWeight: '600', cursor: 'pointer', textAlign: 'center'
+                      }}
+                    >
+                      🟧 3. Đổi Acc Chéo NCC B
+                    </button>
 
-                <button
-                  type="button"
-                  onClick={() => setWarrantyMode('PARTIAL_REFUND')}
-                  style={{
-                    padding: '10px 8px', borderRadius: '8px', border: warrantyMode === 'PARTIAL_REFUND' ? '2px solid #eab308' : '1px solid rgba(255,255,255,0.1)',
-                    background: warrantyMode === 'PARTIAL_REFUND' ? 'rgba(234,179,8,0.25)' : 'rgba(255,255,255,0.04)',
-                    color: '#fff', fontSize: '12px', fontWeight: '600', cursor: 'pointer', textAlign: 'center'
-                  }}
-                >
-                  🟡 5. Hoàn Tiền 1 Phần
-                </button>
+                    <button
+                      type="button"
+                      onClick={() => setWarrantyMode('FULL_REFUND')}
+                      style={{
+                        padding: '10px 8px', borderRadius: '8px', border: warrantyMode === 'FULL_REFUND' ? '2px solid #ef4444' : '1px solid rgba(255,255,255,0.1)',
+                        background: warrantyMode === 'FULL_REFUND' ? 'rgba(239,68,68,0.25)' : 'rgba(255,255,255,0.04)',
+                        color: '#fff', fontSize: '12px', fontWeight: '600', cursor: 'pointer', textAlign: 'center'
+                      }}
+                    >
+                      🔴 4. Hoàn Tiền 100%
+                    </button>
 
-                <button
-                  type="button"
-                  onClick={() => setWarrantyMode('REJECT_WARRANTY')}
-                  style={{
-                    padding: '10px 8px', borderRadius: '8px', border: warrantyMode === 'REJECT_WARRANTY' ? '2px solid #64748b' : '1px solid rgba(255,255,255,0.1)',
-                    background: warrantyMode === 'REJECT_WARRANTY' ? 'rgba(100,116,139,0.25)' : 'rgba(255,255,255,0.04)',
-                    color: '#fff', fontSize: '12px', fontWeight: '600', cursor: 'pointer', textAlign: 'center'
-                  }}
-                >
-                  ⚪ 6. Từ Chối Bảo Hành
-                </button>
-              </div>
-            </div>
+                    <button
+                      type="button"
+                      onClick={() => setWarrantyMode('PARTIAL_REFUND')}
+                      style={{
+                        padding: '10px 8px', borderRadius: '8px', border: warrantyMode === 'PARTIAL_REFUND' ? '2px solid #eab308' : '1px solid rgba(255,255,255,0.1)',
+                        background: warrantyMode === 'PARTIAL_REFUND' ? 'rgba(234,179,8,0.25)' : 'rgba(255,255,255,0.04)',
+                        color: '#fff', fontSize: '12px', fontWeight: '600', cursor: 'pointer', textAlign: 'center'
+                      }}
+                    >
+                      🟡 5. Hoàn Tiền 1 Phần
+                    </button>
 
-            <form onSubmit={handleConfirmWarranty} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                    <button
+                      type="button"
+                      onClick={() => setWarrantyMode('REJECT_WARRANTY')}
+                      style={{
+                        padding: '10px 8px', borderRadius: '8px', border: warrantyMode === 'REJECT_WARRANTY' ? '2px solid #64748b' : '1px solid rgba(255,255,255,0.1)',
+                        background: warrantyMode === 'REJECT_WARRANTY' ? 'rgba(100,116,139,0.25)' : 'rgba(255,255,255,0.04)',
+                        color: '#fff', fontSize: '12px', fontWeight: '600', cursor: 'pointer', textAlign: 'center'
+                      }}
+                    >
+                      ⚪ 6. Từ Chối Bảo Hành
+                    </button>
+                  </div>
+                </div>
               <div>
                 <label className="form-label">Ghi Chú / Lý Do Bảo Hành</label>
                 <input
@@ -2400,6 +2401,7 @@ export default function Orders() {
                   ⚠️ Đơn hàng sẽ được chuyển sang trạng thái <strong>Đã hoàn tiền (100%)</strong> ({Number(showWarrantyModal.sell_price || 0).toLocaleString()}đ).
                 </div>
               )}
+              </div>
 
               <div style={{ padding: '16px 24px', borderTop: '1px solid rgba(255,255,255,0.08)', background: '#111827', marginTop: 'auto', display: 'flex', gap: '10px' }}>
                 <button type="submit" className="glass-button" style={{ flex: 1, height: '42px', background: 'linear-gradient(135deg, #f59e0b, #10b981)', color: '#fff', fontWeight: '700' }}>
