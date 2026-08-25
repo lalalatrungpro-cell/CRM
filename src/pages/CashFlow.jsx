@@ -349,8 +349,25 @@ export default function CashFlow() {
 
       {/* ==================== POPUP MODAL: ADD TRANSACTION ==================== */}
       {showModal && createPortal(
-        <div className="global-modal-overlay" onClick={closeModal}>
-          <div className="global-modal-card" onClick={e => e.stopPropagation()} style={{ maxWidth: '520px', padding: '24px' }}>
+        <div
+            className="drawer-overlay"
+            onClick={closeModal}
+            style={{
+              position: 'fixed', inset: 0, zIndex: 9999,
+              background: 'rgba(0,0,0,0.65)', backdropFilter: 'blur(6px)',
+              display: 'flex', justifyContent: 'flex-end'
+            }}
+          >
+            <div
+              className="drawer-content animate-slide-in-right"
+              onClick={e => e.stopPropagation()}
+              style={{
+                width: '100%', maxWidth: '560px', height: '100vh',
+                background: '#0f172a', borderLeft: '1px solid rgba(255,255,255,0.1)',
+                boxShadow: '-10px 0 35px rgba(0,0,0,0.7)',
+                display: 'flex', flexDirection: 'column', padding: '24px', overflowY: 'auto'
+              }}
+            >
             <div className="modal-header" style={{ marginBottom: '16px' }}>
               <h2 style={{ fontSize: '18px', fontWeight: '800', color: '#fff', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
                 {formData.type === 'INCOME' ? <ArrowDownRight size={20} color="#10b981" /> : <ArrowUpRight size={20} color="#ef4444" />}

@@ -478,8 +478,25 @@ export default function Payroll() {
 
       {/* ==================== POPUP MODAL: ADD / EDIT STAFF ==================== */}
       {showStaffModal && createPortal(
-        <div className="global-modal-overlay" onClick={() => setShowStaffModal(false)}>
-          <div className="global-modal-card" onClick={e => e.stopPropagation()} style={{ maxWidth: '520px', padding: '24px' }}>
+        <div
+            className="drawer-overlay"
+            onClick={() => setShowStaffModal(false)}
+            style={{
+              position: 'fixed', inset: 0, zIndex: 9999,
+              background: 'rgba(0,0,0,0.65)', backdropFilter: 'blur(6px)',
+              display: 'flex', justifyContent: 'flex-end'
+            }}
+          >
+            <div
+              className="drawer-content animate-slide-in-right"
+              onClick={e => e.stopPropagation()}
+              style={{
+                width: '100%', maxWidth: '560px', height: '100vh',
+                background: '#0f172a', borderLeft: '1px solid rgba(255,255,255,0.1)',
+                boxShadow: '-10px 0 35px rgba(0,0,0,0.7)',
+                display: 'flex', flexDirection: 'column', padding: '24px', overflowY: 'auto'
+              }}
+            >
             <div className="modal-header" style={{ marginBottom: '16px' }}>
               <h2 style={{ fontSize: '18px', fontWeight: '800', color: '#fff', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <UserCheck size={20} color="#6366f1" />
@@ -601,8 +618,25 @@ export default function Payroll() {
 
       {/* ==================== POPUP MODAL: EDIT PAYROLL (BONUS / DEDUCTION) ==================== */}
       {showEditPayrollModal && editingPayroll && createPortal(
-        <div className="global-modal-overlay" onClick={() => setShowEditPayrollModal(false)}>
-          <div className="global-modal-card" onClick={e => e.stopPropagation()} style={{ maxWidth: '480px', padding: '24px' }}>
+        <div
+            className="drawer-overlay"
+            onClick={() => setShowEditPayrollModal(false)}
+            style={{
+              position: 'fixed', inset: 0, zIndex: 9999,
+              background: 'rgba(0,0,0,0.65)', backdropFilter: 'blur(6px)',
+              display: 'flex', justifyContent: 'flex-end'
+            }}
+          >
+            <div
+              className="drawer-content animate-slide-in-right"
+              onClick={e => e.stopPropagation()}
+              style={{
+                width: '100%', maxWidth: '560px', height: '100vh',
+                background: '#0f172a', borderLeft: '1px solid rgba(255,255,255,0.1)',
+                boxShadow: '-10px 0 35px rgba(0,0,0,0.7)',
+                display: 'flex', flexDirection: 'column', padding: '24px', overflowY: 'auto'
+              }}
+            >
             <div className="modal-header" style={{ marginBottom: '16px' }}>
               <h2 style={{ fontSize: '18px', fontWeight: '800', color: '#fff', margin: 0 }}>
                 Điều Chỉnh Lương: {editingPayroll.staff_name}
