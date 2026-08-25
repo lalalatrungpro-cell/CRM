@@ -39,6 +39,19 @@ export default function ExpiringAccounts() {
 
   const todayStr = new Date().toISOString().split('T')[0];
 
+  const formatShortDate = (dateStr) => {
+    if (!dateStr || dateStr === '---') return '---';
+    const parts = String(dateStr).split('T')[0].split('-');
+    if (parts.length === 3) {
+      const year = parts[0].slice(-2);
+      const month = parts[1];
+      const day = parts[2];
+      return `${day}/${month}/${year}`;
+    }
+    return dateStr;
+  };
+
+
   const [orderRenewForm, setOrderRenewForm] = useState({
     durationDays: 30,
     sellPrice: 150000,
@@ -650,10 +663,10 @@ export default function ExpiringAccounts() {
                             <button
                               type="button"
                               onClick={() => handleCopyFullOrderText(order)}
-                              style={{ background: 'rgba(16,185,129,0.18)', border: '1px solid rgba(16,185,129,0.35)', color: '#10b981', borderRadius: '4px', padding: '2px 6px', fontSize: '10.5px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '3px', fontWeight: '700' }}
-                              title="1-Click copy TOÀN BỘ thông tin đơn hàng như lúc lên đơn để gửi Zalo"
+                              style={{ background: 'rgba(16,185,129,0.18)', border: '1px solid rgba(16,185,129,0.35)', color: '#10b981', borderRadius: '4px', padding: '2px 8px', fontSize: '11px', cursor: 'pointer', fontWeight: '700', whiteSpace: 'nowrap' }}
+                              title="1-Click copy TOÀN BỘ thông tin đơn hàng gửi Zalo"
                             >
-                              {copiedId === `full-${order.id}` ? <Check size={11} /> : <Copy size={11} />} {copiedId === `full-${order.id}` ? 'Đã Copy Full' : '📋 Copy Full Đơn'}
+                              {copiedId === `full-${order.id}` ? '✓ Đã Copy' : 'Copy Đơn'}
                             </button>
                             <button
                               type="button"
@@ -673,53 +686,53 @@ export default function ExpiringAccounts() {
                           <div style={{ fontSize: '11px', color: '#64748b', fontStyle: 'italic', marginTop: '2px' }}>Tự nhập acc</div>
                         )}
                       </td>
-                      <td style={{ padding: '14px 16px' }}>{expDate}</td>
-                      <td style={{ padding: '14px 16px' }}>
+                      <td style={{ padding: '12px 14px', whiteSpace: 'nowrap', fontWeight: '600' }}>{formatShortDate(expDate)}</td>
+                      <td style={{ padding: '12px 14px', whiteSpace: 'nowrap' }}>
                         {isExpired ? (
-                          <span className="badge badge-danger">ĐÃ QUÁ HẠN {Math.abs(dLeft)} NGÀY</span>
+                          <span className="badge badge-danger" style={{ padding: '3px 8px', fontSize: '11px', fontWeight: '700', whiteSpace: 'nowrap' }}>Quá hạn {Math.abs(dLeft)} ngày</span>
                         ) : dLeft === 0 ? (
-                          <span className="badge badge-danger">HẾT HẠN HÔM NAY</span>
+                          <span className="badge badge-danger" style={{ padding: '3px 8px', fontSize: '11px', fontWeight: '700', whiteSpace: 'nowrap' }}>Hết hạn hôm nay</span>
                         ) : (
-                          <span className="badge badge-warning">CÒN {dLeft} NGÀY</span>
+                          <span className="badge badge-warning" style={{ padding: '3px 8px', fontSize: '11px', fontWeight: '700', whiteSpace: 'nowrap' }}>Còn {dLeft} ngày</span>
                         )}
                       </td>
-                      <td style={{ padding: '14px 16px' }}>
-                        <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexWrap: 'wrap' }}>
+                      <td style={{ padding: '12px 14px', whiteSpace: 'nowrap' }}>
+                        <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
                           <button
-                            className="glass-button"
+                            type="button"
                             onClick={() => handleOpenCustProfile(order)}
-                            style={{ padding: '6px 12px', fontSize: '11.5px', background: 'rgba(168,85,247,0.18)', color: '#c084fc', border: '1px solid rgba(168,85,247,0.35)', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '4px' }}
+                            style={{ padding: '4px 8px', fontSize: '11px', background: 'rgba(168,85,247,0.15)', color: '#c084fc', border: '1px solid rgba(168,85,247,0.3)', borderRadius: '6px', fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '3px', whiteSpace: 'nowrap' }}
                             title="Mở Hồ Sơ Khách Hàng 360° & Chăm Sóc KH"
                           >
-                            <MessageSquare size={13} /> CSKH 360°
+                            <MessageSquare size={12} /> CSKH 360°
                           </button>
 
                           <button
-                            className="glass-button"
+                            type="button"
                             onClick={() => handleOpenOrderRenewModal(order)}
-                            style={{ padding: '6px 12px', fontSize: '11.5px', background: 'rgba(16,185,129,0.18)', color: '#10b981', border: '1px solid rgba(16,185,129,0.35)', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '4px' }}
+                            style={{ padding: '4px 8px', fontSize: '11px', background: 'rgba(16,185,129,0.15)', color: '#10b981', border: '1px solid rgba(16,185,129,0.3)', borderRadius: '6px', fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '3px', whiteSpace: 'nowrap' }}
                             title="Tạo đơn gia hạn mới"
                           >
-                            <RefreshCw size={13} /> Gia Hạn
+                            <RefreshCw size={12} /> Gia Hạn
                           </button>
 
                           {order.care_status?.includes('Từ chối gia hạn') ? (
                             <button
-                              className="glass-button"
+                              type="button"
                               onClick={() => handleQuickCareStatus(order, '')}
-                              style={{ padding: '6px 10px', fontSize: '11px', background: 'rgba(56,189,248,0.18)', color: '#38bdf8', border: '1px solid rgba(56,189,248,0.3)', display: 'flex', alignItems: 'center', gap: '4px' }}
+                              style={{ padding: '4px 8px', fontSize: '11px', background: 'rgba(56,189,248,0.15)', color: '#38bdf8', border: '1px solid rgba(56,189,248,0.3)', borderRadius: '6px', fontWeight: '600', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '3px', whiteSpace: 'nowrap' }}
                               title="Khôi phục đơn về danh sách Cần CSKH"
                             >
-                              <RefreshCw size={12} /> Khôi Phục
+                              <RefreshCw size={11} /> Khôi Phục
                             </button>
                           ) : (
                             <button
-                              className="glass-button"
+                              type="button"
                               onClick={() => handleQuickCareStatus(order, '🔴 Từ chối gia hạn')}
-                              style={{ padding: '6px 10px', fontSize: '11px', background: 'rgba(239,68,68,0.12)', color: '#f87171', border: '1px solid rgba(239,68,68,0.25)', display: 'flex', alignItems: 'center', gap: '4px' }}
+                              style={{ padding: '4px 8px', fontSize: '11px', background: 'rgba(239,68,68,0.1)', color: '#f87171', border: '1px solid rgba(239,68,68,0.22)', borderRadius: '6px', fontWeight: '600', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '3px', whiteSpace: 'nowrap' }}
                               title="Ẩn đơn này khỏi bảng Cần CSKH (Khách từ chối)"
                             >
-                              <EyeOff size={12} /> Ẩn Cảnh Báo
+                              <EyeOff size={11} /> Ẩn Cảnh Báo
                             </button>
                           )}
                         </div>
