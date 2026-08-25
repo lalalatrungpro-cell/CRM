@@ -1274,7 +1274,7 @@ export default function Orders() {
       toast.info('Đang tạo ảnh QR kèm thông tin chuyển khoản...');
       
       const vqr = vietqr || { bank_id: 'MB', account_no: '0901234567', account_name: 'SHOP DROPSHIP CRM', memo_prefix: 'DON' };
-      const bankId = vqr.bank_id || vqr.bankId || 'MB';
+      const bankId = getBankDisplayName(vqr.bank_id || vqr.bankId || 'MB');
       const accountNo = vqr.account_no || vqr.accountNo || '0901234567';
       const accountName = vqr.account_name || vqr.accountName || 'SHOP DROPSHIP CRM';
       const memo = `${vqr.memo_prefix || vqr.memoPrefix || 'DON'} ${order ? order.id : ''}`;
@@ -1423,7 +1423,7 @@ export default function Orders() {
       const prodName = order.product_name || order.productName;
       const sellP = order.sell_price || order.sellPrice || 0;
       const expDate = order.expire_date || order.expireDate || '---';
-      const bName = vqr.bank_id || vqr.bankId || 'MB';
+      const bName = getBankDisplayName(vqr.bank_id || vqr.bankId || 'MB');
       const accNo = vqr.account_no || vqr.accountNo || '';
       const accName = vqr.account_name || vqr.accountName || '';
 
