@@ -3258,70 +3258,37 @@ export default function Orders() {
       )}
 
       
-      {/* EDIT ACCOUNT & ORDER MODAL */}
+      {/* EDIT ACCOUNT & ORDER MODAL - 920PX ENTERPRISE MULTI-COLUMN GRID */}
       {showEditModal && (
         <div style={{
           position: 'fixed', inset: 0, zIndex: 9999,
-          background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(8px)',
+          background: 'rgba(0,0,0,0.82)', backdropFilter: 'blur(10px)',
           display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px'
         }}>
-          <div className="glass-panel animate-scale-in" style={{ width: '100%', maxWidth: '580px', padding: '24px', position: 'relative', maxHeight: '90vh', overflowY: 'auto' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '18px', borderBottom: '1px solid rgba(255,255,255,0.08)', paddingBottom: '12px' }}>
+          <div className="glass-panel animate-scale-in" style={{ width: '100%', maxWidth: '920px', padding: '24px', position: 'relative', maxHeight: '92vh', overflowY: 'auto' }}>
+            {/* Modal Header */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '18px', borderBottom: '1px solid rgba(255,255,255,0.08)', paddingBottom: '14px' }}>
               <div>
-                <h3 style={{ fontSize: '18px', fontWeight: '800', color: '#fff', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <h3 style={{ fontSize: '19px', fontWeight: '800', color: '#fff', display: 'flex', alignItems: 'center', gap: '8px' }}>
                   ✏️ CHỈNH SỬA ĐƠN HÀNG 360° #{showEditModal.id}
                 </h3>
                 <p style={{ color: '#94a3b8', fontSize: '12.5px', marginTop: '3px' }}>
-                  Sản Phẩm: <strong style={{ color: '#818cf8' }}>{showEditModal.product_name || showEditModal.productName}</strong>
+                  Sản Phẩm Đang Chọn: <strong style={{ color: '#c084fc' }}>{editFormData.productName || showEditModal.product_name}</strong> | Khách Hàng: <strong style={{ color: '#818cf8' }}>{editFormData.customerName || showEditModal.customer_name}</strong>
                 </p>
               </div>
-              <button onClick={() => setShowEditModal(null)} style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer', padding: '4px' }}>
+              <button onClick={() => setShowEditModal(null)} style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: '#94a3b8', cursor: 'pointer', padding: '6px', borderRadius: '8px' }}>
                 <X size={20} />
               </button>
             </div>
 
             <form onSubmit={handleSaveEditOrder} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              {/* SECTION 1: CUSTOMER & CONTACT INFO */}
-              <div style={{ background: 'rgba(99,102,241,0.08)', border: '1px solid rgba(99,102,241,0.25)', padding: '12px 14px', borderRadius: '10px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                <div style={{ fontSize: '11.5px', fontWeight: '800', color: '#818cf8', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                  📦 1. SẢN PHẨM & KHÁCH HÀNG LIÊN HỆ
-                </div>
-                <div>
-                  <label className="form-label" style={{ color: '#c084fc', fontWeight: 'bold' }}>
-                    📦 Đổi Sản Phẩm Dịch Vụ *
-                  </label>
-                  <select
-                    className="glass-input" required
-                    style={{ width: '100%', height: '38px', fontSize: '13px', border: '1px solid rgba(192,132,252,0.4)', fontWeight: 'bold', color: '#c084fc' }}
-                    value={editFormData.productName}
-                    onChange={e => {
-                      const pName = e.target.value;
-                      const prod = products.find(p => p.name === pName);
-                      if (prod) {
-                        const dur = prod.default_duration_days || prod.defaultDurationDays || 30;
-                        const custType = getCustomerTypeFromState(formData);
-                        const sellP = getTierPriceForProduct(prod, custType);
-                        const costP = prod.default_cost || prod.defaultCost || 50000;
-                        const exp = new Date(Date.now() + dur * 86400000).toISOString().split('T')[0];
-                        setEditFormData(f => ({
-                          ...f,
-                          productName: pName,
-                          sellPrice: sellP,
-                          costPrice: costP,
-                          expireDate: exp
-                        }));
-                        toast.info(`Đã đổi sản phẩm sang ${pName}. Tự động cập nhật Giá & Hạn dùng!`);
-                      } else {
-                        setEditFormData(f => ({ ...f, productName: pName }));
-                      }
-                    }}
-                  >
-                    {products.map(p => (
-                      <option key={p.id} value={p.name}>{p.name}</option>
-                    ))}
-                  </select>
-                </div>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+              {/* ROW 1: 3-COLUMN GRID (KHÁCH HÀNG & SP | LIÊN HỆ & HẠN DÙNG | KHO & GIÁ VỐN) */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '14px' }}>
+                {/* COLUMN 1: KHÁCH HÀNG & SP */}
+                <div style={{ background: 'rgba(168,85,247,0.08)', border: '1px solid rgba(168,85,247,0.25)', padding: '12px 14px', borderRadius: '10px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  <div style={{ fontSize: '11.5px', fontWeight: '800', color: '#c084fc', textTransform: 'uppercase', letterSpacing: '0.04em', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    👤 KHÁCH HÀNG & SẢN PHẨM
+                  </div>
                   <div>
                     <label className="form-label" style={{ color: '#cbd5e1', fontWeight: '700' }}>Tên Khách Hàng *</label>
                     <input
@@ -3334,6 +3301,46 @@ export default function Orders() {
                     />
                   </div>
                   <div>
+                    <label className="form-label" style={{ color: '#c084fc', fontWeight: '700' }}>📦 Đổi Sản Phẩm Dịch Vụ *</label>
+                    <select
+                      className="glass-input" required
+                      style={{ width: '100%', height: '38px', fontSize: '12.5px', border: '1px solid rgba(192,132,252,0.4)', fontWeight: 'bold', color: '#c084fc' }}
+                      value={editFormData.productName}
+                      onChange={e => {
+                        const pName = e.target.value;
+                        const prod = products.find(p => p.name === pName);
+                        if (prod) {
+                          const dur = prod.default_duration_days || prod.defaultDurationDays || 30;
+                          const custType = getCustomerTypeFromState(formData);
+                          const sellP = getTierPriceForProduct(prod, custType);
+                          const costP = prod.default_cost || prod.defaultCost || 50000;
+                          const exp = new Date(Date.now() + dur * 86400000).toISOString().split('T')[0];
+                          setEditFormData(f => ({
+                            ...f,
+                            productName: pName,
+                            sellPrice: sellP,
+                            costPrice: costP,
+                            expireDate: exp
+                          }));
+                          toast.info(`Đã đổi sản phẩm sang ${pName}. Tự động cập nhật Giá & Hạn dùng!`);
+                        } else {
+                          setEditFormData(f => ({ ...f, productName: pName }));
+                        }
+                      }}
+                    >
+                      {products.map(p => (
+                        <option key={p.id} value={p.name}>{p.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                {/* COLUMN 2: LIÊN HỆ & HẠN DÙNG */}
+                <div style={{ background: 'rgba(56,189,248,0.08)', border: '1px solid rgba(56,189,248,0.25)', padding: '12px 14px', borderRadius: '10px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  <div style={{ fontSize: '11.5px', fontWeight: '800', color: '#38bdf8', textTransform: 'uppercase', letterSpacing: '0.04em', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    📱 LIÊN HỆ & THỜI HẠN
+                  </div>
+                  <div>
                     <label className="form-label" style={{ color: '#cbd5e1', fontWeight: '700' }}>SĐT / Zalo Khách</label>
                     <input
                       type="text"
@@ -3344,64 +3351,8 @@ export default function Orders() {
                       onChange={e => setEditFormData({ ...editFormData, phone: e.target.value })}
                     />
                   </div>
-                </div>
-              </div>
-
-              {/* SECTION 2: CREDENTIALS & DELIVERY */}
-              <div style={{ background: 'rgba(56,189,248,0.08)', border: '1px solid rgba(56,189,248,0.25)', padding: '12px 14px', borderRadius: '10px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                <div style={{ fontSize: '11.5px', fontWeight: '800', color: '#38bdf8', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                  🔑 2. TÀI KHOẢN & LINK GIAO KHÁCH
-                </div>
-                <textarea
-                  className="glass-input"
-                  style={{ minHeight: '75px', fontFamily: 'monospace', fontSize: '12.5px', background: 'rgba(15, 23, 42, 0.8)', border: '1px solid rgba(56,189,248,0.4)' }}
-                  placeholder="VD: user@gmail.com | pass123 | https://link_join_slot..."
-                  value={editFormData.infor}
-                  onChange={e => setEditFormData({ ...editFormData, infor: e.target.value })}
-                />
-              </div>
-
-              {/* SECTION 3: FINANCIALS & PRICING */}
-              <div style={{ background: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.25)', padding: '12px 14px', borderRadius: '10px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                <div style={{ fontSize: '11.5px', fontWeight: '800', color: '#10b981', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                  💰 3. TÀI CHÍNH, GIÁ BÁN & TRẠNG THÁI
-                </div>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                   <div>
-                    <label className="form-label" style={{ color: '#10b981', fontWeight: '700' }}>Giá Bán Khách (VNĐ)</label>
-                    <input
-                      type="number" className="glass-input"
-                      style={{ width: '100%', height: '38px', fontSize: '13px', fontWeight: '700', color: '#10b981' }}
-                      value={editFormData.sellPrice}
-                      onChange={e => setEditFormData({ ...editFormData, sellPrice: e.target.value })}
-                    />
-                  </div>
-                  <div>
-                    <label className="form-label" style={{ color: '#c084fc', fontWeight: '700' }}>Tiền Giảm Giá / Voucher (VNĐ)</label>
-                    <input
-                      type="number" className="glass-input"
-                      style={{ width: '100%', height: '38px', fontSize: '13px', color: '#c084fc' }}
-                      value={editFormData.discountAmount}
-                      onChange={e => setEditFormData({ ...editFormData, discountAmount: e.target.value })}
-                    />
-                  </div>
-                </div>
-
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                  <div>
-                    <label className="form-label" style={{ color: '#cbd5e1' }}>Trạng Thái Thanh Toán *</label>
-                    <select
-                      className="glass-input"
-                      style={{ width: '100%', height: '38px', fontSize: '13px' }}
-                      value={editFormData.status}
-                      onChange={e => setEditFormData({ ...editFormData, status: e.target.value })}
-                    >
-                      <option value="Đã thanh toán">🟢 Đã thanh toán</option>
-                      <option value="Nợ">🔴 Nợ (Chưa thanh toán)</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="form-label" style={{ color: '#cbd5e1' }}>Ngày Hết Hạn Acc</label>
+                    <label className="form-label" style={{ color: '#cbd5e1', fontWeight: '700' }}>📅 Ngày Hết Hạn Acc</label>
                     <input
                       type="date" className="glass-input"
                       style={{ width: '100%', height: '38px', fontSize: '13px' }}
@@ -3410,16 +3361,14 @@ export default function Orders() {
                     />
                   </div>
                 </div>
-              </div>
 
-              {/* SECTION 4: SUPPLIER & COST PRICE */}
-              <div style={{ background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.25)', padding: '12px 14px', borderRadius: '10px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                <div style={{ fontSize: '11.5px', fontWeight: '800', color: '#f59e0b', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                  🏢 4. NGUỒN NHẬP SỈ & GIÁ VỐN
-                </div>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                {/* COLUMN 3: KHO & GIÁ VỐN */}
+                <div style={{ background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.25)', padding: '12px 14px', borderRadius: '10px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  <div style={{ fontSize: '11.5px', fontWeight: '800', color: '#f59e0b', textTransform: 'uppercase', letterSpacing: '0.04em', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    🏢 KHO & GIÁ VỐN NHẬP
+                  </div>
                   <div>
-                    <label className="form-label" style={{ color: '#f59e0b' }}>Nhà Cung Cấp Nguồn Nhập</label>
+                    <label className="form-label" style={{ color: '#f59e0b', fontWeight: '700' }}>Nhà Cung Cấp Nguồn Nhập</label>
                     <select
                       className="glass-input"
                       style={{ width: '100%', height: '38px', fontSize: '12.5px' }}
@@ -3428,15 +3377,15 @@ export default function Orders() {
                     >
                       <option value="">-- Chọn Nhà Cung Cấp --</option>
                       {suppliers.map(s => (
-                        <option key={s.id} value={s.id}>{s.name} (SĐT: {s.phone || 'N/A'})</option>
+                        <option key={s.id} value={s.id}>{s.name}</option>
                       ))}
                     </select>
                   </div>
                   <div>
-                    <label className="form-label" style={{ color: '#f59e0b' }}>Giá Vốn Nhập Sỉ (VNĐ)</label>
+                    <label className="form-label" style={{ color: '#f59e0b', fontWeight: '700' }}>Giá Vốn Nhập Sỉ (VNĐ)</label>
                     <input
                       type="number" className="glass-input"
-                      style={{ width: '100%', height: '38px', fontSize: '13px', color: '#f59e0b' }}
+                      style={{ width: '100%', height: '38px', fontSize: '13px', color: '#f59e0b', fontWeight: '700' }}
                       value={editFormData.costPrice}
                       onChange={e => setEditFormData({ ...editFormData, costPrice: e.target.value })}
                     />
@@ -3444,17 +3393,78 @@ export default function Orders() {
                 </div>
               </div>
 
+              {/* ROW 2: 3-COLUMN FINANCIALS & PRICING ROW */}
+              <div style={{ background: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.25)', padding: '12px 14px', borderRadius: '10px', display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '14px' }}>
+                <div>
+                  <label className="form-label" style={{ color: '#10b981', fontWeight: '700' }}>💰 Giá Bán Khách (VNĐ)</label>
+                  <input
+                    type="number" className="glass-input"
+                    style={{ width: '100%', height: '38px', fontSize: '13.5px', fontWeight: '800', color: '#10b981' }}
+                    value={editFormData.sellPrice}
+                    onChange={e => setEditFormData({ ...editFormData, sellPrice: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <label className="form-label" style={{ color: '#c084fc', fontWeight: '700' }}>🎟️ Tiền Giảm Giá / Voucher (VNĐ)</label>
+                  <input
+                    type="number" className="glass-input"
+                    style={{ width: '100%', height: '38px', fontSize: '13.5px', color: '#c084fc', fontWeight: '700' }}
+                    value={editFormData.discountAmount}
+                    onChange={e => setEditFormData({ ...editFormData, discountAmount: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <label className="form-label" style={{ color: '#cbd5e1', fontWeight: '700' }}>💳 Trạng Thái Thanh Toán *</label>
+                  <select
+                    className="glass-input"
+                    style={{ width: '100%', height: '38px', fontSize: '13px', fontWeight: '700' }}
+                    value={editFormData.status}
+                    onChange={e => setEditFormData({ ...editFormData, status: e.target.value })}
+                  >
+                    <option value="Đã thanh toán">🟢 Đã thanh toán</option>
+                    <option value="Nợ">🔴 Nợ (Chưa thanh toán)</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* ROW 3: CREDENTIALS & DELIVERY TEXTAREA */}
+              <div style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(56,189,248,0.3)', padding: '12px 14px', borderRadius: '10px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ fontSize: '11.5px', fontWeight: '800', color: '#38bdf8', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                    🔑 THÔNG TIN TÀI KHOẢN / INVITE LINK GIAO KHÁCH
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      navigator.clipboard.writeText(editFormData.infor);
+                      toast.success('✅ Đã copy tài khoản!');
+                    }}
+                    style={{ background: 'rgba(56,189,248,0.2)', border: '1px solid rgba(56,189,248,0.4)', color: '#38bdf8', padding: '2px 8px', borderRadius: '4px', fontSize: '11px', fontWeight: '700', cursor: 'pointer' }}
+                  >
+                    📋 Copy Acc
+                  </button>
+                </div>
+                <textarea
+                  className="glass-input"
+                  rows={3}
+                  style={{ width: '100%', fontFamily: 'monospace', fontSize: '12.5px', background: 'rgba(15, 23, 42, 0.85)', border: '1px solid rgba(56,189,248,0.3)' }}
+                  placeholder="VD: user@gmail.com | pass123 | https://link_join_slot..."
+                  value={editFormData.infor}
+                  onChange={e => setEditFormData({ ...editFormData, infor: e.target.value })}
+                />
+              </div>
+
               {/* SUBMIT BUTTONS */}
-              <div style={{ display: 'flex', gap: '10px', marginTop: '6px' }}>
+              <div style={{ display: 'flex', gap: '12px', marginTop: '6px' }}>
                 <button
                   type="submit" className="glass-button"
-                  style={{ flex: 1, height: '42px', background: 'linear-gradient(135deg, #6366f1, #10b981)', color: '#fff', fontWeight: '800', fontSize: '13.5px' }}
+                  style={{ flex: 1, height: '44px', background: 'linear-gradient(135deg, #6366f1, #10b981)', color: '#fff', fontWeight: '800', fontSize: '14px', borderRadius: '8px' }}
                 >
                   💾 LƯU CHỈNH SỬA ĐƠN HÀNG 360°
                 </button>
                 <button
                   type="button" onClick={() => setShowEditModal(null)}
-                  style={{ padding: '0 20px', height: '42px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)', background: 'transparent', color: '#94a3b8', cursor: 'pointer', fontWeight: '600' }}
+                  style={{ padding: '0 24px', height: '44px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)', background: 'transparent', color: '#94a3b8', cursor: 'pointer', fontWeight: '600' }}
                 >
                   Hủy
                 </button>
