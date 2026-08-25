@@ -588,6 +588,101 @@ export default function Orders() {
   const [batchItems, setBatchItems] = useState([]);
   const [selectedAddProduct, setSelectedAddProduct] = useState('');
 
+  // POS Dual Discount State ('VOUCHER' | 'MANUAL')
+  const [discountMode, setDiscountMode] = useState('VOUCHER');
+  const [voucherCodeInput, setVoucherCodeInput] = useState('');
+  const [appliedDiscount, setAppliedDiscount] = useState(null);
+  const [manualDiscountType, setManualDiscountType] = useState('AMOUNT'); // 'AMOUNT' | 'PERCENT'
+  const [manualDiscountValue, setManualDiscountValue] = useState('');
+  const [manualDiscountReason, setManualDiscountReason] = useState('');
+
+  const POS_VOUCHERS = [
+    { code: 'VIP10', type: 'PERCENT', value: 10, label: 'VIP10 (-10%)' },
+    { code: 'TET2026', type: 'AMOUNT', value: 50000, label: 'TET2026 (-50k)' },
+    { code: 'CHIETKHOACTV', type: 'PERCENT', value: 15, label: 'CTV (-15%)' },
+    { code: 'TRIAN50K', type: 'AMOUNT', value: 50000, label: 'TRIAN (-50k)' }
+  ];
+
+  const handleApplyVoucherCode = (code) => {
+    if (!code) return;
+    const clean = String(code).trim().toUpperCase();
+    const found = POS_VOUCHERS.find(v => v.code === clean);
+    
+    // Determine gross sell price subtotal
+    const subtotal = Number(formData.sellPrice) || 150000;
+
+    let discountAmt = 0;
+    let labelStr = '';
+
+    if (found) {
+      if (found.type === 'PERCENT') {
+        discountAmt = Math.round((subtotal * found.value) / 100);
+        labelStr = `Voucher ${found.code} (-${found.value}%)`;
+      } else {
+        discountAmt = found.value;
+        labelStr = `Voucher ${found.code} (-${found.value.toLocaleString()}đ)`;
+      }
+    } else {
+      // Default fallback for custom voucher codes: treat as 10% or fixed 50k
+      if (clean.includes('50') || clean.includes('50K')) {
+        discountAmt = 50000;
+        labelStr = `Voucher ${clean} (-50.000đ)`;
+      } else {
+        discountAmt = Math.round(subtotal * 0.1);
+        labelStr = `Voucher ${clean} (-10%)`;
+      }
+    }
+
+    discountAmt = Math.min(subtotal, Math.max(0, discountAmt));
+    setAppliedDiscount({
+      type: 'VOUCHER',
+      code: clean,
+      discountType: found ? found.type : 'CUSTOM',
+      value: found ? found.value : 10,
+      amount: discountAmt,
+      label: labelStr
+    });
+    toast.success(`🎉 Đã áp dụng ${labelStr}!`);
+  };
+
+  const handleApplyManualDiscount = (type, valStr, reason) => {
+    const numVal = parseFloat(valStr) || 0;
+    if (numVal <= 0) {
+      setAppliedDiscount(null);
+      return;
+    }
+    const subtotal = Number(formData.sellPrice) || 150000;
+    let discountAmt = 0;
+    let labelStr = '';
+
+    if (type === 'PERCENT') {
+      discountAmt = Math.round((subtotal * numVal) / 100);
+      labelStr = `Bớt ${numVal}% ${reason ? `(${reason})` : ''}`;
+    } else {
+      discountAmt = numVal;
+      labelStr = `Bớt ${numVal.toLocaleString()}đ ${reason ? `(${reason})` : ''}`;
+    }
+
+    discountAmt = Math.min(subtotal, Math.max(0, discountAmt));
+    setAppliedDiscount({
+      type: 'MANUAL',
+      code: 'MANUAL',
+      discountType: type,
+      value: numVal,
+      amount: discountAmt,
+      label: labelStr
+    });
+  };
+
+  const handleClearDiscount = () => {
+    setAppliedDiscount(null);
+    setVoucherCodeInput('');
+    setManualDiscountValue('');
+    setManualDiscountReason('');
+    toast.info('Đã tháo mã giảm giá khỏi đơn hàng.');
+  };
+
+
   // [Phase 5] Detect if selected product is EVERGREEN (no expire date)
   const selectedProduct = products.find(p => p.name === formData.productName);
   const isEvergreen = (selectedProduct?.product_type || selectedProduct?.productType) === 'EVERGREEN';
@@ -621,6 +716,10 @@ export default function Orders() {
     setProductSearchTerm('');
     setShowProductDropdown(false);
     setSelectedAddProduct('');
+    setAppliedDiscount(null);
+    setVoucherCodeInput('');
+    setManualDiscountValue('');
+    setManualDiscountReason('');
   };
 
   const getCustomerTypeFromState = (fData) => {
@@ -2824,6 +2923,143 @@ export default function Orders() {
                     <div style={{ fontSize: '18px', fontWeight: '800', color: '#10b981' }}>
                       {batchItems.reduce((s, i) => s + (Number(i.sellPrice) || 0) * (Number(i.quantity) || 1), 0).toLocaleString()}đ
                     </div>
+                  </div>
+                )}
+              </div>
+
+              {/* POS DUAL DISCOUNT & VOUCHER ENGINE WIDGET */}
+              <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '10px', padding: '12px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ fontSize: '12.5px', fontWeight: '800', color: '#c084fc', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    🎟️ GIẢM GIÁ & ƯU ĐÃI POS
+                  </span>
+                  {/* Mode Switcher */}
+                  <div style={{ display: 'flex', background: 'rgba(0,0,0,0.3)', padding: '2px', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.08)' }}>
+                    <button
+                      type="button"
+                      onClick={() => setDiscountMode('VOUCHER')}
+                      style={{
+                        padding: '3px 10px', fontSize: '11px', fontWeight: '700', borderRadius: '4px', border: 'none', cursor: 'pointer',
+                        background: discountMode === 'VOUCHER' ? '#8b5cf6' : 'transparent',
+                        color: discountMode === 'VOUCHER' ? '#fff' : '#94a3b8'
+                      }}
+                    >
+                      🎟️ Mã Voucher
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setDiscountMode('MANUAL')}
+                      style={{
+                        padding: '3px 10px', fontSize: '11px', fontWeight: '700', borderRadius: '4px', border: 'none', cursor: 'pointer',
+                        background: discountMode === 'MANUAL' ? '#8b5cf6' : 'transparent',
+                        color: discountMode === 'MANUAL' ? '#fff' : '#94a3b8'
+                      }}
+                    >
+                      ✏️ Bớt Tiền Lẻ
+                    </button>
+                  </div>
+                </div>
+
+                {/* TAB 1: VOUCHER PROMO CODES */}
+                {discountMode === 'VOUCHER' && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    <div style={{ display: 'flex', gap: '6px' }}>
+                      <input
+                        type="text"
+                        className="glass-input"
+                        placeholder="Nhập mã voucher (VD: VIP10, TET2026)..."
+                        value={voucherCodeInput}
+                        onChange={e => setVoucherCodeInput(e.target.value.toUpperCase())}
+                        style={{ flex: 1, padding: '6px 10px', fontSize: '12px', textTransform: 'uppercase' }}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => handleApplyVoucherCode(voucherCodeInput)}
+                        style={{ background: '#8b5cf6', color: '#fff', border: 'none', borderRadius: '6px', padding: '6px 14px', fontSize: '12px', fontWeight: '700', cursor: 'pointer' }}
+                      >
+                        Áp Dụng
+                      </button>
+                    </div>
+
+                    <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', alignItems: 'center' }}>
+                      <span style={{ fontSize: '11px', color: '#64748b' }}>Gợi ý:</span>
+                      {POS_VOUCHERS.map(v => (
+                        <button
+                          key={v.code}
+                          type="button"
+                          onClick={() => handleApplyVoucherCode(v.code)}
+                          style={{
+                            padding: '2px 8px', borderRadius: '4px', fontSize: '11px', fontWeight: '700', cursor: 'pointer',
+                            background: appliedDiscount?.code === v.code ? 'rgba(139,92,246,0.25)' : 'rgba(255,255,255,0.04)',
+                            border: appliedDiscount?.code === v.code ? '1px solid #a855f7' : '1px solid rgba(255,255,255,0.08)',
+                            color: appliedDiscount?.code === v.code ? '#c084fc' : '#94a3b8'
+                          }}
+                        >
+                          🏷️ {v.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* TAB 2: MANUAL AMOUNT DISCOUNT */}
+                {discountMode === 'MANUAL' && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', gap: '8px' }}>
+                      <select
+                        className="glass-input"
+                        value={manualDiscountType}
+                        onChange={e => {
+                          setManualDiscountType(e.target.value);
+                          if (manualDiscountValue) handleApplyManualDiscount(e.target.value, manualDiscountValue, manualDiscountReason);
+                        }}
+                        style={{ padding: '6px 8px', fontSize: '12px' }}
+                      >
+                        <option value="AMOUNT">VNĐ (Tiền mặt)</option>
+                        <option value="PERCENT">% (Phần trăm)</option>
+                      </select>
+                      <input
+                        type="number"
+                        className="glass-input"
+                        placeholder={manualDiscountType === 'AMOUNT' ? "Số tiền bớt (VD: 20000)..." : "Phần trăm giảm (VD: 10)..."}
+                        value={manualDiscountValue}
+                        onChange={e => {
+                          const val = e.target.value;
+                          setManualDiscountValue(val);
+                          handleApplyManualDiscount(manualDiscountType, val, manualDiscountReason);
+                        }}
+                        style={{ padding: '6px 10px', fontSize: '12px' }}
+                      />
+                    </div>
+                    <input
+                      type="text"
+                      className="glass-input"
+                      placeholder="Lý do giảm (VD: Bớt tiền lẻ cho khách quen...)"
+                      value={manualDiscountReason}
+                      onChange={e => {
+                        const r = e.target.value;
+                        setManualDiscountReason(r);
+                        if (manualDiscountValue) handleApplyManualDiscount(manualDiscountType, manualDiscountValue, r);
+                      }}
+                      style={{ padding: '6px 10px', fontSize: '11.5px' }}
+                    />
+                  </div>
+                )}
+
+                {/* APPLIED DISCOUNT BADGE WITH 1-CLICK CLEAR (✕) */}
+                {appliedDiscount && (
+                  <div style={{ background: 'rgba(168,85,247,0.15)', border: '1px solid rgba(168,85,247,0.35)', borderRadius: '6px', padding: '6px 10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div style={{ fontSize: '12px', fontWeight: '700', color: '#c084fc', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <span>🎟️ Đã áp dụng: <strong>{appliedDiscount.label}</strong> (-{Number(appliedDiscount.amount).toLocaleString()}đ)</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleClearDiscount}
+                      style={{ background: 'rgba(239,68,68,0.2)', border: '1px solid rgba(239,68,68,0.4)', color: '#ef4444', borderRadius: '4px', padding: '2px 8px', fontSize: '11px', cursor: 'pointer', fontWeight: '700' }}
+                      title="Tháo mã giảm giá"
+                    >
+                      ✕ Tháo Mã
+                    </button>
                   </div>
                 )}
               </div>
