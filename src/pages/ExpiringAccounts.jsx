@@ -816,9 +816,27 @@ export default function ExpiringAccounts() {
       )}
 
       {/* Modal Gia Hạn Đơn Khách */}
+      {/* QUICK ORDER RENEWAL SLIDE-OVER DRAWER (560PX) */}
       {renewingOrder && (
-        <div className="modal-overlay" onClick={() => setRenewingOrder(null)}>
-          <div className="modal-box" onClick={e => e.stopPropagation()} style={{ maxWidth: '500px' }}>
+        <div
+          className="drawer-overlay"
+          onClick={() => setRenewingOrder(null)}
+          style={{
+            position: 'fixed', inset: 0, zIndex: 9999,
+            background: 'rgba(0,0,0,0.65)', backdropFilter: 'blur(6px)',
+            display: 'flex', justifyContent: 'flex-end'
+          }}
+        >
+          <div
+            className="drawer-content animate-slide-in-right"
+            onClick={e => e.stopPropagation()}
+            style={{
+              width: '100%', maxWidth: '560px', height: '100vh',
+              background: '#0f172a', borderLeft: '1px solid rgba(255,255,255,0.1)',
+              boxShadow: '-10px 0 35px rgba(0,0,0,0.7)',
+              display: 'flex', flexDirection: 'column'
+            }}
+          >
             <div className="modal-header">
               <h2 style={{ fontSize: '18px', fontWeight: '700' }}>Gia Hạn Đơn Hàng #{renewingOrder.id}</h2>
               <button className="modal-close-btn" onClick={() => setRenewingOrder(null)}><X size={18} /></button>
@@ -886,9 +904,27 @@ export default function ExpiringAccounts() {
       )}
 
       {/* Modal Gia Hạn Kho Team */}
+      {/* QUICK TEAM RENEWAL SLIDE-OVER DRAWER (560PX) */}
       {renewingTeam && (
-        <div className="modal-overlay" onClick={() => setRenewingTeam(null)}>
-          <div className="modal-box" onClick={e => e.stopPropagation()} style={{ maxWidth: '460px' }}>
+        <div
+          className="drawer-overlay"
+          onClick={() => setRenewingTeam(null)}
+          style={{
+            position: 'fixed', inset: 0, zIndex: 9999,
+            background: 'rgba(0,0,0,0.65)', backdropFilter: 'blur(6px)',
+            display: 'flex', justifyContent: 'flex-end'
+          }}
+        >
+          <div
+            className="drawer-content animate-slide-in-right"
+            onClick={e => e.stopPropagation()}
+            style={{
+              width: '100%', maxWidth: '560px', height: '100vh',
+              background: '#0f172a', borderLeft: '1px solid rgba(255,255,255,0.1)',
+              boxShadow: '-10px 0 35px rgba(0,0,0,0.7)',
+              display: 'flex', flexDirection: 'column'
+            }}
+          >
             <div className="modal-header">
               <h2 style={{ fontSize: '18px', fontWeight: '700' }}>Gia Hạn Nguồn Kho Team</h2>
               <button className="modal-close-btn" onClick={() => setRenewingTeam(null)}><X size={18} /></button>
@@ -919,9 +955,27 @@ export default function ExpiringAccounts() {
       )}
 
       {/* UNIFIED CUSTOMER 360° PROFILE & CSKH CARE MODAL */}
+      {/* UNIFIED CUSTOMER 360° SLIDE-OVER DRAWER (750PX) */}
       {selectedCustProfile && (
-        <div className="modal-overlay" onClick={() => setSelectedCustProfile(null)}>
-          <div className="modal-box" onClick={e => e.stopPropagation()} style={{ maxWidth: '720px', maxHeight: '90vh', overflowY: 'auto' }}>
+        <div
+          className="drawer-overlay"
+          onClick={() => setSelectedCustProfile(null)}
+          style={{
+            position: 'fixed', inset: 0, zIndex: 9999,
+            background: 'rgba(0,0,0,0.65)', backdropFilter: 'blur(6px)',
+            display: 'flex', justifyContent: 'flex-end'
+          }}
+        >
+          <div
+            className="drawer-content animate-slide-in-right"
+            onClick={e => e.stopPropagation()}
+            style={{
+              width: '100%', maxWidth: '750px', height: '100vh',
+              background: '#0f172a', borderLeft: '1px solid rgba(255,255,255,0.1)',
+              boxShadow: '-10px 0 35px rgba(0,0,0,0.7)',
+              display: 'flex', flexDirection: 'column'
+            }}
+          >
             <div className="modal-header">
               <h2 style={{ fontSize: '18px', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <User size={20} color="#a855f7" /> Hồ Sơ Khách Hàng 360° & CSKH

@@ -642,9 +642,27 @@ export default function Customers() {
       </div>
 
       {/* Add / Edit Rich Detailed Customer Modal */}
+      {/* CUSTOMER PROFILE CREATE/EDIT SLIDE-OVER DRAWER (560PX) */}
       {showModal && (
-        <div className="modal-overlay" onClick={closeModal}>
-          <div className="modal-box" onClick={e => e.stopPropagation()} style={{ maxWidth: '580px' }}>
+        <div
+          className="drawer-overlay"
+          onClick={closeModal}
+          style={{
+            position: 'fixed', inset: 0, zIndex: 9999,
+            background: 'rgba(0,0,0,0.65)', backdropFilter: 'blur(6px)',
+            display: 'flex', justifyContent: 'flex-end'
+          }}
+        >
+          <div
+            className="drawer-content animate-slide-in-right"
+            onClick={e => e.stopPropagation()}
+            style={{
+              width: '100%', maxWidth: '560px', height: '100vh',
+              background: '#0f172a', borderLeft: '1px solid rgba(255,255,255,0.1)',
+              boxShadow: '-10px 0 35px rgba(0,0,0,0.7)',
+              display: 'flex', flexDirection: 'column'
+            }}
+          >
             <div className="modal-header">
               <h2 style={{ fontSize: '18px', fontWeight: '700' }}>
                 {editingCustomer ? 'Chỉnh Sửa Hồ Sơ Khách Hàng Chi Tiết' : 'Thêm Hồ Sơ Khách Hàng Mới 360°'}
