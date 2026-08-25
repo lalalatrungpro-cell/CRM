@@ -2197,16 +2197,41 @@ export default function Orders() {
               display: 'flex', flexDirection: 'column'
             }}
           >
-            <div className="modal-header" style={{ marginBottom: '16px' }}>
-              <div>
-                <h2 style={{ fontSize: '20px', fontWeight: 'bold', color: '#fff', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <RefreshCw size={20} color="#f59e0b" /> Trung Tâm Bảo Hành & Đổi Trả 360° Đơn #{showWarrantyModal.id}
-                </h2>
-                <p style={{ color: '#94a3b8', fontSize: '13px', marginTop: '4px' }}>
-                  Khách: <strong>{showWarrantyModal.customer_name}</strong> | SP: <strong>{showWarrantyModal.product_name}</strong> | Nguồn sỉ: <strong style={{ color: '#f59e0b' }}>{suppliers.find(s => String(s.id) === String(showWarrantyModal.supplier_id))?.name || 'N/A'}</strong>
-                </p>
+            <div style={{
+              padding: '20px 24px',
+              borderBottom: '1px solid rgba(255,255,255,0.08)',
+              background: 'linear-gradient(135deg, rgba(30,41,59,0.9), rgba(15,23,42,0.95))',
+              display: 'flex', justifyContent: 'space-between', alignItems: 'center'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <div style={{
+                  width: '44px', height: '44px', borderRadius: '12px',
+                  background: 'linear-gradient(135deg, #f59e0b, #ef4444)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: '22px', boxShadow: '0 4px 18px rgba(245,158,11,0.35)'
+                }}>
+                  🔄
+                </div>
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <h2 style={{ fontSize: '19px', fontWeight: '800', color: '#fff', margin: 0, letterSpacing: '-0.01em' }}>
+                      TRUNG TÂM BẢO HÀNH & ĐỔI TRẢ 360° #{showWarrantyModal.id}
+                    </h2>
+                    <span style={{ fontSize: '10.5px', fontWeight: '800', background: 'rgba(245,158,11,0.18)', color: '#f59e0b', padding: '2px 8px', borderRadius: '20px', border: '1px solid rgba(245,158,11,0.3)', textTransform: 'uppercase' }}>
+                      ⚡ 6-Mode Control
+                    </span>
+                  </div>
+                  <p style={{ fontSize: '12.5px', color: '#94a3b8', margin: '3px 0 0 0' }}>
+                    Khách: <strong style={{ color: '#818cf8' }}>{showWarrantyModal.customer_name}</strong> | SP: <strong style={{ color: '#c084fc' }}>{showWarrantyModal.product_name}</strong> | Nguồn sỉ: <strong style={{ color: '#f59e0b' }}>{suppliers.find(s => String(s.id) === String(showWarrantyModal.supplier_id))?.name || 'N/A'}</strong>
+                  </p>
+                </div>
               </div>
-              <button className="modal-close-btn" onClick={() => setShowWarrantyModal(null)}><X size={18} /></button>
+              <button
+                type="button" onClick={() => setShowWarrantyModal(null)}
+                style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)', color: '#94a3b8', cursor: 'pointer', padding: '7px', borderRadius: '10px' }}
+              >
+                <X size={18} />
+              </button>
             </div>
 
             {/* 6-Card Scenario Tabs Selector */}

@@ -497,12 +497,36 @@ export default function Payroll() {
                 display: 'flex', flexDirection: 'column', padding: '24px', overflowY: 'auto'
               }}
             >
-            <div className="modal-header" style={{ marginBottom: '16px' }}>
-              <h2 style={{ fontSize: '18px', fontWeight: '800', color: '#fff', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <UserCheck size={20} color="#6366f1" />
-                {editingStaff ? 'Chỉnh Sửa Hồ Sơ Nhân Sự' : 'Thêm Nhân Sự Mới'}
-              </h2>
-              <button className="modal-close-btn" onClick={() => setShowStaffModal(false)}><X size={18} /></button>
+            <div style={{
+              padding: '20px 24px',
+              borderBottom: '1px solid rgba(255,255,255,0.08)',
+              background: 'linear-gradient(135deg, rgba(30,41,59,0.9), rgba(15,23,42,0.95))',
+              display: 'flex', justifyContent: 'space-between', alignItems: 'center'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <div style={{
+                  width: '42px', height: '42px', borderRadius: '12px',
+                  background: 'linear-gradient(135deg, #8b5cf6, #6d28d9)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: '20px', boxShadow: '0 4px 15px rgba(139,92,246,0.35)'
+                }}>
+                  👔
+                </div>
+                <div>
+                  <h2 style={{ fontSize: '19px', fontWeight: '800', color: '#fff', margin: 0 }}>
+                    QUẢN LÝ HỒ SƠ NHÂN VIÊN
+                  </h2>
+                  <p style={{ fontSize: '12.5px', color: '#94a3b8', margin: '3px 0 0 0' }}>
+                    Thêm/Sửa nhân sự, phân quyền & cấu hình lương KPI
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button" onClick={() => setShowStaffModal(false)}
+                style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)', color: '#94a3b8', cursor: 'pointer', padding: '7px', borderRadius: '10px' }}
+              >
+                <X size={18} />
+              </button>
             </div>
 
             <form onSubmit={handleSaveStaff} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
@@ -637,11 +661,36 @@ export default function Payroll() {
                 display: 'flex', flexDirection: 'column', padding: '24px', overflowY: 'auto'
               }}
             >
-            <div className="modal-header" style={{ marginBottom: '16px' }}>
-              <h2 style={{ fontSize: '18px', fontWeight: '800', color: '#fff', margin: 0 }}>
-                Điều Chỉnh Lương: {editingPayroll.staff_name}
-              </h2>
-              <button className="modal-close-btn" onClick={() => setShowEditPayrollModal(false)}><X size={18} /></button>
+            <div style={{
+              padding: '20px 24px',
+              borderBottom: '1px solid rgba(255,255,255,0.08)',
+              background: 'linear-gradient(135deg, rgba(30,41,59,0.9), rgba(15,23,42,0.95))',
+              display: 'flex', justifyContent: 'space-between', alignItems: 'center'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <div style={{
+                  width: '42px', height: '42px', borderRadius: '12px',
+                  background: 'linear-gradient(135deg, #3b82f6, #1d4ed8)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: '20px', boxShadow: '0 4px 15px rgba(59,130,246,0.35)'
+                }}>
+                  🧮
+                </div>
+                <div>
+                  <h2 style={{ fontSize: '19px', fontWeight: '800', color: '#fff', margin: 0 }}>
+                    TÍNH LƯƠNG & THƯỞNG KINH DOANH
+                  </h2>
+                  <p style={{ fontSize: '12.5px', color: '#94a3b8', margin: '3px 0 0 0' }}>
+                    Tính lương cứng, hoa hồng doanh số & thưởng hiệu suất
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button" onClick={() => setShowEditPayrollModal(false)}
+                style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)', color: '#94a3b8', cursor: 'pointer', padding: '7px', borderRadius: '10px' }}
+              >
+                <X size={18} />
+              </button>
             </div>
 
             <form onSubmit={handleSaveEditPayroll} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>

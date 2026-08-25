@@ -437,11 +437,36 @@ export default function Suppliers() {
               display: 'flex', flexDirection: 'column', padding: '24px', overflowY: 'auto'
             }}
           >
-            <div className="modal-header" style={{ marginBottom: '16px' }}>
-              <h2 style={{ fontSize: '18px', fontWeight: '700', color: '#fff' }}>
-                {editingSupplier ? 'Chỉnh Sửa Nhà Cung Cấp' : 'Thêm Nhà Cung Cấp Mới'}
-              </h2>
-              <button className="modal-close-btn" onClick={closeModal}><X size={18} /></button>
+            <div style={{
+              padding: '20px 24px',
+              borderBottom: '1px solid rgba(255,255,255,0.08)',
+              background: 'linear-gradient(135deg, rgba(30,41,59,0.9), rgba(15,23,42,0.95))',
+              display: 'flex', justifyContent: 'space-between', alignItems: 'center'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <div style={{
+                  width: '42px', height: '42px', borderRadius: '12px',
+                  background: 'linear-gradient(135deg, #f59e0b, #b45309)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: '20px', boxShadow: '0 4px 15px rgba(245,158,11,0.35)'
+                }}>
+                  🏭
+                </div>
+                <div>
+                  <h2 style={{ fontSize: '19px', fontWeight: '800', color: '#fff', margin: 0 }}>
+                    QUẢN LÝ NHÀ CUNG CẤP NGUỒN SỈ
+                  </h2>
+                  <p style={{ fontSize: '12.5px', color: '#94a3b8', margin: '3px 0 0 0' }}>
+                    Theo dõi đối tác nhập hàng, số điện thoại & lịch sử nhập sỉ
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button" onClick={closeModal}
+                style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)', color: '#94a3b8', cursor: 'pointer', padding: '7px', borderRadius: '10px' }}
+              >
+                <X size={18} />
+              </button>
             </div>
 
             <form onSubmit={handleSaveSupplier} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>

@@ -2122,11 +2122,36 @@ export default function Inventory() {
                 display: 'flex', flexDirection: 'column', padding: '24px', overflowY: 'auto'
               }}
             >
-            <div className="modal-header">
-              <h2 style={{ fontSize: '18px', fontWeight: '800', color: '#fff', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <Plus size={20} color="#10b981" /> Nhập Key / Account Số Lượng Lớn (Bulk Import)
-              </h2>
-              <button className="modal-close-btn" onClick={() => setShowBulkModal(false)}><X size={18} /></button>
+            <div style={{
+              padding: '20px 24px',
+              borderBottom: '1px solid rgba(255,255,255,0.08)',
+              background: 'linear-gradient(135deg, rgba(30,41,59,0.9), rgba(15,23,42,0.95))',
+              display: 'flex', justifyContent: 'space-between', alignItems: 'center'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <div style={{
+                  width: '42px', height: '42px', borderRadius: '12px',
+                  background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: '20px', boxShadow: '0 4px 15px rgba(99,102,241,0.35)'
+                }}>
+                  📥
+                </div>
+                <div>
+                  <h2 style={{ fontSize: '19px', fontWeight: '800', color: '#fff', margin: 0 }}>
+                    NHẬP KHO ACC HÀNG LOẠT (BULK ADD)
+                  </h2>
+                  <p style={{ fontSize: '12.5px', color: '#94a3b8', margin: '3px 0 0 0' }}>
+                    Nhập nhanh danh sách acc/pass/key kho sỉ theo từng dòng
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button" onClick={() => setShowBulkModal(false)}
+                style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)', color: '#94a3b8', cursor: 'pointer', padding: '7px', borderRadius: '10px' }}
+              >
+                <X size={18} />
+              </button>
             </div>
 
             <form onSubmit={handleBulkImport} style={{ display: 'flex', flexDirection: 'column', gap: '14px', marginTop: '10px' }}>
@@ -2335,11 +2360,36 @@ export default function Inventory() {
                 display: 'flex', flexDirection: 'column', padding: '24px'
               }}
             >
-            <div className="modal-header">
-              <h2 style={{ fontSize: '17px', fontWeight: '800', color: '#ef4444', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <AlertTriangle size={18} /> Đánh Dấu Key Lỗi / Chờ Đổi Trả NCC
-              </h2>
-              <button className="modal-close-btn" onClick={() => setShowFaultyModal(null)}><X size={18} /></button>
+            <div style={{
+              padding: '20px 24px',
+              borderBottom: '1px solid rgba(255,255,255,0.08)',
+              background: 'linear-gradient(135deg, rgba(30,41,59,0.9), rgba(15,23,42,0.95))',
+              display: 'flex', justifyContent: 'space-between', alignItems: 'center'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <div style={{
+                  width: '42px', height: '42px', borderRadius: '12px',
+                  background: 'linear-gradient(135deg, #ef4444, #dc2626)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: '20px', boxShadow: '0 4px 15px rgba(239,68,68,0.35)'
+                }}>
+                  🚨
+                </div>
+                <div>
+                  <h2 style={{ fontSize: '19px', fontWeight: '800', color: '#fff', margin: 0 }}>
+                    KHAI BÁO ACC DIE & BÁO LỖI KHO
+                  </h2>
+                  <p style={{ fontSize: '12.5px', color: '#94a3b8', margin: '3px 0 0 0' }}>
+                    Ghi nhận lỗi kho, nhả slot tự động & báo nhà cung cấp
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button" onClick={() => setShowFaultyModal(null)}
+                style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)', color: '#94a3b8', cursor: 'pointer', padding: '7px', borderRadius: '10px' }}
+              >
+                <X size={18} />
+              </button>
             </div>
 
             <form onSubmit={handleConfirmFaulty} style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '10px' }}>

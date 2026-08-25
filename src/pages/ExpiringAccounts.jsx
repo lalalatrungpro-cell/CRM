@@ -837,9 +837,41 @@ export default function ExpiringAccounts() {
               display: 'flex', flexDirection: 'column'
             }}
           >
-            <div className="modal-header">
-              <h2 style={{ fontSize: '18px', fontWeight: '700' }}>Gia Hạn Đơn Hàng #{renewingOrder.id}</h2>
-              <button className="modal-close-btn" onClick={() => setRenewingOrder(null)}><X size={18} /></button>
+            <div style={{
+              padding: '20px 24px',
+              borderBottom: '1px solid rgba(255,255,255,0.08)',
+              background: 'linear-gradient(135deg, rgba(30,41,59,0.9), rgba(15,23,42,0.95))',
+              display: 'flex', justifyContent: 'space-between', alignItems: 'center'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <div style={{
+                  width: '42px', height: '42px', borderRadius: '12px',
+                  background: 'linear-gradient(135deg, #10b981, #059669)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: '20px', boxShadow: '0 4px 15px rgba(16,185,129,0.35)'
+                }}>
+                  🔄
+                </div>
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <h2 style={{ fontSize: '19px', fontWeight: '800', color: '#fff', margin: 0 }}>
+                      GIA HẠN ĐƠN HÀNG #{renewingOrder.id}
+                    </h2>
+                    <span style={{ fontSize: '10.5px', fontWeight: '800', background: 'rgba(16,185,129,0.18)', color: '#10b981', padding: '2px 8px', borderRadius: '20px', border: '1px solid rgba(16,185,129,0.3)', textTransform: 'uppercase' }}>
+                      Auto Extend
+                    </span>
+                  </div>
+                  <p style={{ fontSize: '12.5px', color: '#94a3b8', margin: '3px 0 0 0' }}>
+                    Gia hạn thời hạn sử dụng acc & tính doanh thu tái ký
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button" onClick={() => setRenewingOrder(null)}
+                style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)', color: '#94a3b8', cursor: 'pointer', padding: '7px', borderRadius: '10px' }}
+              >
+                <X size={18} />
+              </button>
             </div>
             <form onSubmit={handleConfirmOrderRenew} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
               <div style={{ background: 'rgba(255,255,255,0.03)', padding: '10px', borderRadius: '8px', fontSize: '13px' }}>
@@ -925,9 +957,41 @@ export default function ExpiringAccounts() {
               display: 'flex', flexDirection: 'column'
             }}
           >
-            <div className="modal-header">
-              <h2 style={{ fontSize: '18px', fontWeight: '700' }}>Gia Hạn Nguồn Kho Team</h2>
-              <button className="modal-close-btn" onClick={() => setRenewingTeam(null)}><X size={18} /></button>
+            <div style={{
+              padding: '20px 24px',
+              borderBottom: '1px solid rgba(255,255,255,0.08)',
+              background: 'linear-gradient(135deg, rgba(30,41,59,0.9), rgba(15,23,42,0.95))',
+              display: 'flex', justifyContent: 'space-between', alignItems: 'center'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <div style={{
+                  width: '42px', height: '42px', borderRadius: '12px',
+                  background: 'linear-gradient(135deg, #3b82f6, #1d4ed8)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: '20px', boxShadow: '0 4px 15px rgba(59,130,246,0.35)'
+                }}>
+                  🛡️
+                </div>
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <h2 style={{ fontSize: '19px', fontWeight: '800', color: '#fff', margin: 0 }}>
+                      GIA HẠN NGUỒN KHO TEAM
+                    </h2>
+                    <span style={{ fontSize: '10.5px', fontWeight: '800', background: 'rgba(59,130,246,0.18)', color: '#60a5fa', padding: '2px 8px', borderRadius: '20px', border: '1px solid rgba(59,130,246,0.3)', textTransform: 'uppercase' }}>
+                      Slot Extension
+                    </span>
+                  </div>
+                  <p style={{ fontSize: '12.5px', color: '#94a3b8', margin: '3px 0 0 0' }}>
+                    Gia hạn nguồn slot kho sỉ & cập nhật ngày hết hạn mới
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button" onClick={() => setRenewingTeam(null)}
+                style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)', color: '#94a3b8', cursor: 'pointer', padding: '7px', borderRadius: '10px' }}
+              >
+                <X size={18} />
+              </button>
             </div>
             <form onSubmit={handleConfirmTeamRenew} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
               <div style={{ background: 'rgba(255,255,255,0.03)', padding: '10px', borderRadius: '8px', fontSize: '13px' }}>
