@@ -976,11 +976,41 @@ export default function ExpiringAccounts() {
               display: 'flex', flexDirection: 'column'
             }}
           >
-            <div className="modal-header">
-              <h2 style={{ fontSize: '18px', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <User size={20} color="#a855f7" /> Hồ Sơ Khách Hàng 360° & CSKH
-              </h2>
-              <button className="modal-close-btn" onClick={() => setSelectedCustProfile(null)}><X size={18} /></button>
+            <div style={{
+              padding: '20px 24px',
+              borderBottom: '1px solid rgba(255,255,255,0.08)',
+              background: 'linear-gradient(135deg, rgba(30,41,59,0.9), rgba(15,23,42,0.95))',
+              display: 'flex', justifyContent: 'space-between', alignItems: 'center'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <div style={{
+                  width: '42px', height: '42px', borderRadius: '12px',
+                  background: 'linear-gradient(135deg, #a855f7, #ec4899)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: '20px', boxShadow: '0 4px 15px rgba(168,85,247,0.35)'
+                }}>
+                  👤
+                </div>
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <h2 style={{ fontSize: '19px', fontWeight: '800', color: '#fff', margin: 0 }}>
+                      HỒ SƠ KHÁCH HÀNG 360° & CSKH
+                    </h2>
+                    <span style={{ fontSize: '10.5px', fontWeight: '800', background: 'rgba(168,85,247,0.18)', color: '#c084fc', padding: '2px 8px', borderRadius: '20px', border: '1px solid rgba(168,85,247,0.3)', textTransform: 'uppercase' }}>
+                      360° Retention Engine
+                    </span>
+                  </div>
+                  <p style={{ fontSize: '12.5px', color: '#94a3b8', margin: '3px 0 0 0' }}>
+                    Quản lý thông tin, lịch sử đơn mua & gửi tin nhắn nhắc tái ký 1-click
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button" onClick={() => setSelectedCustProfile(null)}
+                style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)', color: '#94a3b8', cursor: 'pointer', padding: '7px', borderRadius: '10px' }}
+              >
+                <X size={18} />
+              </button>
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>

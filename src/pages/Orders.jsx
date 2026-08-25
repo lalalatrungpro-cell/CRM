@@ -3372,17 +3372,40 @@ export default function Orders() {
             }}
           >
             {/* Modal Header */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '18px', borderBottom: '1px solid rgba(255,255,255,0.08)', paddingBottom: '14px' }}>
-              <div>
-                <h3 style={{ fontSize: '19px', fontWeight: '800', color: '#fff', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  ✏️ CHỈNH SỬA ĐƠN HÀNG 360° #{showEditModal.id}
-                </h3>
-                <p style={{ color: '#94a3b8', fontSize: '12.5px', marginTop: '3px' }}>
-                  Sản Phẩm Đang Chọn: <strong style={{ color: '#c084fc' }}>{editFormData.productName || showEditModal.product_name}</strong> | Khách Hàng: <strong style={{ color: '#818cf8' }}>{editFormData.customerName || showEditModal.customer_name}</strong>
-                </p>
+            <div style={{
+              padding: '20px 24px',
+              borderBottom: '1px solid rgba(255,255,255,0.08)',
+              background: 'linear-gradient(135deg, rgba(30,41,59,0.9), rgba(15,23,42,0.95))',
+              display: 'flex', justifyContent: 'space-between', alignItems: 'center'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <div style={{
+                  width: '42px', height: '42px', borderRadius: '12px',
+                  background: 'linear-gradient(135deg, #a855f7, #6366f1)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: '20px', boxShadow: '0 4px 15px rgba(168,85,247,0.35)'
+                }}>
+                  ✏️
+                </div>
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <h2 style={{ fontSize: '19px', fontWeight: '800', color: '#fff', margin: 0 }}>
+                      CHỈNH SỬA ĐƠN HÀNG 360° #{showEditModal.id}
+                    </h2>
+                    <span style={{ fontSize: '10.5px', fontWeight: '800', background: 'rgba(168,85,247,0.18)', color: '#c084fc', padding: '2px 8px', borderRadius: '20px', border: '1px solid rgba(168,85,247,0.3)', textTransform: 'uppercase' }}>
+                      ⚡ 2-Way Auto Sync
+                    </span>
+                  </div>
+                  <p style={{ fontSize: '12.5px', color: '#94a3b8', margin: '3px 0 0 0' }}>
+                    Sản phẩm: <strong style={{ color: '#c084fc' }}>{editFormData.productName || showEditModal.product_name}</strong> | Khách: <strong style={{ color: '#818cf8' }}>{editFormData.customerName || showEditModal.customer_name}</strong>
+                  </p>
+                </div>
               </div>
-              <button onClick={() => setShowEditModal(null)} style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: '#94a3b8', cursor: 'pointer', padding: '6px', borderRadius: '8px' }}>
-                <X size={20} />
+              <button
+                type="button" onClick={() => setShowEditModal(null)}
+                style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)', color: '#94a3b8', cursor: 'pointer', padding: '7px', borderRadius: '10px' }}
+              >
+                <X size={18} />
               </button>
             </div>
 

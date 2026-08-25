@@ -663,11 +663,36 @@ export default function Customers() {
               display: 'flex', flexDirection: 'column'
             }}
           >
-            <div className="modal-header">
-              <h2 style={{ fontSize: '18px', fontWeight: '700' }}>
-                {editingCustomer ? 'Chỉnh Sửa Hồ Sơ Khách Hàng Chi Tiết' : 'Thêm Hồ Sơ Khách Hàng Mới 360°'}
-              </h2>
-              <button className="modal-close-btn" onClick={closeModal}><X size={18} /></button>
+            <div style={{
+              padding: '20px 24px',
+              borderBottom: '1px solid rgba(255,255,255,0.08)',
+              background: 'linear-gradient(135deg, rgba(30,41,59,0.9), rgba(15,23,42,0.95))',
+              display: 'flex', justifyContent: 'space-between', alignItems: 'center'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <div style={{
+                  width: '42px', height: '42px', borderRadius: '12px',
+                  background: 'linear-gradient(135deg, #10b981, #3b82f6)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: '20px', boxShadow: '0 4px 15px rgba(16,185,129,0.35)'
+                }}>
+                  👤
+                </div>
+                <div>
+                  <h2 style={{ fontSize: '19px', fontWeight: '800', color: '#fff', margin: 0 }}>
+                    {editingCustomer ? 'CHỈNH SỬA HỒ SƠ KHÁCH HÀNG' : 'THÊM HỒ SƠ KHÁCH HÀNG MỚI 360°'}
+                  </h2>
+                  <p style={{ fontSize: '12.5px', color: '#94a3b8', margin: '3px 0 0 0' }}>
+                    Lưu trữ thông tin liên hệ, phân loại sỉ/lẻ & theo dõi công nợ
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button" onClick={closeModal}
+                style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)', color: '#94a3b8', cursor: 'pointer', padding: '7px', borderRadius: '10px' }}
+              >
+                <X size={18} />
+              </button>
             </div>
 
             <form onSubmit={handleSaveCustomer} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
