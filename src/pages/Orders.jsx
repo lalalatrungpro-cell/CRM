@@ -1008,14 +1008,22 @@ export default function Orders() {
       const randPart = Math.random().toString(36).substr(2, 5).toUpperCase();
       const batchRef = `BATCH-${datePart}-${randPart}`;
 
-      // Expand batch items into individual order payloads
+      // Calculate total subtotal and total discount for batch/single item
+      const totalGrossSubtotal = itemsToProcess.reduce((sum, item) => {
+        const q = Math.max(1, parseInt(item.quantity) || 1);
+        return sum + (parseFloat(item.sellPrice) || 0) * q;
+      }, 0);
+
+      const totalDiscountAmt = appliedDiscount ? Number(appliedDiscount.amount || 0) : 0;
+      const totalItemCount = itemsToProcess.reduce((sum, item) => sum + Math.max(1, parseInt(item.quantity) || 1), 0);
+
+      // Expand batch items into individual order payloads with discount deducted
       const expandedPayloads = [];
       for (const item of itemsToProcess) {
         const qty = Math.max(1, parseInt(item.quantity) || 1);
         const supp = suppliers.find(s => String(s.id) === String(item.supplierId));
         const suppName = supp ? supp.name : '';
 
-        // Split multi-line infor string
         const inforLines = (item.infor || '')
           .split('\n')
           .map(line => line.trim())
@@ -1031,6 +1039,18 @@ export default function Orders() {
             singleInfor = (item.infor || '').trim();
           }
 
+          const itemGross = parseFloat(item.sellPrice) || 0;
+          // Distribute discount across items
+          let itemDiscount = 0;
+          if (totalDiscountAmt > 0) {
+            if (totalGrossSubtotal > 0) {
+              itemDiscount = Math.round((totalDiscountAmt * itemGross) / totalGrossSubtotal);
+            } else if (totalItemCount > 0) {
+              itemDiscount = Math.round(totalDiscountAmt / totalItemCount);
+            }
+          }
+          const itemNetSellPrice = Math.max(0, itemGross - itemDiscount);
+
           expandedPayloads.push({
             customer_id: finalCustId,
             customer_name: finalCustName,
@@ -1041,7 +1061,10 @@ export default function Orders() {
             product_name: item.productName,
             infor: singleInfor,
             cost_price: parseFloat(item.costPrice) || 0,
-            sell_price: parseFloat(item.sellPrice) || 0,
+            sell_price: itemNetSellPrice,
+            gross_sell_price: itemGross,
+            discount_amount: itemDiscount,
+            discount_code: appliedDiscount ? appliedDiscount.label : '',
             status: formData.status || 'Đã thanh toán',
             purchase_date: formData.purchaseDate || todayStr,
             expire_date: item.isEvergreen ? '---' : (item.expireDate || nextMonthStr),
@@ -2920,8 +2943,15 @@ export default function Orders() {
                         {batchItems.reduce((s, i) => s + Number(i.quantity || 1), 0)} sản phẩm trong giỏ ({batchItems.length} loại)
                       </div>
                     </div>
-                    <div style={{ fontSize: '18px', fontWeight: '800', color: '#10b981' }}>
-                      {batchItems.reduce((s, i) => s + (Number(i.sellPrice) || 0) * (Number(i.quantity) || 1), 0).toLocaleString()}đ
+                    <div style={{ textAlign: 'right' }}>
+                      {appliedDiscount && (
+                        <div style={{ fontSize: '11.5px', color: '#94a3b8', textDecoration: 'line-through' }}>
+                          Tạm tính: {batchItems.reduce((s, i) => s + (Number(i.sellPrice) || 0) * (Number(i.quantity) || 1), 0).toLocaleString()}đ
+                        </div>
+                      )}
+                      <div style={{ fontSize: '18px', fontWeight: '800', color: '#10b981' }}>
+                        {Math.max(0, batchItems.reduce((s, i) => s + (Number(i.sellPrice) || 0) * (Number(i.quantity) || 1), 0) - (appliedDiscount ? Number(appliedDiscount.amount || 0) : 0)).toLocaleString()}đ
+                      </div>
                     </div>
                   </div>
                 )}
@@ -3082,12 +3112,28 @@ export default function Orders() {
                         {getCustomerTypeFromState(formData) === 'Si' ? '🟣 Khách Sỉ' : getCustomerTypeFromState(formData) === 'CTV' ? '🟡 Khách CTV' : '🟢 Khách Lẻ'}
                       </strong>
                     </span>
-                    <span style={{ color: (parseFloat(formData.sellPrice || 0) <= parseFloat(formData.costPrice || 0)) ? '#ef4444' : '#10b981', fontWeight: 'bold' }}>
-                      {parseFloat(formData.sellPrice || 0) <= parseFloat(formData.costPrice || 0)
-                        ? '⚠️ CẢNH BÁO LỖ VỐN'
-                        : `Lãi đơn: +${(parseFloat(formData.sellPrice || 0) - parseFloat(formData.costPrice || 0)).toLocaleString()}đ (${parseFloat(formData.sellPrice || 0) > 0 ? Math.round(((parseFloat(formData.sellPrice || 0) - parseFloat(formData.costPrice || 0)) / parseFloat(formData.sellPrice || 0)) * 100) : 0}%)`
-                      }
-                    </span>
+                    {(() => {
+                      const grossP = batchItems.length > 0
+                        ? batchItems.reduce((s, i) => s + (Number(i.sellPrice) || 0) * (Number(i.quantity) || 1), 0)
+                        : (parseFloat(formData.sellPrice) || 0);
+                      const costP = batchItems.length > 0
+                        ? batchItems.reduce((s, i) => s + (Number(i.costPrice) || 0) * (Number(i.quantity) || 1), 0)
+                        : (parseFloat(formData.costPrice) || 0);
+                      const discP = appliedDiscount ? Number(appliedDiscount.amount || 0) : 0;
+                      const netP = Math.max(0, grossP - discP);
+                      const profitP = netP - costP;
+                      const marginPct = netP > 0 ? Math.round((profitP / netP) * 100) : 0;
+                      const isLossP = profitP <= 0;
+
+                      return (
+                        <span style={{ color: isLossP ? '#ef4444' : '#10b981', fontWeight: 'bold' }}>
+                          {isLossP
+                            ? `⚠️ CẢNH BÁO LỖ VỐN (${profitP.toLocaleString()}đ)`
+                            : `Lãi thực tế: +${profitP.toLocaleString()}đ (${marginPct}%)`
+                          }
+                        </span>
+                      );
+                    })()}
                   </div>
                   {lowestPriceHint && (
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '11px', color: '#38bdf8', borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: '4px', marginTop: '2px' }}>
