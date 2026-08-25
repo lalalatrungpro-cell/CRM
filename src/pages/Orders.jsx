@@ -347,12 +347,14 @@ export default function Orders() {
   const handleOpenEditModal = (order) => {
     setEditFormData({
       id: order.id,
+      customerName: order.customer_name || order.customerName || '',
+      phone: order.phone || '',
       infor: order.infor || '',
-      sellPrice: order.sell_price || 0,
-      costPrice: order.cost_price || 0,
-      supplierId: order.supplier_id || '',
+      sellPrice: order.sell_price || order.sellPrice || 0,
+      costPrice: order.cost_price || order.costPrice || 0,
+      supplierId: order.supplier_id || order.supplierId || '',
       status: order.status || 'Đã thanh toán',
-      expireDate: order.expire_date || ''
+      expireDate: order.expire_date || order.expireDate || ''
     });
     setShowEditModal(order);
   };
@@ -477,6 +479,8 @@ export default function Orders() {
     if (!editFormData.id) return;
 
     const payload = {
+      customer_name: (editFormData.customerName || '').trim(),
+      phone: (editFormData.phone || '').trim(),
       infor: editFormData.infor,
       sell_price: Number(editFormData.sellPrice),
       cost_price: Number(editFormData.costPrice),
@@ -487,6 +491,17 @@ export default function Orders() {
 
     try {
       const oldOrder = orders.find(o => String(o.id) === String(editFormData.id));
+      if (oldOrder) {
+        const custId = oldOrder.customer_id || oldOrder.customerId;
+        if (custId) {
+          try {
+            await CustomerService.update(custId, {
+              name: (editFormData.customerName || '').trim(),
+              phone: (editFormData.phone || '').trim()
+            });
+          } catch (err) {}
+        }
+      }
       if (oldOrder && oldOrder.status === 'Nợ' && editFormData.status === 'Đã thanh toán') {
         const custId = oldOrder.customer_id || oldOrder.customerId;
         const oldSellPrice = Number(oldOrder.sell_price || oldOrder.sellPrice || 0);
@@ -3223,6 +3238,36 @@ export default function Orders() {
             </div>
 
             <form onSubmit={handleSaveEditOrder} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+              {/* Customer Name & Phone Edit Row */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', background: 'rgba(255,255,255,0.03)', padding: '10px 12px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.06)' }}>
+                <div>
+                  <label className="form-label" style={{ color: '#818cf8', fontWeight: 'bold' }}>
+                    👤 Tên Khách Hàng *
+                  </label>
+                  <input
+                    type="text"
+                    className="glass-input" required
+                    style={{ width: '100%', height: '36px', fontSize: '13px' }}
+                    placeholder="Nhập tên khách..."
+                    value={editFormData.customerName}
+                    onChange={e => setEditFormData({ ...editFormData, customerName: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <label className="form-label" style={{ color: '#10b981', fontWeight: 'bold' }}>
+                    📱 SĐT / Zalo Khách
+                  </label>
+                  <input
+                    type="text"
+                    className="glass-input"
+                    style={{ width: '100%', height: '36px', fontSize: '13px' }}
+                    placeholder="Nhập số điện thoại..."
+                    value={editFormData.phone}
+                    onChange={e => setEditFormData({ ...editFormData, phone: e.target.value })}
+                  />
+                </div>
+              </div>
+
               <div>
                 <label className="form-label" style={{ color: '#60a5fa', fontWeight: 'bold' }}>
                   🔑 Thông Tin Tài Khoản / Invite Link Giao Khách:
