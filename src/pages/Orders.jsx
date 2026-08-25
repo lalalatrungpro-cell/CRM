@@ -1919,148 +1919,167 @@ export default function Orders() {
         const detailQrUrl = showDetailModal.qrUrl || '';
 
         return (
-          <div className="modal-overlay" onClick={() => setShowDetailModal(null)}>
-          <div className="modal-box" onClick={e => e.stopPropagation()} style={{ maxWidth: '620px', background: '#111625' }}>
-            <div className="modal-header">
-              <div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <h2 style={{ fontSize: '18px', fontWeight: '800', color: '#fff' }}>Chi Tiết Đơn Hàng 360° #{detailOrder.id}</h2>
-                  <span className={`badge ${detailOrder.status === 'Đã thanh toán' ? 'badge-success' : 'badge-warning'}`}>
-                    {detailOrder.status}
-                  </span>
-                </div>
-                <p style={{ fontSize: '12px', color: '#64748b', marginTop: '2px' }}>
-                  Kênh bán: <strong style={{ color: '#818cf8' }}>{detailOrder.channel || detailOrder.source || 'FB Page'}</strong>
-                </p>
-              </div>
-              <button className="modal-close-btn" onClick={() => setShowDetailModal(null)}><X size={18} /></button>
-            </div>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              {/* Customer & Product Information Grid */}
-              <div style={{ background: 'rgba(255,255,255,0.03)', padding: '14px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.06)', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', fontSize: '13px' }}>
+          <div
+            className="drawer-overlay"
+            onClick={() => setShowDetailModal(null)}
+            style={{
+              position: 'fixed', inset: 0, zIndex: 9999,
+              background: 'rgba(0,0,0,0.65)', backdropFilter: 'blur(6px)',
+              display: 'flex', justifyContent: 'flex-end'
+            }}
+          >
+            <div
+              className="drawer-content animate-slide-in-right"
+              onClick={e => e.stopPropagation()}
+              style={{
+                width: '100%', maxWidth: '640px', height: '100vh',
+                background: '#0f172a', borderLeft: '1px solid rgba(255,255,255,0.1)',
+                boxShadow: '-10px 0 35px rgba(0,0,0,0.7)',
+                display: 'flex', flexDirection: 'column'
+              }}
+            >
+              <div className="modal-header" style={{ padding: '20px 24px', borderBottom: '1px solid rgba(255,255,255,0.08)', background: '#111827' }}>
                 <div>
-                  <span style={{ color: '#94a3b8', fontSize: '12px' }}>Khách Hàng:</span>
-                  <p style={{ fontWeight: '700', color: '#fff', margin: '2px 0' }}>
-                    {detailOrder.customer_name || detailOrder.customerName}
-                  </p>
-                  <span style={{ color: '#10b981', fontSize: '12px' }}>SĐT: {detailOrder.phone || 'Chưa cập nhật'}</span>
-                </div>
-                <div>
-                  <span style={{ color: '#94a3b8', fontSize: '12px' }}>Sản Phẩm Dịch Vụ:</span>
-                  <p style={{ fontWeight: '700', color: '#818cf8', margin: '2px 0' }}>
-                    {detailOrder.product_name || detailOrder.productName}
-                  </p>
-                  <span style={{ color: '#64748b', fontSize: '12px' }}>Nguồn Sỉ: {detailOrder.supplier_name || detailOrder.supplierName || 'Tự nhập'}</span>
-                  {(() => {
-                    const pObj = products.find(p => p.name === (detailOrder.product_name || detailOrder.productName));
-                    if (!pObj?.description) return null;
-                    return (
-                      <div style={{ fontSize: '11.5px', color: '#94a3b8', background: 'rgba(255,255,255,0.03)', padding: '6px 8px', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.06)', marginTop: '4px' }}>
-                        📝 {pObj.description}
-                      </div>
-                    );
-                  })()}
-                </div>
-              </div>
-
-              {/* Account Credentials Box */}
-              {detailOrder.infor && (
-                <div style={{ background: 'rgba(0,0,0,0.3)', padding: '12px 14px', borderRadius: '10px', border: '1px solid rgba(99,102,241,0.25)' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-                    <span style={{ fontSize: '11px', fontWeight: '700', color: '#818cf8', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                      🔑 Thông Tin Tài Khoản / Invite Link Giao Khách
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <h2 style={{ fontSize: '18px', fontWeight: '800', color: '#fff' }}>Chi Tiết Đơn Hàng 360° #{detailOrder.id}</h2>
+                    <span className={`badge ${detailOrder.status === 'Đã thanh toán' ? 'badge-success' : 'badge-warning'}`}>
+                      {detailOrder.status}
                     </span>
-                    <button
-                      className="glass-button"
-                      onClick={() => handleCopyInfor(detailOrder.infor, detailOrder.id)}
-                      style={{ padding: '3px 8px', fontSize: '11px', background: 'rgba(99,102,241,0.2)', color: '#818cf8' }}
-                    >
-                      {copiedId === `infor-${detailOrder.id}` ? <Check size={12} /> : <Copy size={12} />} Copy Acc
-                    </button>
                   </div>
-                  <code style={{ fontSize: '12.5px', color: '#fff', wordBreak: 'break-all', fontFamily: 'monospace' }}>
-                    {detailOrder.infor}
-                  </code>
-                </div>
-              )}
-
-              {/* Financial & Expiry Metrics */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px', fontSize: '12.5px' }}>
-                <div style={{ background: 'rgba(255,255,255,0.03)', padding: '10px 12px', borderRadius: '8px' }}>
-                  <span style={{ color: '#94a3b8', fontSize: '11.5px' }}>Giá Bán Khách</span>
-                  <p style={{ fontSize: '15px', fontWeight: '800', color: '#10b981', margin: '2px 0' }}>
-                    {(detailOrder.sell_price || detailOrder.sellPrice || 0).toLocaleString()}đ
+                  <p style={{ fontSize: '12px', color: '#64748b', marginTop: '2px' }}>
+                    Kênh bán: <strong style={{ color: '#818cf8' }}>{detailOrder.channel || detailOrder.source || 'FB Page'}</strong>
                   </p>
                 </div>
-                <div style={{ background: 'rgba(255,255,255,0.03)', padding: '10px 12px', borderRadius: '8px' }}>
-                  <span style={{ color: '#94a3b8', fontSize: '11.5px' }}>Giá Vốn Nhập</span>
-                  <p style={{ fontSize: '15px', fontWeight: '800', color: '#f59e0b', margin: '2px 0' }}>
-                    {(detailOrder.cost_price || detailOrder.costPrice || 0).toLocaleString()}đ
-                  </p>
-                </div>
-                <div style={{ background: 'rgba(255,255,255,0.03)', padding: '10px 12px', borderRadius: '8px' }}>
-                  <span style={{ color: '#94a3b8', fontSize: '11.5px' }}>Lợi Nhuận Thuần</span>
-                  <p style={{ fontSize: '15px', fontWeight: '800', color: '#6366f1', margin: '2px 0' }}>
-                    {((detailOrder.sell_price || detailOrder.sellPrice || 0) - (detailOrder.cost_price || detailOrder.costPrice || 0)).toLocaleString()}đ
-                  </p>
-                </div>
+                <button className="modal-close-btn" onClick={() => setShowDetailModal(null)}><X size={18} /></button>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', fontSize: '12.5px', background: 'rgba(255,255,255,0.02)', padding: '10px 12px', borderRadius: '8px' }}>
-                <div>
-                  <span style={{ color: '#94a3b8' }}>Ngày Mua:</span> <strong>{detailOrder.purchase_date || detailOrder.date || '---'}</strong>
-                </div>
-                <div>
-                  <span style={{ color: '#94a3b8' }}>Ngày Hết Hạn:</span> <strong style={{ color: '#ec4899' }}>{detailOrder.expire_date || detailOrder.expireDate || '---'}</strong>
-                </div>
-              </div>
-
-              {/* VietQR Code & Bank Details */}
-              {detailQrUrl && (
-                <div style={{ background: 'rgba(0,0,0,0.25)', padding: '14px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.06)', display: 'flex', alignItems: 'center', gap: '16px' }}>
-                  <img src={detailQrUrl} alt="VietQR" style={{ width: '140px', height: 'auto', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)' }} />
-                  <div style={{ flex: 1, fontSize: '12px', color: '#cbd5e1', lineHeight: 1.6 }}>
-                    <p style={{ margin: 0, fontWeight: '700', color: '#fff' }}>💳 THÔNG TIN CHUYỂN KHOẢN VIETQR:</p>
-                    <p style={{ margin: 0 }}>🏦 Ngân hàng: <strong>{getBankDisplayName(vietqr?.bank_id || vietqr?.bankId || 'MB')}</strong></p>
-                    <p style={{ margin: 0 }}>🔢 STK: <strong style={{ color: '#10b981' }}>{vietqr?.account_no || vietqr?.accountNo || '0901234567'}</strong></p>
-                    <p style={{ margin: 0 }}>👤 Chủ TK: <strong>{vietqr?.account_name || vietqr?.accountName || 'SHOP DROPSHIP CRM'}</strong></p>
-                    <p style={{ margin: 0 }}>📝 Nội dung: <strong style={{ color: '#ef4444' }}>{(vietqr?.memo_prefix || vietqr?.memoPrefix || 'DON') + ' ' + detailOrder.id}</strong></p>
+              <div style={{ flex: 1, overflowY: 'auto', padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                {/* Customer & Product Information Grid */}
+                <div style={{ background: 'rgba(255,255,255,0.03)', padding: '14px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.06)', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', fontSize: '13px' }}>
+                  <div>
+                    <span style={{ color: '#94a3b8', fontSize: '12px' }}>Khách Hàng:</span>
+                    <p style={{ fontWeight: '700', color: '#fff', margin: '2px 0' }}>
+                      {detailOrder.customer_name || detailOrder.customerName}
+                    </p>
+                    <span style={{ color: '#10b981', fontSize: '12px' }}>SĐT: {detailOrder.phone || 'Chưa cập nhật'}</span>
+                  </div>
+                  <div>
+                    <span style={{ color: '#94a3b8', fontSize: '12px' }}>Sản Phẩm Dịch Vụ:</span>
+                    <p style={{ fontWeight: '700', color: '#818cf8', margin: '2px 0' }}>
+                      {detailOrder.product_name || detailOrder.productName}
+                    </p>
+                    <span style={{ color: '#64748b', fontSize: '12px' }}>Nguồn Sỉ: {detailOrder.supplier_name || detailOrder.supplierName || 'Tự nhập'}</span>
+                    {(() => {
+                      const pObj = products.find(p => p.name === (detailOrder.product_name || detailOrder.productName));
+                      if (!pObj?.description) return null;
+                      return (
+                        <div style={{ fontSize: '11.5px', color: '#94a3b8', background: 'rgba(255,255,255,0.03)', padding: '6px 8px', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.06)', marginTop: '4px' }}>
+                          📝 {pObj.description}
+                        </div>
+                      );
+                    })()}
                   </div>
                 </div>
-              )}
 
-              {/* Action Buttons */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px', marginTop: '8px' }}>
-                <button
-                  className="glass-button"
-                  onClick={() => handleCopyZaloText(detailOrder)}
-                  style={{ background: '#0068ff', color: '#fff', fontWeight: '700', fontSize: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px' }}
-                >
-                  <Copy size={15} /> Copy Văn Bản Zalo
-                </button>
-                <button
-                  className="glass-button"
-                  onClick={() => handleCopyQRImageOnly(detailOrder, detailQrUrl)}
-                  style={{ background: 'linear-gradient(135deg, #10b981, #059669)', color: '#fff', fontWeight: '700', fontSize: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px' }}
-                >
-                  <QrCode size={15} /> Copy Thẻ Ảnh QR
-                </button>
-                <button
-                  className="glass-button"
-                  onClick={() => {
-                    const orderToPrint = detailOrder;
-                    setShowDetailModal(null);
-                    setShowInvoiceModal({ order: orderToPrint, qrUrl: detailQrUrl });
-                  }}
-                  style={{ background: 'rgba(16,185,129,0.18)', color: '#10b981', border: '1px solid rgba(16,185,129,0.3)', fontWeight: '700', fontSize: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px' }}
-                >
-                  <Printer size={15} /> In Hóa Đơn A4
-                </button>
+                {/* Account Credentials Box */}
+                {detailOrder.infor && (
+                  <div style={{ background: 'rgba(0,0,0,0.3)', padding: '12px 14px', borderRadius: '10px', border: '1px solid rgba(99,102,241,0.25)' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                      <span style={{ fontSize: '11px', fontWeight: '700', color: '#818cf8', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                        🔑 Thông Tin Tài Khoản / Invite Link Giao Khách
+                      </span>
+                      <button
+                        className="glass-button"
+                        onClick={() => handleCopyInfor(detailOrder.infor, detailOrder.id)}
+                        style={{ padding: '3px 8px', fontSize: '11px', background: 'rgba(99,102,241,0.2)', color: '#818cf8' }}
+                      >
+                        {copiedId === `infor-${detailOrder.id}` ? <Check size={12} /> : <Copy size={12} />} Copy Acc
+                      </button>
+                    </div>
+                    <code style={{ fontSize: '12.5px', color: '#fff', wordBreak: 'break-all', fontFamily: 'monospace' }}>
+                      {detailOrder.infor}
+                    </code>
+                  </div>
+                )}
+
+                {/* Financial & Expiry Metrics */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px', fontSize: '12.5px' }}>
+                  <div style={{ background: 'rgba(255,255,255,0.03)', padding: '10px 12px', borderRadius: '8px' }}>
+                    <span style={{ color: '#94a3b8', fontSize: '11.5px' }}>Giá Bán Khách</span>
+                    <p style={{ fontSize: '15px', fontWeight: '800', color: '#10b981', margin: '2px 0' }}>
+                      {(detailOrder.sell_price || detailOrder.sellPrice || 0).toLocaleString()}đ
+                    </p>
+                  </div>
+                  <div style={{ background: 'rgba(255,255,255,0.03)', padding: '10px 12px', borderRadius: '8px' }}>
+                    <span style={{ color: '#94a3b8', fontSize: '11.5px' }}>Giá Vốn Nhập</span>
+                    <p style={{ fontSize: '15px', fontWeight: '800', color: '#f59e0b', margin: '2px 0' }}>
+                      {(detailOrder.cost_price || detailOrder.costPrice || 0).toLocaleString()}đ
+                    </p>
+                  </div>
+                  <div style={{ background: 'rgba(255,255,255,0.03)', padding: '10px 12px', borderRadius: '8px' }}>
+                    <span style={{ color: '#94a3b8', fontSize: '11.5px' }}>Lợi Nhuận Thuần</span>
+                    <p style={{ fontSize: '15px', fontWeight: '800', color: '#6366f1', margin: '2px 0' }}>
+                      {((detailOrder.sell_price || detailOrder.sellPrice || 0) - (detailOrder.cost_price || detailOrder.costPrice || 0)).toLocaleString()}đ
+                    </p>
+                  </div>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', fontSize: '12.5px', background: 'rgba(255,255,255,0.02)', padding: '10px 12px', borderRadius: '8px' }}>
+                  <div>
+                    <span style={{ color: '#94a3b8' }}>Ngày Mua:</span> <strong>{detailOrder.purchase_date || detailOrder.date || '---'}</strong>
+                  </div>
+                  <div>
+                    <span style={{ color: '#94a3b8' }}>Ngày Hết Hạn:</span> <strong style={{ color: '#ec4899' }}>{detailOrder.expire_date || detailOrder.expireDate || '---'}</strong>
+                  </div>
+                </div>
+
+                {/* VietQR Code & Bank Details */}
+                {detailQrUrl && (
+                  <div style={{ background: 'rgba(0,0,0,0.25)', padding: '14px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.06)', display: 'flex', alignItems: 'center', gap: '16px' }}>
+                    <img src={detailQrUrl} alt="VietQR" style={{ width: '140px', height: 'auto', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)' }} />
+                    <div style={{ flex: 1, fontSize: '12px', color: '#cbd5e1', lineHeight: 1.6 }}>
+                      <p style={{ margin: 0, fontWeight: '700', color: '#fff' }}>💳 THÔNG TIN CHUYỂN KHOẢN VIETQR:</p>
+                      <p style={{ margin: 0 }}>🏦 Ngân hàng: <strong>{getBankDisplayName(vietqr?.bank_id || vietqr?.bankId || 'MB')}</strong></p>
+                      <p style={{ margin: 0 }}>🔢 STK: <strong style={{ color: '#10b981' }}>{vietqr?.account_no || vietqr?.accountNo || '0901234567'}</strong></p>
+                      <p style={{ margin: 0 }}>👤 Chủ TK: <strong>{vietqr?.account_name || vietqr?.accountName || 'SHOP DROPSHIP CRM'}</strong></p>
+                      <p style={{ margin: 0 }}>📝 Nội dung: <strong style={{ color: '#ef4444' }}>{(vietqr?.memo_prefix || vietqr?.memoPrefix || 'DON') + ' ' + detailOrder.id}</strong></p>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Sticky Action Footer */}
+              <div style={{ padding: '16px 24px', borderTop: '1px solid rgba(255,255,255,0.08)', background: '#111827' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px' }}>
+                  <button
+                    className="glass-button"
+                    onClick={() => handleCopyZaloText(detailOrder)}
+                    style={{ background: '#0068ff', color: '#fff', fontWeight: '700', fontSize: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px' }}
+                  >
+                    <Copy size={15} /> Copy Văn Bản Zalo
+                  </button>
+                  <button
+                    className="glass-button"
+                    onClick={() => handleCopyQRImageOnly(detailOrder, detailQrUrl)}
+                    style={{ background: 'linear-gradient(135deg, #10b981, #059669)', color: '#fff', fontWeight: '700', fontSize: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px' }}
+                  >
+                    <QrCode size={15} /> Copy Thẻ Ảnh QR
+                  </button>
+                  <button
+                    className="glass-button"
+                    onClick={() => {
+                      const orderToPrint = detailOrder;
+                      setShowDetailModal(null);
+                      setShowInvoiceModal({ order: orderToPrint, qrUrl: detailQrUrl });
+                    }}
+                    style={{ background: 'rgba(16,185,129,0.18)', color: '#10b981', border: '1px solid rgba(16,185,129,0.3)', fontWeight: '700', fontSize: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px' }}
+                  >
+                    <Printer size={15} /> In Hóa Đơn A4
+                  </button>
+                </div>
               </div>
             </div>
           </div>
-        </div>
         );
       })()}
 
