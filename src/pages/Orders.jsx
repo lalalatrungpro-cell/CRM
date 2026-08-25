@@ -623,6 +623,21 @@ export default function Orders() {
   const [batchItems, setBatchItems] = useState([]);
   const [selectedAddProduct, setSelectedAddProduct] = useState('');
 
+  // Auto-sync formData.expireDate with the latest batch item if empty
+  useEffect(() => {
+    if (batchItems.length > 0) {
+      const lastItem = batchItems[batchItems.length - 1];
+      if (lastItem.expireDate && (!formData.expireDate || formData.expireDate !== lastItem.expireDate)) {
+        setFormData(f => ({
+          ...f,
+          productName: f.productName || lastItem.productName,
+          expireDate: lastItem.expireDate
+        }));
+      }
+    }
+  }, [batchItems]);
+
+
   // POS Dual Discount State ('VOUCHER' | 'MANUAL')
   const [discountMode, setDiscountMode] = useState('VOUCHER');
   const [voucherCodeInput, setVoucherCodeInput] = useState('');
@@ -813,6 +828,12 @@ export default function Orders() {
 
     setBatchItems(prev => [...prev, newItem]);
     setSelectedAddProduct('');
+    setFormData(f => ({
+      ...f,
+      productName: prod.name,
+      durationDays: dur,
+      expireDate: expDate
+    }));
   };
 
   const handleUpdateBatchItem = (itemId, field, value) => {
