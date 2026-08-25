@@ -347,6 +347,7 @@ export default function Orders() {
   const handleOpenEditModal = (order) => {
     setEditFormData({
       id: order.id,
+      productName: order.product_name || order.productName || '',
       customerName: order.customer_name || order.customerName || '',
       phone: order.phone || '',
       infor: order.infor || '',
@@ -486,6 +487,7 @@ export default function Orders() {
     const costP = Number(editFormData.costPrice) || 0;
 
     const payload = {
+      product_name: editFormData.productName,
       customer_name: custName,
       phone: custPhone,
       infor: editFormData.infor,
@@ -3282,7 +3284,42 @@ export default function Orders() {
               {/* SECTION 1: CUSTOMER & CONTACT INFO */}
               <div style={{ background: 'rgba(99,102,241,0.08)', border: '1px solid rgba(99,102,241,0.25)', padding: '12px 14px', borderRadius: '10px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
                 <div style={{ fontSize: '11.5px', fontWeight: '800', color: '#818cf8', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                  👤 1. THÔNG TIN KHÁCH HÀNG & LIÊN HỆ
+                  📦 1. SẢN PHẨM & KHÁCH HÀNG LIÊN HỆ
+                </div>
+                <div>
+                  <label className="form-label" style={{ color: '#c084fc', fontWeight: 'bold' }}>
+                    📦 Đổi Sản Phẩm Dịch Vụ *
+                  </label>
+                  <select
+                    className="glass-input" required
+                    style={{ width: '100%', height: '38px', fontSize: '13px', border: '1px solid rgba(192,132,252,0.4)', fontWeight: 'bold', color: '#c084fc' }}
+                    value={editFormData.productName}
+                    onChange={e => {
+                      const pName = e.target.value;
+                      const prod = products.find(p => p.name === pName);
+                      if (prod) {
+                        const dur = prod.default_duration_days || prod.defaultDurationDays || 30;
+                        const custType = getCustomerTypeFromState(formData);
+                        const sellP = getTierPriceForProduct(prod, custType);
+                        const costP = prod.default_cost || prod.defaultCost || 50000;
+                        const exp = new Date(Date.now() + dur * 86400000).toISOString().split('T')[0];
+                        setEditFormData(f => ({
+                          ...f,
+                          productName: pName,
+                          sellPrice: sellP,
+                          costPrice: costP,
+                          expireDate: exp
+                        }));
+                        toast.info(`Đã đổi sản phẩm sang ${pName}. Tự động cập nhật Giá & Hạn dùng!`);
+                      } else {
+                        setEditFormData(f => ({ ...f, productName: pName }));
+                      }
+                    }}
+                  >
+                    {products.map(p => (
+                      <option key={p.id} value={p.name}>{p.name}</option>
+                    ))}
+                  </select>
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                   <div>
