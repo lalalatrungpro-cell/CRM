@@ -2176,10 +2176,27 @@ export default function Orders() {
 
       {/* MODAL 3: Warranty / Change Account */}
       
-      {/* 6-MODE WARRANTY CONTROL PANEL MODAL */}
+      {/* 6-MODE WARRANTY CONTROL PANEL SLIDE-OVER DRAWER (680PX) */}
       {showWarrantyModal && (
-        <div className="modal-overlay" onClick={() => setShowWarrantyModal(null)}>
-          <div className="modal-box animate-scale-in" onClick={e => e.stopPropagation()} style={{ maxWidth: '640px', padding: '24px' }}>
+        <div
+          className="drawer-overlay"
+          onClick={() => setShowWarrantyModal(null)}
+          style={{
+            position: 'fixed', inset: 0, zIndex: 9999,
+            background: 'rgba(0,0,0,0.65)', backdropFilter: 'blur(6px)',
+            display: 'flex', justifyContent: 'flex-end'
+          }}
+        >
+          <div
+            className="drawer-content animate-slide-in-right"
+            onClick={e => e.stopPropagation()}
+            style={{
+              width: '100%', maxWidth: '680px', height: '100vh',
+              background: '#0f172a', borderLeft: '1px solid rgba(255,255,255,0.1)',
+              boxShadow: '-10px 0 35px rgba(0,0,0,0.7)',
+              display: 'flex', flexDirection: 'column'
+            }}
+          >
             <div className="modal-header" style={{ marginBottom: '16px' }}>
               <div>
                 <h2 style={{ fontSize: '20px', fontWeight: 'bold', color: '#fff', display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -2359,11 +2376,11 @@ export default function Orders() {
                 </div>
               )}
 
-              <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
-                <button type="submit" className="glass-button" style={{ flex: 1, background: 'linear-gradient(135deg, #f59e0b, #10b981)', color: '#fff', fontWeight: '700' }}>
+              <div style={{ padding: '16px 24px', borderTop: '1px solid rgba(255,255,255,0.08)', background: '#111827', marginTop: 'auto', display: 'flex', gap: '10px' }}>
+                <button type="submit" className="glass-button" style={{ flex: 1, height: '42px', background: 'linear-gradient(135deg, #f59e0b, #10b981)', color: '#fff', fontWeight: '700' }}>
                   ⚡ Xác Nhận Xử Lý Bảo Hành
                 </button>
-                <button type="button" onClick={() => setShowWarrantyModal(null)} style={{ padding: '10px 20px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)', background: 'transparent', color: '#94a3b8', cursor: 'pointer' }}>
+                <button type="button" onClick={() => setShowWarrantyModal(null)} style={{ padding: '0 20px', height: '42px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)', background: 'transparent', color: '#94a3b8', cursor: 'pointer' }}>
                   Hủy
                 </button>
               </div>
@@ -2372,15 +2389,33 @@ export default function Orders() {
         </div>
       )}
 
-      {/* MODAL POS Add Order */}
+      {/* MODAL POS ADD ORDER SLIDE-OVER DRAWER (720PX) */}
       {showModal && (
-        <div className="modal-overlay" onClick={closeModal}>
-          <div className="modal-box" onClick={e => e.stopPropagation()} style={{ maxWidth: '540px' }}>
+        <div
+          className="drawer-overlay"
+          onClick={closeModal}
+          style={{
+            position: 'fixed', inset: 0, zIndex: 9999,
+            background: 'rgba(0,0,0,0.65)', backdropFilter: 'blur(6px)',
+            display: 'flex', justifyContent: 'flex-end'
+          }}
+        >
+          <div
+            className="drawer-content animate-slide-in-right"
+            onClick={e => e.stopPropagation()}
+            style={{
+              width: '100%', maxWidth: '720px', height: '100vh',
+              background: '#0f172a', borderLeft: '1px solid rgba(255,255,255,0.1)',
+              boxShadow: '-10px 0 35px rgba(0,0,0,0.7)',
+              display: 'flex', flexDirection: 'column'
+            }}
+          >
             <div className="modal-header">
               <h2 style={{ fontSize: '18px', fontWeight: '700' }}>Tạo Đơn Hàng Mới (POS)</h2>
               <button className="modal-close-btn" onClick={closeModal}><X size={18} /></button>
             </div>
-            <form onSubmit={handleCreateOrder} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+            <form onSubmit={handleCreateOrder} style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+            <div style={{ flex: 1, overflowY: 'auto', padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
               <div>
                 <label className="form-label" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
                   <span>CHỌN KHÁCH HÀNG (Tra cứu SĐT / Email / Tên) *</span>
@@ -3265,11 +3300,12 @@ export default function Orders() {
                 )}
               </div>
 
-              <div style={{ display: 'flex', gap: '10px', marginTop: '12px', paddingBottom: '6px' }}>
-                <button type="submit" className="glass-button" style={{ flex: 1, background: 'linear-gradient(135deg, #6366f1, #10b981)', color: '#fff', fontWeight: '700' }}>
+              </div>
+              <div style={{ padding: '16px 24px', borderTop: '1px solid rgba(255,255,255,0.08)', background: '#111827', marginTop: 'auto', display: 'flex', gap: '10px' }}>
+                <button type="submit" className="glass-button" style={{ flex: 1, height: '42px', background: 'linear-gradient(135deg, #6366f1, #10b981)', color: '#fff', fontWeight: '800' }}>
                   Hoàn Tất Tạo Đơn POS
                 </button>
-                <button type="button" onClick={closeModal} style={{ padding: '10px 20px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)', background: 'transparent', color: '#94a3b8', cursor: 'pointer' }}>Hủy</button>
+                <button type="button" onClick={closeModal} style={{ padding: '0 20px', height: '42px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)', background: 'transparent', color: '#94a3b8', cursor: 'pointer' }}>Hủy</button>
               </div>
             </form>
           </div>
@@ -3277,14 +3313,27 @@ export default function Orders() {
       )}
 
       
-      {/* EDIT ACCOUNT & ORDER MODAL - 920PX ENTERPRISE MULTI-COLUMN GRID */}
+      {/* EDIT ACCOUNT & ORDER MODAL - ENTERPRISE SLIDE-OVER DRAWER (680PX) */}
       {showEditModal && (
-        <div style={{
-          position: 'fixed', inset: 0, zIndex: 9999,
-          background: 'rgba(0,0,0,0.82)', backdropFilter: 'blur(10px)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px'
-        }}>
-          <div className="glass-panel animate-scale-in" style={{ width: '100%', maxWidth: '920px', padding: '24px', position: 'relative', maxHeight: '92vh', overflowY: 'auto' }}>
+        <div
+          className="drawer-overlay"
+          onClick={() => setShowEditModal(null)}
+          style={{
+            position: 'fixed', inset: 0, zIndex: 9999,
+            background: 'rgba(0,0,0,0.65)', backdropFilter: 'blur(6px)',
+            display: 'flex', justifyContent: 'flex-end'
+          }}
+        >
+          <div
+            className="drawer-content animate-slide-in-right"
+            onClick={e => e.stopPropagation()}
+            style={{
+              width: '100%', maxWidth: '680px', height: '100vh',
+              background: '#0f172a', borderLeft: '1px solid rgba(255,255,255,0.1)',
+              boxShadow: '-10px 0 35px rgba(0,0,0,0.7)',
+              display: 'flex', flexDirection: 'column'
+            }}
+          >
             {/* Modal Header */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '18px', borderBottom: '1px solid rgba(255,255,255,0.08)', paddingBottom: '14px' }}>
               <div>
@@ -3300,7 +3349,8 @@ export default function Orders() {
               </button>
             </div>
 
-            <form onSubmit={handleSaveEditOrder} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <form onSubmit={handleSaveEditOrder} style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+              <div style={{ flex: 1, overflowY: 'auto', padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
               {/* ROW 1: 3-COLUMN GRID (KHÁCH HÀNG & SP | LIÊN HỆ & HẠN DÙNG | KHO & GIÁ VỐN) */}
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '14px' }}>
                 {/* COLUMN 1: KHÁCH HÀNG & SP */}
@@ -3474,7 +3524,8 @@ export default function Orders() {
               </div>
 
               {/* SUBMIT BUTTONS */}
-              <div style={{ display: 'flex', gap: '12px', marginTop: '6px' }}>
+              </div>
+              <div style={{ padding: '16px 24px', borderTop: '1px solid rgba(255,255,255,0.08)', background: '#111827', marginTop: 'auto', display: 'flex', gap: '12px' }}>
                 <button
                   type="submit" className="glass-button"
                   style={{ flex: 1, height: '44px', background: 'linear-gradient(135deg, #6366f1, #10b981)', color: '#fff', fontWeight: '800', fontSize: '14px', borderRadius: '8px' }}
