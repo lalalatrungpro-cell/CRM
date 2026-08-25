@@ -351,6 +351,7 @@ export default function Orders() {
       phone: order.phone || '',
       infor: order.infor || '',
       sellPrice: order.sell_price || order.sellPrice || 0,
+      discountAmount: order.discount_amount || order.discountAmount || 0,
       costPrice: order.cost_price || order.costPrice || 0,
       supplierId: order.supplier_id || order.supplierId || '',
       status: order.status || 'Đã thanh toán',
@@ -478,12 +479,19 @@ export default function Orders() {
     e.preventDefault();
     if (!editFormData.id) return;
 
+    const custName = (editFormData.customerName || '').trim();
+    const custPhone = (editFormData.phone || '').trim();
+    const sellP = Number(editFormData.sellPrice) || 0;
+    const discP = Number(editFormData.discountAmount) || 0;
+    const costP = Number(editFormData.costPrice) || 0;
+
     const payload = {
-      customer_name: (editFormData.customerName || '').trim(),
-      phone: (editFormData.phone || '').trim(),
+      customer_name: custName,
+      phone: custPhone,
       infor: editFormData.infor,
-      sell_price: Number(editFormData.sellPrice),
-      cost_price: Number(editFormData.costPrice),
+      sell_price: sellP,
+      discount_amount: discP,
+      cost_price: costP,
       supplier_id: editFormData.supplierId,
       status: editFormData.status,
       expire_date: editFormData.expireDate
@@ -525,7 +533,19 @@ export default function Orders() {
       }
 
       await OrderService.update(editFormData.id, payload);
-      toast.success('Đã cập nhật thông tin tài khoản & đơn hàng!');
+
+      // Audit Log Trail Creation
+      try {
+        if (AuditLogService) {
+          await AuditLogService.create(shopId, {
+            order_id: editFormData.id,
+            action: 'UPDATE_ORDER_360',
+            content: `Sửa đơn #${editFormData.id}: KH ${custName} (${custPhone}), Giá bán: ${sellP.toLocaleString()}đ, Giảm: ${discP.toLocaleString()}đ`
+          });
+        }
+      } catch (aErr) {}
+
+      toast.success('🎉 Đã cập nhật thành công Đơn hàng 360° & đồng bộ Hồ sơ Khách Hàng!');
       setShowEditModal(null);
       if (showDetailModal && String(showDetailModal.id) === String(editFormData.id)) {
         setShowDetailModal({ ...showDetailModal, ...payload });
@@ -3219,136 +3239,164 @@ export default function Orders() {
       {showEditModal && (
         <div style={{
           position: 'fixed', inset: 0, zIndex: 9999,
-          background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(8px)',
+          background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(8px)',
           display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px'
         }}>
-          <div className="glass-panel animate-scale-in" style={{ width: '100%', maxWidth: '520px', padding: '24px', position: 'relative' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '18px' }}>
+          <div className="glass-panel animate-scale-in" style={{ width: '100%', maxWidth: '580px', padding: '24px', position: 'relative', maxHeight: '90vh', overflowY: 'auto' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '18px', borderBottom: '1px solid rgba(255,255,255,0.08)', paddingBottom: '12px' }}>
               <div>
-                <h3 style={{ fontSize: '18px', fontWeight: 'bold', color: '#fff' }}>
-                  ✏️ Điền / Cập Nhật Tài Khoản Đơn #{showEditModal.id}
+                <h3 style={{ fontSize: '18px', fontWeight: '800', color: '#fff', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  ✏️ CHỈNH SỬA ĐƠN HÀNG 360° #{showEditModal.id}
                 </h3>
-                <p style={{ color: '#94a3b8', fontSize: '12.5px', marginTop: '2px' }}>
-                  Khách hàng: {showEditModal.customer_name} | SP: {showEditModal.product_name}
+                <p style={{ color: '#94a3b8', fontSize: '12.5px', marginTop: '3px' }}>
+                  Sản Phẩm: <strong style={{ color: '#818cf8' }}>{showEditModal.product_name || showEditModal.productName}</strong>
                 </p>
               </div>
-              <button onClick={() => setShowEditModal(null)} style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer' }}>
+              <button onClick={() => setShowEditModal(null)} style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer', padding: '4px' }}>
                 <X size={20} />
               </button>
             </div>
 
-            <form onSubmit={handleSaveEditOrder} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-              {/* Customer Name & Phone Edit Row */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', background: 'rgba(255,255,255,0.03)', padding: '10px 12px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.06)' }}>
-                <div>
-                  <label className="form-label" style={{ color: '#818cf8', fontWeight: 'bold' }}>
-                    👤 Tên Khách Hàng *
-                  </label>
-                  <input
-                    type="text"
-                    className="glass-input" required
-                    style={{ width: '100%', height: '36px', fontSize: '13px' }}
-                    placeholder="Nhập tên khách..."
-                    value={editFormData.customerName}
-                    onChange={e => setEditFormData({ ...editFormData, customerName: e.target.value })}
-                  />
+            <form onSubmit={handleSaveEditOrder} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              {/* SECTION 1: CUSTOMER & CONTACT INFO */}
+              <div style={{ background: 'rgba(99,102,241,0.08)', border: '1px solid rgba(99,102,241,0.25)', padding: '12px 14px', borderRadius: '10px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                <div style={{ fontSize: '11.5px', fontWeight: '800', color: '#818cf8', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                  👤 1. THÔNG TIN KHÁCH HÀNG & LIÊN HỆ
                 </div>
-                <div>
-                  <label className="form-label" style={{ color: '#10b981', fontWeight: 'bold' }}>
-                    📱 SĐT / Zalo Khách
-                  </label>
-                  <input
-                    type="text"
-                    className="glass-input"
-                    style={{ width: '100%', height: '36px', fontSize: '13px' }}
-                    placeholder="Nhập số điện thoại..."
-                    value={editFormData.phone}
-                    onChange={e => setEditFormData({ ...editFormData, phone: e.target.value })}
-                  />
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                  <div>
+                    <label className="form-label" style={{ color: '#cbd5e1', fontWeight: '700' }}>Tên Khách Hàng *</label>
+                    <input
+                      type="text"
+                      className="glass-input" required
+                      style={{ width: '100%', height: '38px', fontSize: '13px' }}
+                      placeholder="Nhập tên khách..."
+                      value={editFormData.customerName}
+                      onChange={e => setEditFormData({ ...editFormData, customerName: e.target.value })}
+                    />
+                  </div>
+                  <div>
+                    <label className="form-label" style={{ color: '#cbd5e1', fontWeight: '700' }}>SĐT / Zalo Khách</label>
+                    <input
+                      type="text"
+                      className="glass-input"
+                      style={{ width: '100%', height: '38px', fontSize: '13px' }}
+                      placeholder="Nhập số điện thoại..."
+                      value={editFormData.phone}
+                      onChange={e => setEditFormData({ ...editFormData, phone: e.target.value })}
+                    />
+                  </div>
                 </div>
               </div>
 
-              <div>
-                <label className="form-label" style={{ color: '#60a5fa', fontWeight: 'bold' }}>
-                  🔑 Thông Tin Tài Khoản / Invite Link Giao Khách:
-                </label>
+              {/* SECTION 2: CREDENTIALS & DELIVERY */}
+              <div style={{ background: 'rgba(56,189,248,0.08)', border: '1px solid rgba(56,189,248,0.25)', padding: '12px 14px', borderRadius: '10px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <div style={{ fontSize: '11.5px', fontWeight: '800', color: '#38bdf8', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                  🔑 2. TÀI KHOẢN & LINK GIAO KHÁCH
+                </div>
                 <textarea
                   className="glass-input"
-                  style={{ minHeight: '80px', fontFamily: 'monospace', fontSize: '13px', background: 'rgba(15, 23, 42, 0.8)', border: '1px solid #3b82f6' }}
-                  placeholder="VD: email@gmail.com | pass123 | https://link_join_slot..."
+                  style={{ minHeight: '75px', fontFamily: 'monospace', fontSize: '12.5px', background: 'rgba(15, 23, 42, 0.8)', border: '1px solid rgba(56,189,248,0.4)' }}
+                  placeholder="VD: user@gmail.com | pass123 | https://link_join_slot..."
                   value={editFormData.infor}
                   onChange={e => setEditFormData({ ...editFormData, infor: e.target.value })}
                 />
               </div>
 
-              <div>
-                <label className="form-label" style={{ color: '#f59e0b', fontWeight: 'bold' }}>
-                  🏢 Chọn Nhà Cung Cấp / Nguồn Nhập Sỉ:
-                </label>
-                <select
-                  className="glass-input"
-                  style={{ border: '1px solid rgba(245, 158, 11, 0.4)' }}
-                  value={editFormData.supplierId}
-                  onChange={e => setEditFormData({ ...editFormData, supplierId: e.target.value })}
-                >
-                  <option value="">-- Chọn Nhà Cung Cấp nhập acc --</option>
-                  {suppliers.map(s => (
-                    <option key={s.id} value={s.id}>{s.name} (SĐT: {s.phone || 'N/A'})</option>
-                  ))}
-                </select>
-              </div>
+              {/* SECTION 3: FINANCIALS & PRICING */}
+              <div style={{ background: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.25)', padding: '12px 14px', borderRadius: '10px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                <div style={{ fontSize: '11.5px', fontWeight: '800', color: '#10b981', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                  💰 3. TÀI CHÍNH, GIÁ BÁN & TRẠNG THÁI
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                  <div>
+                    <label className="form-label" style={{ color: '#10b981', fontWeight: '700' }}>Giá Bán Khách (VNĐ)</label>
+                    <input
+                      type="number" className="glass-input"
+                      style={{ width: '100%', height: '38px', fontSize: '13px', fontWeight: '700', color: '#10b981' }}
+                      value={editFormData.sellPrice}
+                      onChange={e => setEditFormData({ ...editFormData, sellPrice: e.target.value })}
+                    />
+                  </div>
+                  <div>
+                    <label className="form-label" style={{ color: '#c084fc', fontWeight: '700' }}>Tiền Giảm Giá / Voucher (VNĐ)</label>
+                    <input
+                      type="number" className="glass-input"
+                      style={{ width: '100%', height: '38px', fontSize: '13px', color: '#c084fc' }}
+                      value={editFormData.discountAmount}
+                      onChange={e => setEditFormData({ ...editFormData, discountAmount: e.target.value })}
+                    />
+                  </div>
+                </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                <div>
-                  <label className="form-label">Giá Bán Khách (VNĐ)</label>
-                  <input
-                    type="number" className="glass-input"
-                    value={editFormData.sellPrice}
-                    onChange={e => setEditFormData({ ...editFormData, sellPrice: e.target.value })}
-                  />
-                </div>
-                <div>
-                  <label className="form-label">Giá Vốn Nhập Sỉ (VNĐ)</label>
-                  <input
-                    type="number" className="glass-input"
-                    value={editFormData.costPrice}
-                    onChange={e => setEditFormData({ ...editFormData, costPrice: e.target.value })}
-                  />
-                </div>
-              </div>
-
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                <div>
-                  <label className="form-label">Trạng Thái Thanh Toán</label>
-                  <select
-                    className="glass-input"
-                    value={editFormData.status}
-                    onChange={e => setEditFormData({ ...editFormData, status: e.target.value })}
-                  >
-                    <option value="Đã thanh toán">Đã thanh toán</option>
-                    <option value="Nợ">Nợ</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="form-label">Ngày Hết Hạn Acc</label>
-                  <input
-                    type="date" className="glass-input"
-                    value={editFormData.expireDate}
-                    onChange={e => setEditFormData({ ...editFormData, expireDate: e.target.value })}
-                  />
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                  <div>
+                    <label className="form-label" style={{ color: '#cbd5e1' }}>Trạng Thái Thanh Toán *</label>
+                    <select
+                      className="glass-input"
+                      style={{ width: '100%', height: '38px', fontSize: '13px' }}
+                      value={editFormData.status}
+                      onChange={e => setEditFormData({ ...editFormData, status: e.target.value })}
+                    >
+                      <option value="Đã thanh toán">🟢 Đã thanh toán</option>
+                      <option value="Nợ">🔴 Nợ (Chưa thanh toán)</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="form-label" style={{ color: '#cbd5e1' }}>Ngày Hết Hạn Acc</label>
+                    <input
+                      type="date" className="glass-input"
+                      style={{ width: '100%', height: '38px', fontSize: '13px' }}
+                      value={editFormData.expireDate}
+                      onChange={e => setEditFormData({ ...editFormData, expireDate: e.target.value })}
+                    />
+                  </div>
                 </div>
               </div>
 
-              <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
+              {/* SECTION 4: SUPPLIER & COST PRICE */}
+              <div style={{ background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.25)', padding: '12px 14px', borderRadius: '10px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                <div style={{ fontSize: '11.5px', fontWeight: '800', color: '#f59e0b', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                  🏢 4. NGUỒN NHẬP SỈ & GIÁ VỐN
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                  <div>
+                    <label className="form-label" style={{ color: '#f59e0b' }}>Nhà Cung Cấp Nguồn Nhập</label>
+                    <select
+                      className="glass-input"
+                      style={{ width: '100%', height: '38px', fontSize: '12.5px' }}
+                      value={editFormData.supplierId}
+                      onChange={e => setEditFormData({ ...editFormData, supplierId: e.target.value })}
+                    >
+                      <option value="">-- Chọn Nhà Cung Cấp --</option>
+                      {suppliers.map(s => (
+                        <option key={s.id} value={s.id}>{s.name} (SĐT: {s.phone || 'N/A'})</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="form-label" style={{ color: '#f59e0b' }}>Giá Vốn Nhập Sỉ (VNĐ)</label>
+                    <input
+                      type="number" className="glass-input"
+                      style={{ width: '100%', height: '38px', fontSize: '13px', color: '#f59e0b' }}
+                      value={editFormData.costPrice}
+                      onChange={e => setEditFormData({ ...editFormData, costPrice: e.target.value })}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* SUBMIT BUTTONS */}
+              <div style={{ display: 'flex', gap: '10px', marginTop: '6px' }}>
                 <button
                   type="submit" className="glass-button"
-                  style={{ flex: 1, background: 'linear-gradient(135deg, #3b82f6, #10b981)', color: '#fff', fontWeight: 'bold' }}
+                  style={{ flex: 1, height: '42px', background: 'linear-gradient(135deg, #6366f1, #10b981)', color: '#fff', fontWeight: '800', fontSize: '13.5px' }}
                 >
-                  💾 Lưu Thông Tin Tài Khoản
+                  💾 LƯU CHỈNH SỬA ĐƠN HÀNG 360°
                 </button>
                 <button
                   type="button" onClick={() => setShowEditModal(null)}
-                  style={{ padding: '10px 18px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)', background: 'transparent', color: '#94a3b8', cursor: 'pointer' }}
+                  style={{ padding: '0 20px', height: '42px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)', background: 'transparent', color: '#94a3b8', cursor: 'pointer', fontWeight: '600' }}
                 >
                   Hủy
                 </button>
