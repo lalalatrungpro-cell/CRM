@@ -234,3 +234,50 @@ export const getBankDisplayName = (code) => {
   if (c === 'SCB') return 'SCB';
   return code;
 };
+
+// ==================== GLOBAL DATE/TIME FORMATTERS (dd/mm/YYYY) ====================
+export const formatDateDDMMYYYY = (dateStr) => {
+  if (!dateStr) return '---';
+  try {
+    const str = String(dateStr).trim();
+    if (!str || str === '---') return '---';
+    // Handle YYYY-MM-DD or YYYY-MM-DDTHH:mm:ss
+    const isoMatch = str.match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if (isoMatch) {
+      const [, yyyy, mm, dd] = isoMatch;
+      return `${dd}/${mm}/${yyyy}`;
+    }
+    // Handle DD/MM/YYYY already formatted
+    const slashMatch = str.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+    if (slashMatch) {
+      const [, dd, mm, yyyy] = slashMatch;
+      return `${dd.padStart(2, '0')}/${mm.padStart(2, '0')}/${yyyy}`;
+    }
+    const d = new Date(str);
+    if (isNaN(d.getTime())) return str;
+    const day = String(d.getDate()).padStart(2, '0');
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const year = d.getFullYear();
+    return `${day}/${month}/${year}`;
+  } catch (e) {
+    return String(dateStr);
+  }
+};
+
+export const formatDateTimeDDMMYYYY = (dateStr) => {
+  if (!dateStr) return '---';
+  try {
+    const str = String(dateStr).trim();
+    if (!str || str === '---') return '---';
+    const d = new Date(str);
+    if (isNaN(d.getTime())) return String(dateStr);
+    const day = String(d.getDate()).padStart(2, '0');
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const year = d.getFullYear();
+    const hours = String(d.getHours()).padStart(2, '0');
+    const minutes = String(d.getMinutes()).padStart(2, '0');
+    return `${day}/${month}/${year} ${hours}:${minutes}`;
+  } catch (e) {
+    return String(dateStr);
+  }
+};

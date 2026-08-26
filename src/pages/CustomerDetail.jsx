@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { CustomerService, OrderService, CareLogService, VietQRService, WarrantyLogService, TeamService } from '../utils/dataService';
-import { getVietQRUrl, getBankDisplayName } from '../utils/storage';
+import { getVietQRUrl, getBankDisplayName , formatDateDDMMYYYY, formatDateTimeDDMMYYYY } from '../utils/storage';
 import { useToast } from '../components/Toast';
 import ConfirmDialog from '../components/ConfirmDialog';
 import {
@@ -336,7 +336,7 @@ export default function CustomerDetail() {
                         </div>
                       )}
                       <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12.5px', color: '#94a3b8' }}>
-                        <span>Hạn: {o.expire_date || o.expireDate || '---'}</span>
+                        <span>Hạn: {formatDateDDMMYYYY(o.expire_date || o.expireDate)}</span>
                         <strong style={{ color: '#10b981' }}>{(o.sell_price || o.sellPrice || 0).toLocaleString()}đ</strong>
                       </div>
                       {o.infor && (
@@ -370,7 +370,7 @@ export default function CustomerDetail() {
                   <div key={w.id || idx} style={{ background: w.type === 'REPLACE_TEAM' ? 'rgba(16,185,129,0.1)' : 'rgba(245,158,11,0.08)', padding: '12px', borderRadius: '8px', border: w.type === 'REPLACE_TEAM' ? '1px solid rgba(16,185,129,0.3)' : '1px solid rgba(245,158,11,0.2)' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', color: w.type === 'REPLACE_TEAM' ? '#10b981' : '#f59e0b', fontWeight: '700' }}>
                       <span>{w.type === 'REPLACE_TEAM' ? `🔄 Chuyển Team Bảo Hành: ${w.old_team_name || 'Team cũ'} ➔ ${w.new_team_name || 'Team mới'}` : `Đơn #${w.order_id} - Lý do: ${w.reason}`}</span>
-                      <span>{w.created_at ? new Date(w.created_at).toLocaleDateString('vi-VN') : ''}</span>
+                      <span>{w.created_at ? formatDateDDMMYYYY(w.created_at) : ''}</span>
                     </div>
                     {w.reason && w.type === 'REPLACE_TEAM' && (
                       <div style={{ fontSize: '11.5px', color: '#94a3b8', marginTop: '4px' }}>
@@ -458,7 +458,7 @@ export default function CustomerDetail() {
                       </span>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                         <span style={{ fontSize: '11px', color: '#94a3b8' }}>
-                          🕒 {log.created_at ? new Date(log.created_at).toLocaleString('vi-VN') : (log.time || 'Vừa xong')}
+                          🕒 {log.created_at ? formatDateTimeDDMMYYYY(log.created_at) : (log.time || 'Vừa xong')}
                         </span>
                         <button onClick={() => setConfirmDeleteLogId(log.id)} style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', padding: '2px' }} title="Xóa ghi chú này">
                           <Trash2 size={13} />
@@ -497,7 +497,7 @@ export default function CustomerDetail() {
                     Số chứng từ: <strong>BKCN-{new Date().getFullYear()}/{(new Date().getMonth() + 1).toString().padStart(2, '0')}/{customer.id}</strong>
                   </p>
                   <p style={{ fontSize: '11.5px', color: '#64748b', margin: 0 }}>
-                    Ngày xuất: {new Date().toLocaleDateString('vi-VN')}
+                    Ngày xuất: {formatDateDDMMYYYY(new Date())}
                   </p>
                 </div>
               </div>

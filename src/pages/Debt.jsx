@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { CustomerService, OrderService, SupplierService, PurchaseService, VietQRService, CashTransactionService } from '../utils/dataService';
-import { getVietQRUrl, getBankDisplayName } from '../utils/storage';
+import { getVietQRUrl, getBankDisplayName , formatDateDDMMYYYY, formatDateTimeDDMMYYYY } from '../utils/storage';
 import { useToast } from '../components/Toast';
 import DateFilterBar from '../components/DateFilterBar';
 import { Wallet, ArrowDownLeft, ArrowUpRight, FileText, Printer, Copy, QrCode, X, Search } from 'lucide-react';
@@ -549,7 +549,7 @@ export default function Debt() {
                     Số chứng từ: <strong>BKCN-{new Date().getFullYear()}/{(new Date().getMonth() + 1).toString().padStart(2, '0')}/{selectedInvoiceCust.id}</strong>
                   </p>
                   <p style={{ fontSize: '11.5px', color: '#64748b', margin: 0 }}>
-                    Ngày xuất: {new Date().toLocaleDateString('vi-VN')}
+                    Ngày xuất: {formatDateDDMMYYYY(new Date())}
                   </p>
                 </div>
               </div>
@@ -693,7 +693,7 @@ export default function Debt() {
                   <p style={{ fontSize: '11.5px', color: '#64748b', margin: 0 }}>SĐT Hotline: <strong>{selectedInvoiceSupp.phone || 'N/A'}</strong></p>
                 </div>
                 <div style={{ textAlign: 'right' }}>
-                  <p style={{ fontSize: '11.5px', color: '#64748b', margin: 0 }}>Ngày xuất: {new Date().toLocaleDateString('vi-VN')}</p>
+                  <p style={{ fontSize: '11.5px', color: '#64748b', margin: 0 }}>Ngày xuất: {formatDateDDMMYYYY(new Date())}</p>
                 </div>
               </div>
 

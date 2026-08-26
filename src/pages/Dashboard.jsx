@@ -1,3 +1,4 @@
+import { formatDateDDMMYYYY, formatDateTimeDDMMYYYY } from '../utils/storage';
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
@@ -305,7 +306,7 @@ export default function Dashboard() {
   const handleExportPnL = () => {
     const lines = [
       ['BÁO CÁO KẾT QUẢ KINH DOANH & TÀI CHÍNH DOANH NGHIỆP (P&L STATEMENT)', ''],
-      ['Ngày xuất báo cáo:', new Date().toLocaleDateString('vi-VN')],
+      ['Ngày xuất báo cáo:', formatDateDDMMYYYY(new Date())],
       ['', ''],
       ['1. DOANH THU THUẦN BÁN HÀNG', totalRevenue],
       ['2. GIÁ VỐN HÀNG BÁN (COGS)', -totalCogs],

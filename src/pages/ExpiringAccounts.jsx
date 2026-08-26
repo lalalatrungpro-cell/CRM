@@ -1,4 +1,4 @@
-import { getBankDisplayName } from '../utils/storage';
+import { getBankDisplayName , formatDateDDMMYYYY, formatDateTimeDDMMYYYY } from '../utils/storage';
 import React, { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { OrderService, TeamService, CustomerService, CareLogService, VietQRService } from '../utils/dataService';
@@ -686,7 +686,7 @@ export default function ExpiringAccounts() {
                           <div style={{ fontSize: '11px', color: '#64748b', fontStyle: 'italic', marginTop: '2px' }}>Tự nhập acc</div>
                         )}
                       </td>
-                      <td style={{ padding: '12px 14px', whiteSpace: 'nowrap', fontWeight: '600' }}>{formatShortDate(expDate)}</td>
+                      <td style={{ padding: '12px 14px', whiteSpace: 'nowrap', fontWeight: '600' }}>{formatDateDDMMYYYY(expDate)}</td>
                       <td style={{ padding: '12px 14px', whiteSpace: 'nowrap' }}>
                         {isExpired ? (
                           <span className="badge badge-danger" style={{ padding: '3px 8px', fontSize: '11px', fontWeight: '700', whiteSpace: 'nowrap' }}>Quá hạn {Math.abs(dLeft)} ngày</span>

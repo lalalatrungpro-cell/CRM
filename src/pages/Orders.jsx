@@ -6,7 +6,7 @@ import {
   CashTransactionService, clearAllSystemData
 } from '../utils/dataService';
 import { supabase } from '../utils/supabaseClient';
-import { getVietQRUrl, getBankDisplayName } from '../utils/storage';
+import { getVietQRUrl, getBankDisplayName , formatDateDDMMYYYY, formatDateTimeDDMMYYYY } from '../utils/storage';
 import { useToast } from '../components/Toast';
 import ConfirmDialog from '../components/ConfirmDialog';
 import DateFilterBar from '../components/DateFilterBar';
@@ -1660,7 +1660,7 @@ export default function Orders() {
                   }
 
                   const createdStr = order.created_at
-                    ? new Date(order.created_at).toLocaleDateString('vi-VN')
+                    ? formatDateDDMMYYYY(order.created_at)
                     : '---';
 
                   const linkedSupp = suppliers.find(s => String(s.id) === String(order.supplier_id || order.supplierId));
@@ -2112,7 +2112,7 @@ export default function Orders() {
                       <p style={{ fontWeight: '700', fontSize: '14px', margin: 0 }}>
                         {isMultiBatch ? `MÃ BATCH: ${showInvoiceModal.order.batch_ref || showInvoiceModal.order.batchRef}` : `MÃ HÓA ĐƠN: #${showInvoiceModal.order.id}`}
                       </p>
-                      <p style={{ fontSize: '12px', color: '#64748b', margin: '2px 0' }}>Ngày: {new Date(showInvoiceModal.order.purchase_date || showInvoiceModal.order.purchaseDate || todayStr).toLocaleDateString('vi-VN')}</p>
+                      <p style={{ fontSize: '12px', color: '#64748b', margin: '2px 0' }}>Ngày: {formatDateDDMMYYYY(showInvoiceModal.order.purchase_date || showInvoiceModal.order.purchaseDate || todayStr)}</p>
                     </div>
                   </div>
 

@@ -1,3 +1,4 @@
+import { formatDateDDMMYYYY, formatDateTimeDDMMYYYY } from '../utils/storage';
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useAuth } from '../contexts/AuthContext';
@@ -184,7 +185,7 @@ export default function Inventory() {
   const handleCopySupplierClaimMsg = (team) => {
     const supp = suppliers.find(s => String(s.id) === String(team.supplier_id || team.supplierId)) || {};
     const suppName = supp.name || team.supplier_name || 'NCC';
-    const pDate = team.created_at || team.purchase_date ? new Date(team.created_at || team.purchase_date).toLocaleDateString('vi-VN') : 'Mới mua';
+    const pDate = team.created_at || team.purchase_date ? formatDateDDMMYYYY(team.created_at || team.purchase_date) : 'Mới mua';
     const text = `Chào ${suppName}, bên mình cần hỗ trợ bảo hành Kho Team bị DIE:\n- Tên Kho Team: ${team.name} (${team.category || 'Canva Pro'})\n- Tài khoản Admin / Acc Gốc: ${team.infor || 'Chưa lưu acc gốc'}\n- Quy mô: ${team.max_slots || 49} slot\n- Ngày mua: ${pDate}\nNhờ bạn kiểm tra khôi phục hoặc đổi team mới giúp mình với nhé. Cảm ơn bạn!`;
     navigator.clipboard.writeText(text);
     toast.success(`✅ Đã copy tin nhắn đòi bảo hành gửi ${suppName}! Dán (Ctrl+V) sang Zalo ngay.`);
@@ -608,7 +609,7 @@ export default function Inventory() {
 
     let text = `📋 DANH SÁCH KEY / TÀI KHOẢN LỖI YÊU CẦU NCC ĐỔI MỚI / HOÀN TIỀN\n`;
     text += `🏢 Cửa Hàng: DROPSHIP CRM STORE\n`;
-    text += `🗓️ Ngày xuất: ${new Date().toLocaleDateString('vi-VN')}\n`;
+    text += `🗓️ Ngày xuất: ${formatDateDDMMYYYY(new Date())}\n`;
     text += `--------------------------------------------------\n`;
     faultyItems.forEach((f, idx) => {
       text += `${idx + 1}. [${f.product_name}] - NCC: ${f.supplier_name || 'N/A'}\n`;
@@ -1003,7 +1004,7 @@ export default function Inventory() {
                             // 1. Import event
                             const importDate = item.created_at || item.import_date || item.purchase_date;
                             if (importDate) {
-                              const dStr = new Date(importDate).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: '2-digit' });
+                              const dStr = formatDateDDMMYYYY(importDate);
                               events.push({ icon: '📥', label: 'Nhập kho', date: dStr, color: '#10b981' });
                             }
 
@@ -1011,7 +1012,7 @@ export default function Inventory() {
                             if (item.order_id || item.customer_name || item.status === 'SOLD') {
                               const exportLog = inventoryLogs.find(l => String(l.inventory_item_id || l.inventoryItemId) === String(item.id) && (l.action_type === 'EXPORT_POS' || l.action_type === 'EXPORT'));
                               const expDate = exportLog?.created_at || item.sold_date;
-                              const dStr = expDate ? new Date(expDate).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: '2-digit' }) : 'Đã bán';
+                              const dStr = expDate ? formatDateDDMMYYYY(expDate) : 'Đã bán';
                               const orderRef = item.order_id ? `#${item.order_id}` : '';
                               events.push({ icon: '📤', label: `Bán POS ${orderRef}`, date: dStr, color: '#a855f7' });
                             }
@@ -1019,14 +1020,14 @@ export default function Inventory() {
                             // 3. Restock / Revoke event
                             const restockLog = inventoryLogs.find(l => String(l.inventory_item_id || l.inventoryItemId) === String(item.id) && l.action_type === 'RESTOCK');
                             if (restockLog) {
-                              const dStr = restockLog.created_at ? new Date(restockLog.created_at).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: '2-digit' }) : 'Vừa thu hồi';
+                              const dStr = restockLog.created_at ? formatDateDDMMYYYY(restockLog.created_at) : 'Vừa thu hồi';
                               events.push({ icon: '🔄', label: 'Thu hồi (Hủy)', date: dStr, color: '#38bdf8' });
                             }
 
                             // 4. Faulty / Warranty event
                             if (item.status === 'FAULTY' || item.faulty_reason) {
                               const faultyLog = inventoryLogs.find(l => String(l.inventory_item_id || l.inventoryItemId) === String(item.id) && (l.action_type === 'WARRANTY_FAULTY' || l.action_type === 'FAULTY'));
-                              const dStr = faultyLog?.created_at ? new Date(faultyLog.created_at).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: '2-digit' }) : '';
+                              const dStr = faultyLog?.created_at ? formatDateDDMMYYYY(faultyLog.created_at) : '';
                               events.push({ icon: '🔴', label: 'Báo lỗi NCC', date: dStr, color: '#ef4444' });
                             }
 
@@ -1297,12 +1298,12 @@ export default function Inventory() {
                       </div>
                       <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: '6px', padding: '6px 8px' }}>
                         <div style={{ fontSize: '9.5px', color: '#64748b', fontWeight: '700', textTransform: 'uppercase' }}>📅 Mua</div>
-                        <div style={{ fontSize: '11.5px', fontWeight: '700', color: '#cbd5e1' }}>{purchaseDate ? new Date(purchaseDate).toLocaleDateString('vi-VN') : '—'}</div>
+                        <div style={{ fontSize: '11.5px', fontWeight: '700', color: '#cbd5e1' }}>{purchaseDate ? formatDateDDMMYYYY(purchaseDate) : '—'}</div>
                       </div>
                       <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: '6px', padding: '6px 8px' }}>
                         <div style={{ fontSize: '9.5px', color: '#64748b', fontWeight: '700', textTransform: 'uppercase' }}>⌛ Hạn Dùng</div>
                         <div style={{ fontSize: '11.5px', fontWeight: '700', color: daysLeft !== null && daysLeft <= 0 ? '#ef4444' : '#cbd5e1' }}>
-                          {expireDate ? new Date(expireDate).toLocaleDateString('vi-VN') : '—'}
+                          {expireDate ? formatDateDDMMYYYY(expireDate) : '—'}
                           {daysLeft !== null && (
                             <span style={{ marginLeft: '3px', fontSize: '9.5px', color: daysLeft <= 0 ? '#ef4444' : daysLeft <= 7 ? '#f59e0b' : '#10b981', fontWeight: '700' }}>
                               ({daysLeft <= 0 ? 'Hết hạn' : `${daysLeft}d`})
@@ -1770,7 +1771,7 @@ export default function Inventory() {
                       <tr key={p.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
                         <td style={{ padding: '12px 16px', color: '#94a3b8' }}>
                           <div style={{ fontWeight: '700', color: '#fff' }}>PN-{String(p.id).padStart(4, '0')}</div>
-                          <div style={{ fontSize: '11px', color: '#64748b' }}>{p.purchase_date || p.purchaseDate ? new Date(p.purchase_date || p.purchaseDate).toLocaleDateString('vi-VN') : '—'}</div>
+                          <div style={{ fontSize: '11px', color: '#64748b' }}>{p.purchase_date || p.purchaseDate ? formatDateDDMMYYYY(p.purchase_date || p.purchaseDate) : '—'}</div>
                         </td>
                         <td style={{ padding: '12px 16px', color: '#fff', fontWeight: '600' }}>
                           {p.product_name || p.productName || 'Sản phẩm nhập kho'}
