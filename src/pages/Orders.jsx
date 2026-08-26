@@ -1248,13 +1248,15 @@ export default function Orders() {
     const custName = order.customer_name || order.customerName || 'Khách Hàng';
     const prodName = order.product_name || order.productName || 'Sản Phẩm';
     const infor = order.infor || 'Đã kích hoạt';
-    const expDate = order.expire_date || order.expireDate || '---';
+    const purDate = formatDateDDMMYYYY(order.purchase_date || order.purchaseDate || order.created_at);
+    const expDate = formatDateDDMMYYYY(order.expire_date || order.expireDate);
     const price = (order.sell_price || order.sellPrice || 0).toLocaleString();
 
     let text = `🎉 XÁC NHẬN ĐƠN HÀNG #${order.id}\n`;
     text += `👤 Khách hàng: ${custName}\n`;
     text += `📦 Sản phẩm: ${prodName}\n`;
     text += `🔑 Account / Info: ${infor}\n`;
+    text += `📅 Ngày kích hoạt: ${purDate}\n`;
     text += `⏳ Ngày hết hạn: ${expDate}\n`;
     text += `💰 Giá thanh toán: ${price} VNĐ\n\n`;
     text += `💳 THÔNG TIN CHUYỂN KHOẢN:\n`;
@@ -1447,7 +1449,9 @@ export default function Orders() {
         </div>
       `;
 
-      const plainText = `🎉 HOÀN TẤT ĐƠN HÀNG #${order.id}\n👤 Khách hàng: ${custName}\n📦 Sản phẩm: ${prodName}\n🔑 Infor: ${order.infor || 'Đã kích hoạt'}\n⏳ Hạn dùng: ${expDate}\n💰 Giá thanh toán: ${sellP.toLocaleString()}đ\n\n💳 THÔNG TIN CHUYỂN KHOẢN VIETQR:\n🔹 Ngân hàng: ${bName}\n🔹 Số tài khoản: ${accNo}\n🔹 Chủ tài khoản: ${accName}\n🔹 Nội dung CK: ${memo}\n🔹 Link QR: ${qrUrl}\n\nCảm ơn bạn đã ủng hộ shop! ❤️🎁`;
+      const purD = formatDateDDMMYYYY(order.purchase_date || order.purchaseDate || order.created_at);
+      const expD = formatDateDDMMYYYY(order.expire_date || order.expireDate);
+      const plainText = `🎉 HOÀN TẤT ĐƠN HÀNG #${order.id}\n👤 Khách hàng: ${custName}\n📦 Sản phẩm: ${prodName}\n🔑 Infor: ${order.infor || 'Đã kích hoạt'}\n📅 Ngày kích hoạt: ${purD}\n⏳ Hạn dùng: ${expD}\n💰 Giá thanh toán: ${sellP.toLocaleString()}đ\n\n💳 THÔNG TIN CHUYỂN KHOẢN VIETQR:\n🔹 Ngân hàng: ${bName}\n🔹 Số tài khoản: ${accNo}\n🔹 Chủ tài khoản: ${accName}\n🔹 Nội dung CK: ${memo}\n🔹 Link QR: ${qrUrl}\n\nCảm ơn bạn đã ủng hộ shop! ❤️🎁`;
 
       const htmlBlob = new Blob([htmlString], { type: 'text/html' });
       const textBlob = new Blob([plainText], { type: 'text/plain' });

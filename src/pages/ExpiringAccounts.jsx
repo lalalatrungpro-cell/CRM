@@ -184,13 +184,15 @@ export default function ExpiringAccounts() {
     const custName = order.customer_name || order.customerName || 'Khách Hàng';
     const prodName = order.product_name || order.productName || 'Sản Phẩm';
     const infor = order.infor || 'Đã kích hoạt';
-    const expDate = order.expire_date || order.expireDate || '---';
+    const purDate = formatDateDDMMYYYY(order.purchase_date || order.purchaseDate || order.created_at);
+    const expDate = formatDateDDMMYYYY(order.expire_date || order.expireDate);
     const price = (order.sell_price || order.sellPrice || 0).toLocaleString();
 
     let text = `🎉 XÁC NHẬN ĐƠN HÀNG #${order.id}\n`;
     text += `👤 Khách hàng: ${custName}\n`;
     text += `📦 Sản phẩm: ${prodName}\n`;
     text += `🔑 Account / Info: ${infor}\n`;
+    text += `📅 Ngày kích hoạt: ${purDate}\n`;
     text += `⏳ Ngày hết hạn: ${expDate}\n`;
     text += `💰 Giá thanh toán: ${price} VNĐ\n\n`;
     text += `💳 THÔNG TIN CHUYỂN KHOẢN:\n`;
