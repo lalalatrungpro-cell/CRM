@@ -1,4 +1,4 @@
-# Dependencies
+﻿# Dependencies
 node_modules/
 .pnpm-store/
 
@@ -28,3 +28,5 @@ Quản lý bán ACC_extracted/
 "Mã Bảo Mật Vercel/"
 "Mã Bảo Mật Vercel"
 *.txt
+
+supabase/.temp/

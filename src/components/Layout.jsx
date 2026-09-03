@@ -3,7 +3,7 @@ import { NavLink, Outlet } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import ErrorBoundary from './ErrorBoundary';
 import {
-  LayoutDashboard, Tag, ShieldCheck, ShoppingCart, Clock,
+  Key, LayoutDashboard, Tag, ShieldCheck, ShoppingCart, Clock,
   Users, Truck, Wallet, Settings, LogOut, Database,
   PackagePlus, TrendingDown, Calculator, Landmark, Boxes
 } from 'lucide-react';
@@ -41,7 +41,8 @@ export default function Layout() {
     {
       title: 'HỆ THỐNG',
       items: [
-        { to: '/settings', label: 'Cài Đặt & Kênh Bán Hàng', icon: <Settings size={17} /> }
+        { to: '/settings', label: 'Cài Đặt & Kênh Bán Hàng', icon: <Settings size={17} /> },
+        { to: '/licenses', label: 'Bản Quyền MamNonPro', icon: <Key size={17} /> }
       ]
     }
   ];

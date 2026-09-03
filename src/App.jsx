@@ -23,6 +23,7 @@ import SupplierDetail from './pages/SupplierDetail';
 import Orders from './pages/Orders';
 import Debt from './pages/Debt';
 import Settings from './pages/Settings';
+import Licenses from './pages/Licenses';
 import MigratePage from './pages/MigratePage';
 
 const RequireAuth = ({ children }) => {
@@ -66,6 +67,7 @@ const AppRoutes = () => {
         <Route path="suppliers/:id" element={<SupplierDetail />} />
         <Route path="debt" element={<Debt />} />
         <Route path="settings" element={<Settings />} />
+        <Route path="licenses" element={<Licenses />} />
         <Route path="migrate" element={<MigratePage />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
