@@ -7,7 +7,20 @@ import {
 } from 'lucide-react';
 
 export default function Licenses() {
-  const { addToast } = useToast();
+  const toast = useToast();
+  const [submitting, setSubmitting] = useState(false);
+
+  const addToast = (msg, type = 'success') => {
+    try {
+      if (toast && typeof toast[type] === 'function') {
+        toast[type](msg);
+      } else if (toast && typeof toast.info === 'function') {
+        toast.info(msg);
+      }
+    } catch(e) {
+      console.log(type, msg);
+    }
+  };
   const [licenses, setLicenses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
@@ -83,6 +96,7 @@ export default function Licenses() {
       return;
     }
 
+    setSubmitting(true);
     try {
       const { error } = await supabase
         .from('mamnonpro_licenses')
@@ -100,12 +114,14 @@ export default function Licenses() {
 
       if (error) throw error;
 
-      addToast('✅ Cấp license mới thành công!', 'success');
       setShowModal(false);
-      loadLicenses();
+      addToast('✅ Cấp license mới thành công!', 'success');
+      await loadLicenses();
     } catch (err) {
       console.error('Lỗi tạo license:', err);
       addToast('Lỗi: ' + (err.message || 'Không thể tạo license'), 'error');
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -517,13 +533,16 @@ export default function Licenses() {
                 </button>
                 <button
                   type="submit"
+                  disabled={submitting}
                   style={{
                     padding: '9px 20px', borderRadius: '10px',
-                    background: 'linear-gradient(135deg, #10b981, #059669)', color: '#fff', border: 'none',
-                    fontSize: '13px', fontWeight: '700', cursor: 'pointer', boxShadow: '0 4px 12px rgba(16,185,129,0.3)'
+                    background: submitting ? '#059669' : 'linear-gradient(135deg, #10b981, #059669)',
+                    color: '#fff', border: 'none', opacity: submitting ? 0.7 : 1,
+                    fontSize: '13px', fontWeight: '700', cursor: submitting ? 'not-allowed' : 'pointer',
+                    boxShadow: '0 4px 12px rgba(16,185,129,0.3)'
                   }}
                 >
-                  Tạo &amp; Cấp Key
+                  {submitting ? '⏳ Đang Lưu...' : 'Tạo & Cấp Key'}
                 </button>
               </div>
             </form>
