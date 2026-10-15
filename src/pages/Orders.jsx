@@ -6,7 +6,7 @@ import {
   CashTransactionService, clearAllSystemData
 } from '../utils/dataService';
 import { supabase } from '../utils/supabaseClient';
-import { getVietQRUrl, getBankDisplayName , formatDateDDMMYYYY, formatDateTimeDDMMYYYY } from '../utils/storage';
+import { getVietQRUrl, getBankDisplayName, formatDateDDMMYYYY, formatDateTimeDDMMYYYY, numberToVietnameseWords, generateInvoiceCopyText } from '../utils/storage';
 import { useToast } from '../components/Toast';
 import ConfirmDialog from '../components/ConfirmDialog';
 import DateFilterBar from '../components/DateFilterBar';
@@ -2087,12 +2087,12 @@ export default function Orders() {
         );
       })()}
 
-      {/* MODAL 2: Printable Commercial Invoice */}
+      {/* MODAL 2: Printable Commercial Invoice (Chuẩn Kế Toán 7 Cột) */}
       {showInvoiceModal && (
         <div className="modal-overlay" onClick={() => setShowInvoiceModal(null)}>
-          <div className="modal-box" onClick={e => e.stopPropagation()} style={{ maxWidth: '650px', background: '#fff', color: '#000' }}>
+          <div className="modal-box" onClick={e => e.stopPropagation()} style={{ maxWidth: '820px', background: '#fff', color: '#0f172a' }}>
             <div className="modal-header" style={{ borderBottom: '1px solid #e2e8f0' }}>
-              <h2 style={{ fontSize: '18px', fontWeight: '700', color: '#0f172a' }}>HÓA ĐƠN BÁN HÀNG #${showInvoiceModal.order.id}</h2>
+              <h2 style={{ fontSize: '18px', fontWeight: '700', color: '#0f172a' }}>HÓA ĐƠN BÁN HÀNG #{showInvoiceModal.order.id}</h2>
               <button className="modal-close-btn" style={{ color: '#000' }} onClick={() => setShowInvoiceModal(null)}><X size={18} /></button>
             </div>
             
@@ -2102,76 +2102,164 @@ export default function Orders() {
                 : [showInvoiceModal.order];
               const isMultiBatch = bOrders.length > 1;
               const totalBatchSum = bOrders.reduce((sum, item) => sum + Number(item.sell_price || item.sellPrice || 0), 0);
+              const invoiceDate = showInvoiceModal.order.created_at || new Date();
 
               return (
-                <div id="printable-invoice" style={{ padding: '16px 0', fontSize: '13.5px', color: '#0f172a', lineHeight: 1.6 }}>
+                <div id="printable-invoice" style={{ padding: '16px 4px', fontSize: '12.5px', color: '#0f172a', lineHeight: 1.6, fontFamily: "'Inter', sans-serif" }}>
                   {/* Header */}
                   <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '2px solid #6366f1', paddingBottom: '12px', marginBottom: '16px' }}>
                     <div>
                       <h2 style={{ fontSize: '20px', fontWeight: '800', color: '#6366f1', margin: 0 }}>DROPSHIP CRM STORE</h2>
                       <p style={{ fontSize: '12px', color: '#64748b', margin: '2px 0' }}>Chuyên Dịch Vụ & Tài Khoản Bản Quyền Số</p>
-                      <p style={{ fontSize: '12px', color: '#64748b', margin: 0 }}>Hotline / Zalo CSKH: 0901234567</p>
+                      <p style={{ fontSize: '12px', color: '#64748b', margin: 0 }}>Hotline / Zalo CSKH: <strong>0901234567</strong></p>
                     </div>
                     <div style={{ textAlign: 'right' }}>
-                      <p style={{ fontWeight: '700', fontSize: '14px', margin: 0 }}>
+                      <p style={{ fontWeight: '700', fontSize: '14px', margin: 0, textTransform: 'uppercase' }}>
                         {isMultiBatch ? `MÃ BATCH: ${showInvoiceModal.order.batch_ref || showInvoiceModal.order.batchRef}` : `MÃ HÓA ĐƠN: #${showInvoiceModal.order.id}`}
                       </p>
-                      <p style={{ fontSize: '12px', color: '#64748b', margin: '2px 0' }}>Ngày: {formatDateDDMMYYYY(showInvoiceModal.order.purchase_date || showInvoiceModal.order.purchaseDate || todayStr)}</p>
+                      <p style={{ fontSize: '12px', color: '#64748b', margin: '2px 0' }}>Ngày lập: {formatDateDDMMYYYY(invoiceDate)}</p>
                     </div>
                   </div>
 
                   {/* Customer Info */}
-                  <div style={{ background: '#f8fafc', padding: '12px', borderRadius: '8px', marginBottom: '16px' }}>
-                    <p style={{ margin: 0 }}><strong>Khách Hàng:</strong> {showInvoiceModal.order.customer_name || showInvoiceModal.order.customerName}</p>
-                    <p style={{ margin: '4px 0 0' }}><strong>Số Điện Thoại / Zalo:</strong> {showInvoiceModal.order.phone || 'N/A'}</p>
+                  <div style={{ background: '#f8fafc', padding: '10px 14px', borderRadius: '8px', border: '1px solid #e2e8f0', marginBottom: '16px' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px' }}>
+                      <div><strong>Khách Hàng:</strong> {showInvoiceModal.order.customer_name || showInvoiceModal.order.customerName}</div>
+                      <div><strong>Số Điện Thoại / Zalo:</strong> {showInvoiceModal.order.phone || 'N/A'}</div>
+                    </div>
                   </div>
 
-                  {/* Items Table */}
-                  <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '16px' }}>
+                  {/* Standard 7-Column Accounting Items Table: STT | Mã Đơn | Tên SP | Infor SP | Đơn Giá | SL | Thành Tiền */}
+                  <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '16px', fontSize: '12px' }}>
                     <thead>
                       <tr style={{ background: '#f1f5f9', borderBottom: '2px solid #cbd5e1' }}>
-                        <th style={{ padding: '8px', textAlign: 'left' }}>Sản Phẩm Dịch Vụ</th>
-                        <th style={{ padding: '8px', textAlign: 'left' }}>Thông Tin Infor / Key</th>
-                        <th style={{ padding: '8px', textAlign: 'right' }}>Hạn Dùng</th>
-                        <th style={{ padding: '8px', textAlign: 'right' }}>Thành Tiền</th>
+                        <th style={{ padding: '8px', textAlign: 'center', width: '38px', border: '1px solid #cbd5e1' }}>STT</th>
+                        <th style={{ padding: '8px', textAlign: 'center', width: '85px', border: '1px solid #cbd5e1' }}>Mã Đơn</th>
+                        <th style={{ padding: '8px', textAlign: 'left', border: '1px solid #cbd5e1' }}>Tên SP</th>
+                        <th style={{ padding: '8px', textAlign: 'left', border: '1px solid #cbd5e1' }}>Infor SP</th>
+                        <th style={{ padding: '8px', textAlign: 'right', width: '95px', border: '1px solid #cbd5e1' }}>Đơn Giá</th>
+                        <th style={{ padding: '8px', textAlign: 'center', width: '40px', border: '1px solid #cbd5e1' }}>SL</th>
+                        <th style={{ padding: '8px', textAlign: 'right', width: '110px', border: '1px solid #cbd5e1' }}>Thành Tiền</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {bOrders.map((item, idx) => (
-                        <tr key={item.id || idx} style={{ borderBottom: '1px solid #e2e8f0' }}>
-                          <td style={{ padding: '8px', fontWeight: '700' }}>#{item.id} - {item.product_name || item.productName}</td>
-                          <td style={{ padding: '8px', fontFamily: 'monospace', fontSize: '12px' }}>{item.infor || 'Đã kích hoạt'}</td>
-                          <td style={{ padding: '8px', textAlign: 'right' }}>{item.expire_date || item.expireDate || '---'}</td>
-                          <td style={{ padding: '8px', textAlign: 'right', fontWeight: '700', color: '#10b981' }}>
-                            {(Number(item.sell_price || item.sellPrice || 0)).toLocaleString()}đ
-                          </td>
-                        </tr>
-                      ))}
+                      {bOrders.map((item, idx) => {
+                        const pName = item.product_name || item.productName || 'Sản Phẩm';
+                        const infor = item.infor || 'Đã kích hoạt';
+                        const exp = item.expire_date || item.expireDate;
+                        const qty = Math.max(1, parseInt(item.quantity) || 1);
+                        const price = Number(item.sell_price || item.sellPrice || 0);
+                        const unitPrice = item.unit_price || item.unitPrice || Math.round(price / qty);
+
+                        return (
+                          <tr key={item.id || idx} style={{ borderBottom: '1px solid #e2e8f0' }}>
+                            <td style={{ padding: '8px', textAlign: 'center', border: '1px solid #cbd5e1' }}>{idx + 1}</td>
+                            <td style={{ padding: '8px', textAlign: 'center', fontWeight: '700', fontFamily: 'monospace', border: '1px solid #cbd5e1' }}>#{item.id}</td>
+                            <td style={{ padding: '8px', fontWeight: '700', color: '#0f172a', border: '1px solid #cbd5e1' }}>
+                              <div>{pName}</div>
+                              {exp && exp !== '---' && (
+                                <div style={{ fontSize: '10.5px', color: '#64748b', fontWeight: '400', marginTop: '2px' }}>
+                                  ⏳ Hạn dùng: {formatDateDDMMYYYY(exp)}
+                                </div>
+                              )}
+                            </td>
+                            <td style={{ padding: '8px', fontFamily: 'monospace', fontSize: '11.5px', wordBreak: 'break-all', border: '1px solid #cbd5e1' }}>
+                              {infor}
+                            </td>
+                            <td style={{ padding: '8px', textAlign: 'right', border: '1px solid #cbd5e1' }}>
+                              {unitPrice.toLocaleString('vi-VN')}đ
+                            </td>
+                            <td style={{ padding: '8px', textAlign: 'center', border: '1px solid #cbd5e1' }}>
+                              {qty}
+                            </td>
+                            <td style={{ padding: '8px', textAlign: 'right', fontWeight: '700', color: '#10b981', border: '1px solid #cbd5e1' }}>
+                              {price.toLocaleString('vi-VN')}đ
+                            </td>
+                          </tr>
+                        );
+                      })}
                     </tbody>
                   </table>
 
-                  {/* Total & QR */}
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#f8fafc', padding: '12px', borderRadius: '8px' }}>
+                  {/* Total & VietQR */}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#f8fafc', padding: '12px 16px', borderRadius: '8px', border: '1px solid #cbd5e1', marginBottom: '16px' }}>
                     <div>
                       {showInvoiceModal.qrUrl && (
-                        <img src={showInvoiceModal.qrUrl} alt="VietQR" style={{ width: '160px', borderRadius: '6px', border: '1px solid #cbd5e1' }} />
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                          <img src={showInvoiceModal.qrUrl} alt="VietQR" style={{ width: '130px', borderRadius: '6px', border: '1px solid #cbd5e1' }} />
+                          <div style={{ fontSize: '11.5px', color: '#475569', lineHeight: 1.5 }}>
+                            <div style={{ fontWeight: '700', color: '#6366f1' }}>💳 QUÉT MÃ VIETQR</div>
+                            <div>Ngân hàng: <strong>{getBankDisplayName(vietqr?.bank_id || vietqr?.bankId || 'MB')}</strong></div>
+                            <div>STK: <strong>{vietqr?.account_no || vietqr?.accountNo || '0901234567'}</strong></div>
+                            <div>Chủ TK: <strong>{vietqr?.account_name || vietqr?.accountName || 'SHOP DROPSHIP CRM'}</strong></div>
+                          </div>
+                        </div>
                       )}
                     </div>
                     <div style={{ textAlign: 'right' }}>
-                      <p style={{ fontSize: '13px', color: '#64748b', margin: 0 }}>Tổng Tiền Thanh Toán ({bOrders.length} món):</p>
-                      <p style={{ fontSize: '22px', fontWeight: '800', color: '#10b981', margin: '4px 0' }}>
-                        {totalBatchSum.toLocaleString()} VNĐ
+                      <p style={{ fontSize: '12px', color: '#64748b', margin: 0 }}>Tổng Tiền Thanh Toán ({bOrders.length} món):</p>
+                      <p style={{ fontSize: '20px', fontWeight: '800', color: '#10b981', margin: '4px 0' }}>
+                        {totalBatchSum.toLocaleString('vi-VN')} VNĐ
                       </p>
-                      <p style={{ fontSize: '12px', color: '#64748b', margin: 0 }}>Trạng thái: <strong>{showInvoiceModal.order.status}</strong></p>
+                      <p style={{ fontSize: '11.5px', color: '#334155', fontStyle: 'italic', margin: '2px 0 4px' }}>
+                        (Bằng chữ: <strong>{numberToVietnameseWords(totalBatchSum)}</strong>)
+                      </p>
+                      <p style={{ fontSize: '11.5px', color: '#64748b', margin: 0 }}>
+                        Trạng thái: <strong style={{ color: showInvoiceModal.order.status === 'Đã thanh toán' ? '#10b981' : '#ef4444' }}>{showInvoiceModal.order.status}</strong>
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Two-Party Accounting Signature Block */}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', margin: '24px 20px 8px', textAlign: 'center', fontSize: '12.5px' }}>
+                    <div>
+                      <p style={{ fontWeight: '700', margin: 0, textTransform: 'uppercase' }}>KHÁCH HÀNG</p>
+                      <p style={{ fontSize: '11px', color: '#64748b', margin: '2px 0 42px' }}>(Ký, ghi rõ họ tên)</p>
+                      <p style={{ fontWeight: '600', color: '#334155', margin: 0 }}>{showInvoiceModal.order.customer_name || showInvoiceModal.order.customerName}</p>
+                    </div>
+                    <div>
+                      <p style={{ fontWeight: '700', margin: 0, textTransform: 'uppercase' }}>NGƯỜI LẬP HÓA ĐƠN</p>
+                      <p style={{ fontSize: '11px', color: '#64748b', margin: '2px 0 42px' }}>(Ký, ghi rõ họ tên)</p>
+                      <p style={{ fontWeight: '600', color: '#334155', margin: 0 }}>Thủ Quỹ / Bán Hàng</p>
                     </div>
                   </div>
                 </div>
               );
             })()}
 
-            <div style={{ display: 'flex', gap: '10px', marginTop: '14px' }}>
-              <button onClick={handlePrintInvoice} className="glass-button" style={{ flex: 1, background: '#6366f1', color: '#fff', fontWeight: '700' }}>
-                <Printer size={16} /> In Hóa Đơn (Print PDF/A4)
+            {/* Action Buttons Toolbar: Sao Chép Hóa Đơn | Copy Thẻ QR | In Hóa Đơn */}
+            <div className="no-print" style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr 1fr', gap: '8px', marginTop: '14px' }}>
+              <button
+                onClick={() => {
+                  const copyText = generateInvoiceCopyText({
+                    order: showInvoiceModal.order,
+                    batchOrders: showInvoiceModal.batchOrders,
+                    vietqr
+                  });
+                  navigator.clipboard.writeText(copyText);
+                  toast.success('📋 Đã copy toàn bộ hóa đơn vào Clipboard! Dán (Ctrl+V) sang Zalo ngay.');
+                }}
+                className="glass-button"
+                style={{ background: '#0068ff', color: '#fff', fontWeight: '700', fontSize: '13px' }}
+                title="Sao chép toàn bộ hóa đơn gửi khách qua Zalo/Chat"
+              >
+                <Copy size={16} /> Sao Chép Hóa Đơn
+              </button>
+              <button
+                onClick={() => handleCopyQRImageOnly(showInvoiceModal.order, showInvoiceModal.qrUrl)}
+                className="glass-button"
+                style={{ background: 'linear-gradient(135deg, #10b981, #059669)', color: '#fff', fontWeight: '700', fontSize: '13px' }}
+                title="Copy thẻ ảnh QR kèm thông tin thanh toán"
+              >
+                <QrCode size={16} /> Copy Thẻ Ảnh QR
+              </button>
+              <button
+                onClick={handlePrintInvoice}
+                className="glass-button"
+                style={{ background: '#6366f1', color: '#fff', fontWeight: '700', fontSize: '13px' }}
+                title="In ấn hoặc xuất file PDF hóa đơn A4"
+              >
+                <Printer size={16} /> In Hóa Đơn (A4/PDF)
               </button>
             </div>
           </div>

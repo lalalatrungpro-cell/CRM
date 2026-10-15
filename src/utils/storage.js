@@ -281,3 +281,135 @@ export const formatDateTimeDDMMYYYY = (dateStr) => {
     return String(dateStr);
   }
 };
+
+// ==================== VIETNAMESE CURRENCY SPELLER ====================
+export function numberToVietnameseWords(amount) {
+  if (!amount || isNaN(amount) || amount === 0) return "Không đồng chẵn.";
+  const num = Math.abs(Math.round(amount));
+  const defaultNumbers = ["không", "một", "hai", "ba", "bốn", "năm", "sáu", "bảy", "tám", "chín"];
+
+  function readGroup(n, isLeadingGroup) {
+    let hundred = Math.floor(n / 100);
+    let ten = Math.floor((n % 100) / 10);
+    let unit = n % 10;
+    let res = "";
+
+    if (hundred > 0 || !isLeadingGroup) {
+      res += defaultNumbers[hundred] + " trăm ";
+    }
+
+    if (ten > 1) {
+      res += defaultNumbers[ten] + " mươi ";
+      if (unit === 1) res += "mốt ";
+      else if (unit === 5) res += "lăm ";
+      else if (unit > 0) res += defaultNumbers[unit] + " ";
+    } else if (ten === 1) {
+      res += "mười ";
+      if (unit === 1) res += "một ";
+      else if (unit === 5) res += "lăm ";
+      else if (unit > 0) res += defaultNumbers[unit] + " ";
+    } else {
+      if (unit > 0) {
+        if (hundred > 0 || !isLeadingGroup) res += "lẻ ";
+        res += defaultNumbers[unit] + " ";
+      }
+    }
+    return res;
+  }
+
+  let total = num;
+  let billion = Math.floor(total / 1000000000);
+  total %= 1000000000;
+  let million = Math.floor(total / 1000000);
+  total %= 1000000;
+  let thousand = Math.floor(total / 1000);
+  let remain = total % 1000;
+
+  let resultStr = "";
+  let isLeading = true;
+
+  if (billion > 0) {
+    resultStr += readGroup(billion, isLeading) + "tỷ ";
+    isLeading = false;
+  }
+  if (million > 0) {
+    resultStr += readGroup(million, isLeading) + "triệu ";
+    isLeading = false;
+  }
+  if (thousand > 0) {
+    resultStr += readGroup(thousand, isLeading) + "nghìn ";
+    isLeading = false;
+  }
+  if (remain > 0) {
+    resultStr += readGroup(remain, isLeading);
+  }
+
+  resultStr = resultStr.trim();
+  if (resultStr.length > 0) {
+    resultStr = resultStr.charAt(0).toUpperCase() + resultStr.slice(1) + " đồng chẵn.";
+  } else {
+    resultStr = "Không đồng chẵn.";
+  }
+  return resultStr;
+}
+
+// ==================== INVOICE COPY TEXT GENERATOR FOR ZALO / CHAT ====================
+export function generateInvoiceCopyText({ order, batchOrders, vietqr }) {
+  if (!order) return '';
+  const bOrders = batchOrders && batchOrders.length > 0 ? batchOrders : [order];
+  const isMultiBatch = bOrders.length > 1;
+  const totalSum = bOrders.reduce((sum, item) => sum + Number(item.sell_price || item.sellPrice || 0), 0);
+
+  const vqr = vietqr || { bank_id: 'MB', account_no: '0901234567', account_name: 'SHOP DROPSHIP CRM', memo_prefix: 'DON' };
+  const bName = getBankDisplayName(vqr.bank_id || vqr.bankId || 'MB');
+  const accNo = vqr.account_no || vqr.accountNo || '0901234567';
+  const accName = vqr.account_name || vqr.accountName || 'SHOP DROPSHIP CRM';
+  const memo = isMultiBatch
+    ? `${vqr.memo_prefix || 'DON'} ${order.batch_ref || order.batchRef || order.id}`
+    : `${vqr.memo_prefix || 'DON'} ${order.id}`;
+
+  const custName = order.customer_name || order.customerName || 'Khách Hàng';
+  const custPhone = order.phone || '';
+  const invoiceCode = isMultiBatch ? (order.batch_ref || order.batchRef || `#${order.id}`) : `#${order.id}`;
+  const invDate = formatDateDDMMYYYY(order.created_at || new Date());
+
+  let text = `🧾 HÓA ĐƠN BÁN HÀNG — DROPSHIP CRM STORE\n`;
+  text += `──────────────────────────────\n`;
+  text += `🔖 Mã Hóa Đơn: ${invoiceCode}\n`;
+  text += `📅 Ngày lập: ${invDate}\n`;
+  text += `👤 Khách hàng: ${custName}${custPhone ? ` (${custPhone})` : ''}\n`;
+  text += `──────────────────────────────\n`;
+  text += `📦 CHI TIẾT SẢN PHẨM & DỊCH VỤ:\n`;
+
+  bOrders.forEach((item, idx) => {
+    const pName = item.product_name || item.productName || 'Sản Phẩm';
+    const infor = item.infor || 'Đã kích hoạt';
+    const exp = item.expire_date || item.expireDate;
+    const qty = Math.max(1, parseInt(item.quantity) || 1);
+    const price = Number(item.sell_price || item.sellPrice || 0);
+    const unitPrice = item.unit_price || item.unitPrice || Math.round(price / qty);
+
+    text += `${idx + 1}. #${item.id} - ${pName}\n`;
+    text += `   • Infor/Key: ${infor}\n`;
+    if (exp && exp !== '---') {
+      text += `   • Hạn dùng: ${formatDateDDMMYYYY(exp)}\n`;
+    }
+    text += `   • Đơn giá: ${unitPrice.toLocaleString('vi-VN')}đ | SL: ${qty} | Thành tiền: ${price.toLocaleString('vi-VN')}đ\n`;
+  });
+
+  text += `──────────────────────────────\n`;
+  text += `💰 TỔNG CỘNG THANH TOÁN: ${totalSum.toLocaleString('vi-VN')} VNĐ\n`;
+  text += `✍️ Bằng chữ: ${numberToVietnameseWords(totalSum)}\n`;
+  text += `📌 Trạng thái: ${order.status || 'Đã thanh toán'}\n`;
+  text += `──────────────────────────────\n`;
+  text += `💳 THÔNG TIN CHUYỂN KHOẢN (VIETQR):\n`;
+  text += `🏦 Ngân hàng: ${bName}\n`;
+  text += `🔢 Số tài khoản: ${accNo}\n`;
+  text += `👤 Chủ tài khoản: ${accName}\n`;
+  text += `📝 Nội dung CK: ${memo}\n`;
+  text += `──────────────────────────────\n`;
+  text += `❤️ Cảm ơn Quý khách đã tin tưởng và ủng hộ shop!`;
+
+  return text;
+}
+
