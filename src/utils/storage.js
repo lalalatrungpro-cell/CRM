@@ -354,11 +354,14 @@ export function numberToVietnameseWords(amount) {
 }
 
 // ==================== INVOICE COPY TEXT GENERATOR FOR ZALO / CHAT ====================
-export function generateInvoiceCopyText({ order, batchOrders, vietqr }) {
+export function generateInvoiceCopyText({ order, batchOrders, vietqr, storeInfo }) {
   if (!order) return '';
   const bOrders = batchOrders && batchOrders.length > 0 ? batchOrders : [order];
   const isMultiBatch = bOrders.length > 1;
   const totalSum = bOrders.reduce((sum, item) => sum + Number(item.sell_price || item.sellPrice || 0), 0);
+
+  const sName = storeInfo?.store_name || storeInfo?.storeName || 'DROPSHIP CRM STORE';
+  const sHotline = storeInfo?.hotline || '0901234567';
 
   const vqr = vietqr || { bank_id: 'MB', account_no: '0901234567', account_name: 'SHOP DROPSHIP CRM', memo_prefix: 'DON' };
   const bName = getBankDisplayName(vqr.bank_id || vqr.bankId || 'MB');
@@ -373,7 +376,8 @@ export function generateInvoiceCopyText({ order, batchOrders, vietqr }) {
   const invoiceCode = isMultiBatch ? (order.batch_ref || order.batchRef || `#${order.id}`) : `#${order.id}`;
   const invDate = formatDateDDMMYYYY(order.created_at || new Date());
 
-  let text = `🧾 HÓA ĐƠN BÁN HÀNG — DROPSHIP CRM STORE\n`;
+  let text = `🧾 HÓA ĐƠN BÁN HÀNG — ${sName}\n`;
+  text += `📞 Hotline / Zalo: ${sHotline}\n`;
   text += `──────────────────────────────\n`;
   text += `🔖 Mã Hóa Đơn: ${invoiceCode}\n`;
   text += `📅 Ngày lập: ${invDate}\n`;

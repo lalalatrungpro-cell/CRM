@@ -1,4 +1,4 @@
-﻿import { supabase } from './supabaseClient';
+import { supabase } from './supabaseClient';
 
 // Helper for safe localStorage fallback
 export const getLocal = (key, defaultVal = []) => {
@@ -760,6 +760,47 @@ export const VietQRService = {
       }
     } catch (err) {}
     return payload;
+  }
+};
+
+// ==================== STORE INFO & BRANDING ====================
+export const StoreInfoService = {
+  get(shopId) {
+    try {
+      const stored = localStorage.getItem(`store_info_${shopId}`) || localStorage.getItem('store_info');
+      if (stored) return JSON.parse(stored);
+    } catch (e) {}
+    return {
+      store_name: 'DROPSHIP CRM STORE',
+      hotline: '0901234567',
+      tagline: 'Chuyên Dịch Vụ & Tài Khoản Bản Quyền Số'
+    };
+  },
+
+  async save(shopId, payload) {
+    const data = {
+      store_name: (payload.store_name || payload.storeName || 'DROPSHIP CRM STORE').trim(),
+      hotline: (payload.hotline || '0901234567').trim(),
+      tagline: (payload.tagline || 'Chuyên Dịch Vụ & Tài Khoản Bản Quyền Số').trim()
+    };
+    try {
+      localStorage.setItem(`store_info_${shopId}`, JSON.stringify(data));
+      localStorage.setItem('store_info', JSON.stringify(data));
+      window.dispatchEvent(new CustomEvent('store_info_updated', { detail: data }));
+    } catch (e) {}
+
+    // Cloud sync to Supabase user metadata if available
+    try {
+      await supabase.auth.updateUser({
+        data: {
+          store_name: data.store_name,
+          store_hotline: data.hotline,
+          store_tagline: data.tagline
+        }
+      });
+    } catch (e) {}
+
+    return data;
   }
 };
 

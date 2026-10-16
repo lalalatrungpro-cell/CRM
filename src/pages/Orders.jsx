@@ -3,7 +3,7 @@ import { useAuth } from '../contexts/AuthContext';
 import {
   OrderService, CustomerService, ProductService, SupplierService,
   TeamService, ChannelService, VietQRService, WarrantyLogService, SupplierPriceService, InventoryService,
-  CashTransactionService, clearAllSystemData
+  CashTransactionService, clearAllSystemData, StoreInfoService
 } from '../utils/dataService';
 import { supabase } from '../utils/supabaseClient';
 import { getVietQRUrl, getBankDisplayName, formatDateDDMMYYYY, formatDateTimeDDMMYYYY, numberToVietnameseWords, generateInvoiceCopyText } from '../utils/storage';
@@ -11,10 +11,12 @@ import { useToast } from '../components/Toast';
 import ConfirmDialog from '../components/ConfirmDialog';
 import DateFilterBar from '../components/DateFilterBar';
 import { convertAllOldOrderIds, convertAllOldCustomerIds } from '../utils/orderMigrator';
+import html2canvas from 'html2canvas';
 import {
   Plus, Users, Copy, Check, ShieldAlert, FileText, UserPlus, Search,
   Filter, Eye, EyeOff, ChevronLeft, ChevronRight, X, QrCode, CreditCard,
-  Trash2, Printer, RefreshCw, Edit3, Edit, AlertTriangle, ShieldCheck, Boxes
+  Trash2, Printer, RefreshCw, Edit3, Edit, AlertTriangle, ShieldCheck, Boxes,
+  Download, Camera
 } from 'lucide-react';
 
 const PAGE_SIZE = 15;
@@ -216,6 +218,8 @@ export default function Orders() {
   const [teams, setTeams] = useState([]);
   const [channels, setChannels] = useState([]);
   const [vietqr, setVietqr] = useState(null);
+  const [storeInfo, setStoreInfo] = useState(null);
+  const [isCapturingInvoice, setIsCapturingInvoice] = useState(false);
   const [loading, setLoading] = useState(true);
   const [dateRange, setDateRange] = useState({ startDate: '', endDate: '', preset: 'ALL' });
 
@@ -579,6 +583,7 @@ export default function Orders() {
       setTeams(tList || []);
       setChannels(chanList || []);
       setVietqr(vqrData || { bank_id: 'MB', account_no: '0901234567', account_name: 'SHOP DROPSHIP CRM', memo_prefix: 'DON' });
+      setStoreInfo(StoreInfoService.get(shopId));
     } catch (err) {
       console.error(err);
       toast.error('Lỗi khi tải dữ liệu Đơn hàng từ Supabase!');
@@ -589,6 +594,15 @@ export default function Orders() {
 
   useEffect(() => {
     loadData();
+  }, [shopId]);
+
+  useEffect(() => {
+    const handleStoreInfoUpdated = (e) => {
+      if (e.detail) setStoreInfo(e.detail);
+      else if (shopId) setStoreInfo(StoreInfoService.get(shopId));
+    };
+    window.addEventListener('store_info_updated', handleStoreInfoUpdated);
+    return () => window.removeEventListener('store_info_updated', handleStoreInfoUpdated);
   }, [shopId]);
 
   const todayStr = new Date().toISOString().split('T')[0];
@@ -1407,6 +1421,95 @@ export default function Orders() {
     }
   };
 
+  const handleCopyFullInvoiceImage = async (order) => {
+    const invoiceEl = document.getElementById('printable-invoice');
+    if (!invoiceEl) return toast.error('Không tìm thấy nội dung hóa đơn!');
+
+    setIsCapturingInvoice(true);
+    toast.info('📸 Đang chụp ảnh toàn bộ hóa đơn nét cao (2K)...');
+
+    try {
+      const canvas = await html2canvas(invoiceEl, {
+        scale: 2,
+        useCORS: true,
+        allowTaint: false,
+        backgroundColor: '#ffffff',
+        logging: false
+      });
+
+      canvas.toBlob(async (blob) => {
+        if (!blob) {
+          setIsCapturingInvoice(false);
+          return toast.error('Không thể tạo file ảnh hóa đơn!');
+        }
+
+        let copied = false;
+        try {
+          if (navigator.clipboard && window.ClipboardItem) {
+            const item = new ClipboardItem({ 'image/png': blob });
+            await navigator.clipboard.write([item]);
+            copied = true;
+          }
+        } catch (clipErr) {
+          console.warn('Clipboard write error:', clipErr);
+        }
+
+        setIsCapturingInvoice(false);
+
+        if (copied) {
+          toast.success('📸 ĐÃ SAO CHÉP ẢNH FULL HÓA ĐƠN! Mở Zalo/Messenger nhấn Ctrl+V để gửi cho khách ngay.');
+        } else {
+          // Fallback: download PNG file
+          const url = URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.href = url;
+          link.download = `Hoa_Don_${order ? order.id : 'export'}.png`;
+          link.click();
+          URL.revokeObjectURL(url);
+          toast.info('Trình duyệt chưa cấp quyền dán ảnh trực tiếp, đã tự động tải file ảnh PNG về máy tính!');
+        }
+      }, 'image/png', 1.0);
+    } catch (err) {
+      console.error('Lỗi khi chụp hóa đơn:', err);
+      setIsCapturingInvoice(false);
+      toast.error('Lỗi khi tạo ảnh hóa đơn: ' + (err.message || 'Vui lòng thử lại.'));
+    }
+  };
+
+  const handleDownloadInvoiceImage = async (order) => {
+    const invoiceEl = document.getElementById('printable-invoice');
+    if (!invoiceEl) return toast.error('Không tìm thấy nội dung hóa đơn!');
+
+    setIsCapturingInvoice(true);
+    toast.info('Đang chuẩn bị file ảnh PNG để tải về...');
+
+    try {
+      const canvas = await html2canvas(invoiceEl, {
+        scale: 2,
+        useCORS: true,
+        allowTaint: false,
+        backgroundColor: '#ffffff',
+        logging: false
+      });
+
+      canvas.toBlob((blob) => {
+        setIsCapturingInvoice(false);
+        if (!blob) return toast.error('Lỗi khi tạo file ảnh tải về.');
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `Hoa_Don_${order ? order.id : 'export'}.png`;
+        link.click();
+        URL.revokeObjectURL(url);
+        toast.success('✅ Đã tải file ảnh hóa đơn (PNG) về máy tính!');
+      }, 'image/png', 1.0);
+    } catch (err) {
+      console.error(err);
+      setIsCapturingInvoice(false);
+      toast.error('Lỗi khi tải ảnh: ' + (err.message || 'Vui lòng thử lại.'));
+    }
+  };
+
   const handleCopyRichTextAndQR = async (order, qrUrl) => {
     try {
       toast.info('Đang copy Văn bản + Hình VietQR...');
@@ -2109,9 +2212,15 @@ export default function Orders() {
                   {/* Header */}
                   <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '2px solid #6366f1', paddingBottom: '12px', marginBottom: '16px' }}>
                     <div>
-                      <h2 style={{ fontSize: '20px', fontWeight: '800', color: '#6366f1', margin: 0 }}>DROPSHIP CRM STORE</h2>
-                      <p style={{ fontSize: '12px', color: '#64748b', margin: '2px 0' }}>Chuyên Dịch Vụ & Tài Khoản Bản Quyền Số</p>
-                      <p style={{ fontSize: '12px', color: '#64748b', margin: 0 }}>Hotline / Zalo CSKH: <strong>0901234567</strong></p>
+                      <h2 style={{ fontSize: '20px', fontWeight: '800', color: '#6366f1', margin: 0 }}>
+                        {storeInfo?.store_name || 'DROPSHIP CRM STORE'}
+                      </h2>
+                      <p style={{ fontSize: '12px', color: '#64748b', margin: '2px 0' }}>
+                        {storeInfo?.tagline || 'Chuyên Dịch Vụ & Tài Khoản Bản Quyền Số'}
+                      </p>
+                      <p style={{ fontSize: '12px', color: '#64748b', margin: 0 }}>
+                        Hotline / Zalo CSKH: <strong>{storeInfo?.hotline || '0901234567'}</strong>
+                      </p>
                     </div>
                     <div style={{ textAlign: 'right' }}>
                       <p style={{ fontWeight: '700', fontSize: '14px', margin: 0, textTransform: 'uppercase' }}>
@@ -2186,7 +2295,7 @@ export default function Orders() {
                     <div>
                       {showInvoiceModal.qrUrl && (
                         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                          <img src={showInvoiceModal.qrUrl} alt="VietQR" style={{ width: '130px', borderRadius: '6px', border: '1px solid #cbd5e1' }} />
+                          <img src={showInvoiceModal.qrUrl} crossOrigin="anonymous" alt="VietQR" style={{ width: '130px', borderRadius: '6px', border: '1px solid #cbd5e1' }} />
                           <div style={{ fontSize: '11.5px', color: '#475569', lineHeight: 1.5 }}>
                             <div style={{ fontWeight: '700', color: '#6366f1' }}>💳 QUÉT MÃ VIETQR</div>
                             <div>Ngân hàng: <strong>{getBankDisplayName(vietqr?.bank_id || vietqr?.bankId || 'MB')}</strong></div>
@@ -2227,40 +2336,117 @@ export default function Orders() {
               );
             })()}
 
-            {/* Action Buttons Toolbar: Sao Chép Hóa Đơn | Copy Thẻ QR | In Hóa Đơn */}
-            <div className="no-print" style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr 1fr', gap: '8px', marginTop: '14px' }}>
+            {/* Action Buttons Toolbar: Prominent Copy Full Invoice Image + Secondary Tools */}
+            <div className="no-print" style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '16px' }}>
+              {/* PRIMARY PROMINENT BUTTON: SAO CHÉP ẢNH FULL HÓA ĐƠN */}
               <button
-                onClick={() => {
-                  const copyText = generateInvoiceCopyText({
-                    order: showInvoiceModal.order,
-                    batchOrders: showInvoiceModal.batchOrders,
-                    vietqr
-                  });
-                  navigator.clipboard.writeText(copyText);
-                  toast.success('📋 Đã copy toàn bộ hóa đơn vào Clipboard! Dán (Ctrl+V) sang Zalo ngay.');
+                type="button"
+                onClick={() => handleCopyFullInvoiceImage(showInvoiceModal.order)}
+                disabled={isCapturingInvoice}
+                className="glass-button"
+                style={{
+                  width: '100%',
+                  height: '48px',
+                  background: isCapturingInvoice
+                    ? 'rgba(99,102,241,0.5)'
+                    : 'linear-gradient(135deg, #0068ff 0%, #4f46e5 100%)',
+                  color: '#ffffff',
+                  fontWeight: '800',
+                  fontSize: '14.5px',
+                  borderRadius: '10px',
+                  boxShadow: '0 4px 18px rgba(0, 104, 255, 0.45)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '8px',
+                  cursor: isCapturingInvoice ? 'wait' : 'pointer',
+                  border: 'none',
+                  transition: 'all 0.2s ease'
                 }}
-                className="glass-button"
-                style={{ background: '#0068ff', color: '#fff', fontWeight: '700', fontSize: '13px' }}
-                title="Sao chép toàn bộ hóa đơn gửi khách qua Zalo/Chat"
+                title="Chụp toàn bộ hóa đơn dạng ảnh 2K và sao chép vào Clipboard để dán (Ctrl+V) gửi ngay cho khách qua Zalo/Messenger"
               >
-                <Copy size={16} /> Sao Chép Hóa Đơn
+                {isCapturingInvoice ? (
+                  <>⏳ Đang Chụp & Xử Lý Ảnh Hóa Đơn...</>
+                ) : (
+                  <>📸 SAO CHÉP ẢNH FULL HÓA ĐƠN (GỬI ZALO/CHAT)</>
+                )}
               </button>
-              <button
-                onClick={() => handleCopyQRImageOnly(showInvoiceModal.order, showInvoiceModal.qrUrl)}
-                className="glass-button"
-                style={{ background: 'linear-gradient(135deg, #10b981, #059669)', color: '#fff', fontWeight: '700', fontSize: '13px' }}
-                title="Copy thẻ ảnh QR kèm thông tin thanh toán"
-              >
-                <QrCode size={16} /> Copy Thẻ Ảnh QR
-              </button>
-              <button
-                onClick={handlePrintInvoice}
-                className="glass-button"
-                style={{ background: '#6366f1', color: '#fff', fontWeight: '700', fontSize: '13px' }}
-                title="In ấn hoặc xuất file PDF hóa đơn A4"
-              >
-                <Printer size={16} /> In Hóa Đơn (A4/PDF)
-              </button>
+
+              {/* SECONDARY UTILITY ACTIONS ROW */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px' }}>
+                <button
+                  type="button"
+                  onClick={() => handleDownloadInvoiceImage(showInvoiceModal.order)}
+                  disabled={isCapturingInvoice}
+                  className="glass-button"
+                  style={{
+                    height: '38px',
+                    background: 'rgba(16, 185, 129, 0.15)',
+                    border: '1px solid rgba(16, 185, 129, 0.4)',
+                    color: '#10b981',
+                    fontWeight: '700',
+                    fontSize: '12px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '6px'
+                  }}
+                  title="Tải ảnh toàn bộ hóa đơn về máy tính dạng PNG"
+                >
+                  <Download size={14} /> Tải Ảnh (PNG)
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    const copyText = generateInvoiceCopyText({
+                      order: showInvoiceModal.order,
+                      batchOrders: showInvoiceModal.batchOrders,
+                      vietqr,
+                      storeInfo
+                    });
+                    navigator.clipboard.writeText(copyText);
+                    toast.success('📋 Đã copy nội dung dạng text vào Clipboard!');
+                  }}
+                  className="glass-button"
+                  style={{
+                    height: '38px',
+                    background: 'rgba(255,255,255,0.06)',
+                    border: '1px solid rgba(255,255,255,0.15)',
+                    color: '#e2e8f0',
+                    fontWeight: '700',
+                    fontSize: '12px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '6px'
+                  }}
+                  title="Sao chép toàn bộ hóa đơn dạng chữ văn bản"
+                >
+                  <Copy size={14} /> Copy Dạng Text
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handlePrintInvoice}
+                  className="glass-button"
+                  style={{
+                    height: '38px',
+                    background: 'rgba(99, 102, 241, 0.15)',
+                    border: '1px solid rgba(99, 102, 241, 0.4)',
+                    color: '#818cf8',
+                    fontWeight: '700',
+                    fontSize: '12px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '6px'
+                  }}
+                  title="In trực tiếp ra máy in hoặc lưu PDF A4"
+                >
+                  <Printer size={14} /> In A4 / PDF
+                </button>
+              </div>
             </div>
           </div>
         </div>

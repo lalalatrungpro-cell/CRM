@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { VietQRService, ChannelService } from '../utils/dataService';
+import { VietQRService, ChannelService, StoreInfoService } from '../utils/dataService';
 import { getVietQRUrl } from '../utils/storage';
 import { useToast } from '../components/Toast';
 import ConfirmDialog from '../components/ConfirmDialog';
-import { QrCode, Save, CreditCard, ShieldCheck, Check, Copy, Zap, Activity, Bell, Plus, Trash2, Layers } from 'lucide-react';
+import { QrCode, Save, CreditCard, ShieldCheck, Check, Copy, Zap, Activity, Bell, Plus, Trash2, Layers, Store } from 'lucide-react';
 
 const BANKS_LIST = [
   { "code": "MB", "name": "MBBank (Ngân hàng Quân Đội)" },
@@ -35,6 +35,12 @@ export default function Settings() {
   const [newChannelName, setNewChannelName] = useState('');
   const [confirmDeleteChannelId, setConfirmDeleteChannelId] = useState(null);
 
+  const [storeInfo, setStoreInfo] = useState({
+    store_name: 'DROPSHIP CRM STORE',
+    hotline: '0901234567',
+    tagline: 'Chuyên Dịch Vụ & Tài Khoản Bản Quyền Số'
+  });
+
   const [vqr, setVqr] = useState({
     bank_id: 'MB',
     account_no: '0901234567',
@@ -47,6 +53,10 @@ export default function Settings() {
     if (!shopId) return;
     setLoading(true);
     try {
+      const sInfo = StoreInfoService.get(shopId);
+      if (sInfo) {
+        setStoreInfo(sInfo);
+      }
       const [vqrData, chanList] = await Promise.all([
         VietQRService.get(shopId),
         ChannelService.list(shopId)
@@ -72,6 +82,20 @@ export default function Settings() {
   useEffect(() => {
     loadSettings();
   }, [shopId]);
+
+  const handleSaveStoreInfo = async (e) => {
+    e.preventDefault();
+    if (!storeInfo.store_name.trim()) return toast.error('Vui lòng nhập Tên Cửa Hàng / Shop Name!');
+    if (!storeInfo.hotline.trim()) return toast.error('Vui lòng nhập Số Hotline / Zalo!');
+
+    try {
+      await StoreInfoService.save(shopId, storeInfo);
+      toast.success('Đã lưu Tên Shop & Hotline vào cài đặt thành công!');
+    } catch (err) {
+      console.error(err);
+      toast.error('Lỗi khi lưu thông tin cửa hàng.');
+    }
+  };
 
   const handleSaveVietQR = async (e) => {
     e.preventDefault();
@@ -144,6 +168,63 @@ export default function Settings() {
         <div style={{ padding: '40px', textAlign: 'center', color: '#94a3b8' }}>Đang tải cài đặt từ đám mây...</div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+          {/* Section 1: Store & Invoice Header Information */}
+          <div className="glass-panel" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', borderBottom: '1px solid rgba(255,255,255,0.06)', paddingBottom: '12px' }}>
+              <Store size={20} color="#6366f1" />
+              <div>
+                <h2 style={{ fontSize: '16px', fontWeight: '700', margin: 0 }}>Thông Tin Thương Hiệu & Đầu Trang Hóa Đơn (Tên Shop & Hotline)</h2>
+                <p style={{ fontSize: '12px', color: '#64748b', margin: '2px 0 0' }}>Hiển thị ở góc trên bên trái của hóa đơn in và bản sao chép ảnh gửi khách qua Zalo.</p>
+              </div>
+            </div>
+
+            <form onSubmit={handleSaveStoreInfo} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px' }}>
+                <div>
+                  <label className="form-label" style={{ fontWeight: '700', color: '#c084fc' }}>🏷️ Tên Cửa Hàng / Shop Name *</label>
+                  <input
+                    type="text" required className="glass-input" placeholder="VD: NGUYEN THANH LUAN STORE"
+                    value={storeInfo.store_name}
+                    onChange={e => setStoreInfo({ ...storeInfo, store_name: e.target.value })}
+                  />
+                  <p style={{ fontSize: '11px', color: '#64748b', marginTop: '4px' }}>Tiêu đề in đậm ở đầu mỗi hóa đơn bán hàng.</p>
+                </div>
+
+                <div>
+                  <label className="form-label" style={{ fontWeight: '700', color: '#38bdf8' }}>📞 Hotline / Số Zalo CSKH *</label>
+                  <input
+                    type="text" required className="glass-input" placeholder="VD: 0987654321"
+                    value={storeInfo.hotline}
+                    onChange={e => setStoreInfo({ ...storeInfo, hotline: e.target.value })}
+                  />
+                  <p style={{ fontSize: '11px', color: '#64748b', marginTop: '4px' }}>Số điện thoại hoặc Zalo để khách hàng liên hệ bảo hành / hỗ trợ.</p>
+                </div>
+
+                <div style={{ gridColumn: '1 / -1' }}>
+                  <label className="form-label" style={{ fontWeight: '700', color: '#94a3b8' }}>✨ Khẩu Hiệu / Lĩnh Vực Kinh Doanh (Phụ đề)</label>
+                  <input
+                    type="text" className="glass-input" placeholder="VD: Chuyên Dịch Vụ & Tài Khoản Bản Quyền Số"
+                    value={storeInfo.tagline}
+                    onChange={e => setStoreInfo({ ...storeInfo, tagline: e.target.value })}
+                  />
+                </div>
+              </div>
+
+              {/* Live Preview Box */}
+              <div style={{ background: '#ffffff', color: '#0f172a', padding: '14px 18px', borderRadius: '10px', border: '2px solid #6366f1', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
+                <div>
+                  <div style={{ fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.05em', color: '#6366f1', fontWeight: '800', marginBottom: '2px' }}>Xem trước đầu hóa đơn:</div>
+                  <h3 style={{ fontSize: '18px', fontWeight: '800', color: '#6366f1', margin: 0 }}>{storeInfo.store_name || 'TÊN CỬA HÀNG CỦA BẠN'}</h3>
+                  <p style={{ fontSize: '11.5px', color: '#64748b', margin: '2px 0' }}>{storeInfo.tagline || 'Chuyên Dịch Vụ & Tài Khoản Bản Quyền Số'}</p>
+                  <p style={{ fontSize: '11.5px', color: '#0f172a', margin: 0 }}>Hotline / Zalo CSKH: <strong>{storeInfo.hotline || '09xxxxxxxx'}</strong></p>
+                </div>
+                <button type="submit" className="glass-button" style={{ height: '42px', padding: '0 24px', display: 'flex', alignItems: 'center', gap: '8px', background: 'linear-gradient(135deg, #6366f1, #10b981)', color: '#fff', fontWeight: '700' }}>
+                  <Save size={16} /> Lưu Thông Tin Cửa Hàng
+                </button>
+              </div>
+            </form>
+          </div>
+
           {/* VietQR Section */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '24px' }}>
             {/* Form */}
