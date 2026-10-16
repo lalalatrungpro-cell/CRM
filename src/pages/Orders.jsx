@@ -1426,11 +1426,11 @@ export default function Orders() {
     if (!invoiceEl) return toast.error('Không tìm thấy nội dung hóa đơn!');
 
     setIsCapturingInvoice(true);
-    toast.info('📸 Đang chụp ảnh toàn bộ hóa đơn nét cao (2K)...');
+    toast.info('📸 Đang chụp ảnh toàn bộ hóa đơn nét cao (2.5K)...');
 
     try {
       const canvas = await html2canvas(invoiceEl, {
-        scale: 2,
+        scale: 2.5,
         useCORS: true,
         allowTaint: false,
         backgroundColor: '#ffffff',
@@ -1485,7 +1485,7 @@ export default function Orders() {
 
     try {
       const canvas = await html2canvas(invoiceEl, {
-        scale: 2,
+        scale: 2.5,
         useCORS: true,
         allowTaint: false,
         backgroundColor: '#ffffff',
@@ -2208,47 +2208,71 @@ export default function Orders() {
               const invoiceDate = showInvoiceModal.order.created_at || new Date();
 
               return (
-                <div id="printable-invoice" style={{ padding: '16px 4px', fontSize: '12.5px', color: '#0f172a', lineHeight: 1.6, fontFamily: "'Inter', sans-serif" }}>
+                <div
+                  id="printable-invoice"
+                  style={{
+                    padding: '30px 34px 24px',
+                    fontSize: '12.5px',
+                    color: '#0f172a',
+                    lineHeight: 1.6,
+                    fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+                    background: '#ffffff',
+                    borderRadius: '16px',
+                    border: '1px solid #e2e8f0',
+                    boxShadow: '0 4px 24px rgba(0,0,0,0.04)'
+                  }}
+                >
                   {/* Header */}
-                  <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '2px solid #6366f1', paddingBottom: '12px', marginBottom: '16px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', borderBottom: '2px solid #6366f1', paddingBottom: '14px', marginBottom: '18px' }}>
                     <div>
-                      <h2 style={{ fontSize: '20px', fontWeight: '800', color: '#6366f1', margin: 0 }}>
-                        {storeInfo?.store_name || 'DROPSHIP CRM STORE'}
-                      </h2>
-                      <p style={{ fontSize: '12px', color: '#64748b', margin: '2px 0' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <h2 style={{ fontSize: '22px', fontWeight: '900', color: '#4f46e5', margin: 0, letterSpacing: '-0.02em' }}>
+                          {storeInfo?.store_name || 'DROPSHIP CRM STORE'}
+                        </h2>
+                        <span style={{ fontSize: '10.5px', fontWeight: '800', background: 'rgba(99, 102, 241, 0.1)', color: '#4f46e5', padding: '2px 8px', borderRadius: '12px', border: '1px solid rgba(99, 102, 241, 0.25)', textTransform: 'uppercase' }}>
+                          Hóa Đơn Bán Hàng
+                        </span>
+                      </div>
+                      <p style={{ fontSize: '12px', color: '#64748b', margin: '3px 0 2px' }}>
                         {storeInfo?.tagline || 'Chuyên Dịch Vụ & Tài Khoản Bản Quyền Số'}
                       </p>
-                      <p style={{ fontSize: '12px', color: '#64748b', margin: 0 }}>
-                        Hotline / Zalo CSKH: <strong>{storeInfo?.hotline || '0901234567'}</strong>
+                      <p style={{ fontSize: '12.5px', color: '#334155', margin: 0 }}>
+                        📞 Hotline / Zalo CSKH: <strong style={{ color: '#0f172a', fontWeight: '800' }}>{storeInfo?.hotline || '0901234567'}</strong>
                       </p>
                     </div>
                     <div style={{ textAlign: 'right' }}>
-                      <p style={{ fontWeight: '700', fontSize: '14px', margin: 0, textTransform: 'uppercase' }}>
+                      <p style={{ fontWeight: '800', fontSize: '15px', color: '#0f172a', margin: 0, textTransform: 'uppercase', letterSpacing: '0.02em' }}>
                         {isMultiBatch ? `MÃ BATCH: ${showInvoiceModal.order.batch_ref || showInvoiceModal.order.batchRef}` : `MÃ HÓA ĐƠN: #${showInvoiceModal.order.id}`}
                       </p>
-                      <p style={{ fontSize: '12px', color: '#64748b', margin: '2px 0' }}>Ngày lập: {formatDateDDMMYYYY(invoiceDate)}</p>
+                      <p style={{ fontSize: '12px', color: '#64748b', margin: '3px 0 0' }}>Ngày lập: <strong>{formatDateDDMMYYYY(invoiceDate)}</strong></p>
                     </div>
                   </div>
 
                   {/* Customer Info */}
-                  <div style={{ background: '#f8fafc', padding: '10px 14px', borderRadius: '8px', border: '1px solid #e2e8f0', marginBottom: '16px' }}>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px' }}>
-                      <div><strong>Khách Hàng:</strong> {showInvoiceModal.order.customer_name || showInvoiceModal.order.customerName}</div>
-                      <div><strong>Số Điện Thoại / Zalo:</strong> {showInvoiceModal.order.phone || 'N/A'}</div>
+                  <div style={{ background: '#f8fafc', padding: '12px 18px', borderRadius: '10px', border: '1px solid #e2e8f0', marginBottom: '18px' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '10px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <span style={{ color: '#64748b', fontSize: '12px' }}>👤 Khách Hàng:</span>
+                        <strong style={{ fontSize: '13.5px', color: '#0f172a' }}>{showInvoiceModal.order.customer_name || showInvoiceModal.order.customerName}</strong>
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <span style={{ color: '#64748b', fontSize: '12px' }}>📱 Điện Thoại / Zalo:</span>
+                        <strong style={{ fontSize: '13.5px', color: '#0f172a' }}>{showInvoiceModal.order.phone || 'N/A'}</strong>
+                      </div>
                     </div>
                   </div>
 
                   {/* Standard 7-Column Accounting Items Table: STT | Mã Đơn | Tên SP | Infor SP | Đơn Giá | SL | Thành Tiền */}
-                  <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '16px', fontSize: '12px' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '18px', fontSize: '12px' }}>
                     <thead>
-                      <tr style={{ background: '#f1f5f9', borderBottom: '2px solid #cbd5e1' }}>
-                        <th style={{ padding: '8px', textAlign: 'center', width: '38px', border: '1px solid #cbd5e1' }}>STT</th>
-                        <th style={{ padding: '8px', textAlign: 'center', width: '85px', border: '1px solid #cbd5e1' }}>Mã Đơn</th>
-                        <th style={{ padding: '8px', textAlign: 'left', border: '1px solid #cbd5e1' }}>Tên SP</th>
-                        <th style={{ padding: '8px', textAlign: 'left', border: '1px solid #cbd5e1' }}>Infor SP</th>
-                        <th style={{ padding: '8px', textAlign: 'right', width: '95px', border: '1px solid #cbd5e1' }}>Đơn Giá</th>
-                        <th style={{ padding: '8px', textAlign: 'center', width: '40px', border: '1px solid #cbd5e1' }}>SL</th>
-                        <th style={{ padding: '8px', textAlign: 'right', width: '110px', border: '1px solid #cbd5e1' }}>Thành Tiền</th>
+                      <tr style={{ background: '#f8fafc', borderBottom: '2px solid #cbd5e1' }}>
+                        <th style={{ padding: '10px 8px', textAlign: 'center', width: '40px', border: '1px solid #e2e8f0', color: '#475569', fontWeight: '700' }}>STT</th>
+                        <th style={{ padding: '10px 8px', textAlign: 'center', width: '90px', border: '1px solid #e2e8f0', color: '#475569', fontWeight: '700' }}>Mã Đơn</th>
+                        <th style={{ padding: '10px 10px', textAlign: 'left', border: '1px solid #e2e8f0', color: '#475569', fontWeight: '700' }}>Tên SP</th>
+                        <th style={{ padding: '10px 10px', textAlign: 'left', border: '1px solid #e2e8f0', color: '#475569', fontWeight: '700' }}>Thông Tin Kích Hoạt / Infor</th>
+                        <th style={{ padding: '10px 8px', textAlign: 'right', width: '95px', border: '1px solid #e2e8f0', color: '#475569', fontWeight: '700' }}>Đơn Giá</th>
+                        <th style={{ padding: '10px 6px', textAlign: 'center', width: '45px', border: '1px solid #e2e8f0', color: '#475569', fontWeight: '700' }}>SL</th>
+                        <th style={{ padding: '10px 10px', textAlign: 'right', width: '115px', border: '1px solid #e2e8f0', color: '#475569', fontWeight: '700' }}>Thành Tiền</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -2262,9 +2286,9 @@ export default function Orders() {
 
                         return (
                           <tr key={item.id || idx} style={{ borderBottom: '1px solid #e2e8f0' }}>
-                            <td style={{ padding: '8px', textAlign: 'center', border: '1px solid #cbd5e1' }}>{idx + 1}</td>
-                            <td style={{ padding: '8px', textAlign: 'center', fontWeight: '700', fontFamily: 'monospace', border: '1px solid #cbd5e1' }}>#{item.id}</td>
-                            <td style={{ padding: '8px', fontWeight: '700', color: '#0f172a', border: '1px solid #cbd5e1' }}>
+                            <td style={{ padding: '10px 8px', textAlign: 'center', border: '1px solid #e2e8f0' }}>{idx + 1}</td>
+                            <td style={{ padding: '10px 8px', textAlign: 'center', fontWeight: '700', fontFamily: 'monospace', border: '1px solid #e2e8f0', color: '#4f46e5' }}>#{item.id}</td>
+                            <td style={{ padding: '10px 10px', fontWeight: '700', color: '#0f172a', border: '1px solid #e2e8f0' }}>
                               <div>{pName}</div>
                               {exp && exp !== '---' && (
                                 <div style={{ fontSize: '10.5px', color: '#64748b', fontWeight: '400', marginTop: '2px' }}>
@@ -2272,16 +2296,16 @@ export default function Orders() {
                                 </div>
                               )}
                             </td>
-                            <td style={{ padding: '8px', fontFamily: 'monospace', fontSize: '11.5px', wordBreak: 'break-all', border: '1px solid #cbd5e1' }}>
+                            <td style={{ padding: '10px 10px', fontFamily: 'monospace', fontSize: '11.5px', wordBreak: 'break-all', border: '1px solid #e2e8f0', background: '#fafafa' }}>
                               {infor}
                             </td>
-                            <td style={{ padding: '8px', textAlign: 'right', border: '1px solid #cbd5e1' }}>
+                            <td style={{ padding: '10px 8px', textAlign: 'right', border: '1px solid #e2e8f0', color: '#334155' }}>
                               {unitPrice.toLocaleString('vi-VN')}đ
                             </td>
-                            <td style={{ padding: '8px', textAlign: 'center', border: '1px solid #cbd5e1' }}>
+                            <td style={{ padding: '10px 6px', textAlign: 'center', border: '1px solid #e2e8f0', fontWeight: '700' }}>
                               {qty}
                             </td>
-                            <td style={{ padding: '8px', textAlign: 'right', fontWeight: '700', color: '#10b981', border: '1px solid #cbd5e1' }}>
+                            <td style={{ padding: '10px 10px', textAlign: 'right', fontWeight: '800', color: '#059669', border: '1px solid #e2e8f0' }}>
                               {price.toLocaleString('vi-VN')}đ
                             </td>
                           </tr>
@@ -2291,79 +2315,95 @@ export default function Orders() {
                   </table>
 
                   {/* Total & VietQR */}
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#f8fafc', padding: '12px 16px', borderRadius: '8px', border: '1px solid #cbd5e1', marginBottom: '16px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#f8fafc', padding: '16px 20px', borderRadius: '12px', border: '1px solid #e2e8f0', marginBottom: '20px' }}>
                     <div>
                       {showInvoiceModal.qrUrl && (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                          <img src={showInvoiceModal.qrUrl} crossOrigin="anonymous" alt="VietQR" style={{ width: '130px', borderRadius: '6px', border: '1px solid #cbd5e1' }} />
-                          <div style={{ fontSize: '11.5px', color: '#475569', lineHeight: 1.5 }}>
-                            <div style={{ fontWeight: '700', color: '#6366f1' }}>💳 QUÉT MÃ VIETQR</div>
-                            <div>Ngân hàng: <strong>{getBankDisplayName(vietqr?.bank_id || vietqr?.bankId || 'MB')}</strong></div>
-                            <div>STK: <strong>{vietqr?.account_no || vietqr?.accountNo || '0901234567'}</strong></div>
-                            <div>Chủ TK: <strong>{vietqr?.account_name || vietqr?.accountName || 'SHOP DROPSHIP CRM'}</strong></div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+                          <img src={showInvoiceModal.qrUrl} crossOrigin="anonymous" alt="VietQR" style={{ width: '135px', borderRadius: '8px', border: '1px solid #cbd5e1', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }} />
+                          <div style={{ fontSize: '12px', color: '#475569', lineHeight: 1.6 }}>
+                            <div style={{ fontWeight: '800', color: '#4f46e5', fontSize: '12.5px', marginBottom: '2px' }}>💳 QUÉT MÃ VIETQR</div>
+                            <div>Ngân hàng: <strong style={{ color: '#0f172a' }}>{getBankDisplayName(vietqr?.bank_id || vietqr?.bankId || 'MB')}</strong></div>
+                            <div>STK: <strong style={{ color: '#059669', fontSize: '13.5px' }}>{vietqr?.account_no || vietqr?.accountNo || '0901234567'}</strong></div>
+                            <div>Chủ TK: <strong style={{ color: '#0f172a' }}>{vietqr?.account_name || vietqr?.accountName || 'SHOP DROPSHIP CRM'}</strong></div>
                           </div>
                         </div>
                       )}
                     </div>
                     <div style={{ textAlign: 'right' }}>
                       <p style={{ fontSize: '12px', color: '#64748b', margin: 0 }}>Tổng Tiền Thanh Toán ({bOrders.length} món):</p>
-                      <p style={{ fontSize: '20px', fontWeight: '800', color: '#10b981', margin: '4px 0' }}>
+                      <p style={{ fontSize: '24px', fontWeight: '900', color: '#059669', margin: '4px 0' }}>
                         {totalBatchSum.toLocaleString('vi-VN')} VNĐ
                       </p>
-                      <p style={{ fontSize: '11.5px', color: '#334155', fontStyle: 'italic', margin: '2px 0 4px' }}>
+                      <p style={{ fontSize: '12px', color: '#334155', fontStyle: 'italic', margin: '2px 0 6px' }}>
                         (Bằng chữ: <strong>{numberToVietnameseWords(totalBatchSum)}</strong>)
                       </p>
-                      <p style={{ fontSize: '11.5px', color: '#64748b', margin: 0 }}>
-                        Trạng thái: <strong style={{ color: showInvoiceModal.order.status === 'Đã thanh toán' ? '#10b981' : '#ef4444' }}>{showInvoiceModal.order.status}</strong>
-                      </p>
+                      <span style={{
+                        display: 'inline-block',
+                        fontSize: '11px',
+                        fontWeight: '800',
+                        padding: '3px 12px',
+                        borderRadius: '20px',
+                        background: showInvoiceModal.order.status === 'Đã thanh toán' ? 'rgba(16, 185, 129, 0.12)' : 'rgba(239, 68, 68, 0.12)',
+                        color: showInvoiceModal.order.status === 'Đã thanh toán' ? '#059669' : '#dc2626',
+                        border: showInvoiceModal.order.status === 'Đã thanh toán' ? '1px solid rgba(16, 185, 129, 0.3)' : '1px solid rgba(239, 68, 68, 0.3)'
+                      }}>
+                        {showInvoiceModal.order.status === 'Đã thanh toán' ? '✓ ĐÃ THANH TOÁN' : '⏳ CHƯA THANH TOÁN (NỢ)'}
+                      </span>
                     </div>
                   </div>
 
                   {/* Two-Party Accounting Signature Block */}
-                  <div style={{ display: 'flex', justifyContent: 'space-between', margin: '24px 20px 8px', textAlign: 'center', fontSize: '12.5px' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', margin: '26px 20px 16px', textAlign: 'center', fontSize: '12.5px' }}>
                     <div>
-                      <p style={{ fontWeight: '700', margin: 0, textTransform: 'uppercase' }}>KHÁCH HÀNG</p>
-                      <p style={{ fontSize: '11px', color: '#64748b', margin: '2px 0 42px' }}>(Ký, ghi rõ họ tên)</p>
-                      <p style={{ fontWeight: '600', color: '#334155', margin: 0 }}>{showInvoiceModal.order.customer_name || showInvoiceModal.order.customerName}</p>
+                      <p style={{ fontWeight: '800', color: '#0f172a', margin: 0, textTransform: 'uppercase', letterSpacing: '0.04em' }}>KHÁCH HÀNG</p>
+                      <p style={{ fontSize: '11px', color: '#94a3b8', margin: '2px 0 65px' }}>(Ký, ghi rõ họ tên)</p>
+                      <div style={{ width: '150px', borderBottom: '1px dashed #cbd5e1', margin: '0 auto 8px' }}></div>
+                      <p style={{ fontWeight: '700', color: '#334155', margin: 0 }}>{showInvoiceModal.order.customer_name || showInvoiceModal.order.customerName}</p>
                     </div>
                     <div>
-                      <p style={{ fontWeight: '700', margin: 0, textTransform: 'uppercase' }}>NGƯỜI LẬP HÓA ĐƠN</p>
-                      <p style={{ fontSize: '11px', color: '#64748b', margin: '2px 0 42px' }}>(Ký, ghi rõ họ tên)</p>
-                      <p style={{ fontWeight: '600', color: '#334155', margin: 0 }}>Thủ Quỹ / Bán Hàng</p>
+                      <p style={{ fontWeight: '800', color: '#0f172a', margin: 0, textTransform: 'uppercase', letterSpacing: '0.04em' }}>NGƯỜI LẬP HÓA ĐƠN</p>
+                      <p style={{ fontSize: '11px', color: '#94a3b8', margin: '2px 0 65px' }}>(Ký, ghi rõ họ tên)</p>
+                      <div style={{ width: '150px', borderBottom: '1px dashed #cbd5e1', margin: '0 auto 8px' }}></div>
+                      <p style={{ fontWeight: '700', color: '#334155', margin: 0 }}>Thủ Quỹ / Bán Hàng</p>
                     </div>
+                  </div>
+
+                  {/* Brand Thank You & Warranty Footer */}
+                  <div style={{ borderTop: '1px dashed #e2e8f0', paddingTop: '14px', marginTop: '16px', textAlign: 'center', fontSize: '11.5px', color: '#64748b' }}>
+                    <span>❤️ Cảm ơn Quý khách đã tin tưởng và đồng hành cùng <strong>{storeInfo?.store_name || 'shop'}</strong>! Hotline / Zalo hỗ trợ bảo hành 24/7: <strong style={{ color: '#4f46e5' }}>{storeInfo?.hotline || '0901234567'}</strong></span>
                   </div>
                 </div>
               );
             })()}
 
-            {/* Action Buttons Toolbar: Prominent Copy Full Invoice Image + Secondary Tools */}
-            <div className="no-print" style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '16px' }}>
+            {/* Action Buttons Toolbar: High Contrast Solid WCAG AAA */}
+            <div className="no-print" style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '18px' }}>
               {/* PRIMARY PROMINENT BUTTON: SAO CHÉP ẢNH FULL HÓA ĐƠN */}
               <button
                 type="button"
                 onClick={() => handleCopyFullInvoiceImage(showInvoiceModal.order)}
                 disabled={isCapturingInvoice}
-                className="glass-button"
                 style={{
                   width: '100%',
                   height: '48px',
                   background: isCapturingInvoice
-                    ? 'rgba(99,102,241,0.5)'
-                    : 'linear-gradient(135deg, #0068ff 0%, #4f46e5 100%)',
+                    ? '#64748b'
+                    : 'linear-gradient(135deg, #0068ff 0%, #1d4ed8 100%)',
                   color: '#ffffff',
                   fontWeight: '800',
                   fontSize: '14.5px',
                   borderRadius: '10px',
-                  boxShadow: '0 4px 18px rgba(0, 104, 255, 0.45)',
+                  boxShadow: '0 4px 16px rgba(0, 104, 255, 0.35)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   gap: '8px',
                   cursor: isCapturingInvoice ? 'wait' : 'pointer',
                   border: 'none',
-                  transition: 'all 0.2s ease'
+                  letterSpacing: '0.02em',
+                  transition: 'all 0.15s ease'
                 }}
-                title="Chụp toàn bộ hóa đơn dạng ảnh 2K và sao chép vào Clipboard để dán (Ctrl+V) gửi ngay cho khách qua Zalo/Messenger"
+                title="Chụp toàn bộ hóa đơn dạng ảnh 2.5K và sao chép vào Clipboard để dán (Ctrl+V) gửi ngay cho khách qua Zalo/Messenger"
               >
                 {isCapturingInvoice ? (
                   <>⏳ Đang Chụp & Xử Lý Ảnh Hóa Đơn...</>
@@ -2372,28 +2412,30 @@ export default function Orders() {
                 )}
               </button>
 
-              {/* SECONDARY UTILITY ACTIONS ROW */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px' }}>
+              {/* SECONDARY UTILITY ACTIONS ROW: SOLID VIBRANT HIGH CONTRAST */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px' }}>
                 <button
                   type="button"
                   onClick={() => handleDownloadInvoiceImage(showInvoiceModal.order)}
                   disabled={isCapturingInvoice}
-                  className="glass-button"
                   style={{
-                    height: '38px',
-                    background: 'rgba(16, 185, 129, 0.15)',
-                    border: '1px solid rgba(16, 185, 129, 0.4)',
-                    color: '#10b981',
+                    height: '40px',
+                    background: '#059669',
+                    border: '1px solid #047857',
+                    borderRadius: '8px',
+                    color: '#ffffff',
                     fontWeight: '700',
-                    fontSize: '12px',
+                    fontSize: '12.5px',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    gap: '6px'
+                    gap: '6px',
+                    cursor: 'pointer',
+                    boxShadow: '0 2px 6px rgba(5, 150, 105, 0.25)'
                   }}
                   title="Tải ảnh toàn bộ hóa đơn về máy tính dạng PNG"
                 >
-                  <Download size={14} /> Tải Ảnh (PNG)
+                  <Download size={15} /> Tải Ảnh (PNG)
                 </button>
 
                 <button
@@ -2408,43 +2450,47 @@ export default function Orders() {
                     navigator.clipboard.writeText(copyText);
                     toast.success('📋 Đã copy nội dung dạng text vào Clipboard!');
                   }}
-                  className="glass-button"
                   style={{
-                    height: '38px',
-                    background: 'rgba(255,255,255,0.06)',
-                    border: '1px solid rgba(255,255,255,0.15)',
-                    color: '#e2e8f0',
+                    height: '40px',
+                    background: '#334155',
+                    border: '1px solid #1e293b',
+                    borderRadius: '8px',
+                    color: '#ffffff',
                     fontWeight: '700',
-                    fontSize: '12px',
+                    fontSize: '12.5px',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    gap: '6px'
+                    gap: '6px',
+                    cursor: 'pointer',
+                    boxShadow: '0 2px 6px rgba(51, 65, 85, 0.25)'
                   }}
                   title="Sao chép toàn bộ hóa đơn dạng chữ văn bản"
                 >
-                  <Copy size={14} /> Copy Dạng Text
+                  <Copy size={15} /> Copy Dạng Text
                 </button>
 
                 <button
                   type="button"
                   onClick={handlePrintInvoice}
-                  className="glass-button"
                   style={{
-                    height: '38px',
-                    background: 'rgba(99, 102, 241, 0.15)',
-                    border: '1px solid rgba(99, 102, 241, 0.4)',
-                    color: '#818cf8',
+                    height: '40px',
+                    background: '#4f46e5',
+                    border: '1px solid #4338ca',
+                    borderRadius: '8px',
+                    color: '#ffffff',
                     fontWeight: '700',
-                    fontSize: '12px',
+                    fontSize: '12.5px',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    gap: '6px'
+                    gap: '6px',
+                    cursor: 'pointer',
+                    boxShadow: '0 2px 6px rgba(79, 70, 229, 0.25)'
                   }}
                   title="In trực tiếp ra máy in hoặc lưu PDF A4"
                 >
-                  <Printer size={14} /> In A4 / PDF
+                  <Printer size={15} /> In A4 / PDF
                 </button>
               </div>
             </div>
